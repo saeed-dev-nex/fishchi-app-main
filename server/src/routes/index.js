@@ -1,0 +1,14 @@
+import { Router } from 'express';
+import authRouter from './user.routes.js';
+import projectRouter from './project.routes.js';
+import sourceRouter from './source.routes.js';
+import exportRouter from './export.routes.js';
+import noteRouter from './note.routes.js';
+const router = Router();
+router.use('/users', authRouter);
+router.use('/projects', projectRouter);
+router.use('/sources', sourceRouter);
+router.use('/export', exportRouter);
+router.use('/notes', noteRouter);
+router.use('/search', searchRouter);
+export default router;
