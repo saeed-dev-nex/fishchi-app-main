@@ -1,35 +1,27 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import PublicLayout from './layouts/Public.Layout';
+import LandingPage from './pages/public/LandingPage';
+import AppLayout from './layouts/App.layout';
+import DashboardPage from './pages/app/DashboardPage';
 
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <BrowserRouter>
+      <Routes>
+        <Route path='/' element={<PublicLayout />}>
+          <Route index element={<LandingPage />} />
+          <Route path='login' element={<div>صفحه ورود</div>} />
+          <Route path='register' element={<div>صفحه ثبت نام</div>} />
+          <Route path='verify-email' element={<div>صفحه تایید ایمیل</div>} />
+        </Route>
+        <Route path='/app' element={<AppLayout />}>
+          <Route index element={<DashboardPage />} />
+          <Route path='projects' element={<div>صفحه پروژه‌ها</div>} />
+          <Route path='projects/:id' element={<div>صفحه جزئیات پروژه</div>} />
+        </Route>
+      </Routes>
+    </BrowserRouter>
+  );
 }
 
-export default App
+export default App;
