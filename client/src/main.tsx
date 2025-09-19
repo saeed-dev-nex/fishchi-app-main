@@ -6,6 +6,8 @@ import { AppThemeProvider } from './contexts/ThemeContext.tsx';
 import App from './App.tsx';
 import { CacheProvider } from '@emotion/react';
 import rtlPlugin from '@mui/stylis-plugin-rtl';
+import { Provider } from 'react-redux';
+import { store } from './store';
 
 import '@fontsource/vazirmatn/400.css';
 import '@fontsource/vazirmatn/500.css';
@@ -18,10 +20,12 @@ const rtlCache = createCache({
 });
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <CacheProvider value={rtlCache}>
-      <AppThemeProvider>
-        <App />
-      </AppThemeProvider>
-    </CacheProvider>
+    <Provider store={store}>
+      <CacheProvider value={rtlCache}>
+        <AppThemeProvider>
+          <App />
+        </AppThemeProvider>
+      </CacheProvider>
+    </Provider>
   </StrictMode>
 );

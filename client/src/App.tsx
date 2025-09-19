@@ -3,6 +3,7 @@ import PublicLayout from './layouts/Public.Layout';
 import LandingPage from './pages/public/LandingPage';
 import AppLayout from './layouts/App.layout';
 import DashboardPage from './pages/app/DashboardPage';
+import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
   return (
@@ -14,10 +15,12 @@ function App() {
           <Route path='register' element={<div>صفحه ثبت نام</div>} />
           <Route path='verify-email' element={<div>صفحه تایید ایمیل</div>} />
         </Route>
-        <Route path='/app' element={<AppLayout />}>
-          <Route index element={<DashboardPage />} />
-          <Route path='projects' element={<div>صفحه پروژه‌ها</div>} />
-          <Route path='projects/:id' element={<div>صفحه جزئیات پروژه</div>} />
+        <Route element={<ProtectedRoute />}>
+          <Route path='/app' element={<AppLayout />}>
+            <Route index element={<DashboardPage />} />
+            <Route path='projects' element={<div>صفحه پروژه‌ها</div>} />
+            <Route path='projects/:id' element={<div>صفحه جزئیات پروژه</div>} />
+          </Route>
         </Route>
       </Routes>
     </BrowserRouter>
