@@ -7,6 +7,7 @@ import type {
   RegisterData,
   VerifyFormInputs,
 } from '../../types';
+import apiClient from '../../api/axios';
 
 const initialState: IAuthState = {
   user: null,
@@ -22,7 +23,7 @@ export const checkUserStatus = createAsyncThunk(
   'auth/checkUserStatus',
   async (_, thunkAPI) => {
     try {
-      const { data } = await axios.get('/api/v1/users/profile');
+      const { data } = await apiClient.get('/users/profile');
       return data.data as IUser;
     } catch (error: any) {
       console.log(error.response?.message);
@@ -37,7 +38,7 @@ export const registerUser = createAsyncThunk(
   'auth/register',
   async (userData: RegisterData, thunkAPI) => {
     try {
-      const { data } = await axios.post('/api/v1/users/register', userData);
+      const { data } = await apiClient.post('/users/register', userData);
       return data.data as IUser;
     } catch (error: any) {
       const message =
@@ -57,10 +58,7 @@ export const verifyEmail = createAsyncThunk(
   'auth/verifyEmail',
   async (verifyData: VerifyFormInputs, thunkAPI) => {
     try {
-      const { data } = await axios.post(
-        '/api/v1/users/verify-email',
-        verifyData
-      );
+      const { data } = await apiClient.post('/users/verify-email', verifyData);
       console.log(data);
 
       return data.data as IUser;
@@ -81,7 +79,7 @@ export const loginUser = createAsyncThunk(
   'auth/login',
   async (loginData: LoginData, thunkAPI) => {
     try {
-      const { data } = await axios.post('/api/v1/users/login', loginData);
+      const { data } = await apiClient.post('/users/login', loginData);
       return data.data as IUser;
     } catch (error: any) {
       console.log(error.response?.message);

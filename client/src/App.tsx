@@ -8,8 +8,16 @@ import LoginPage from './pages/public/LoginPage';
 import RegisterPage from './pages/public/RegisterPage';
 import VerificationEmail from './pages/public/VerifyEmailPage';
 import ProjectsPage from './pages/app/ProjectsPage';
+import { useDispatch } from 'react-redux';
+import type { AppDispatch } from './store';
+import { checkUserStatus } from './store/features/authSlice';
+import { useEffect } from 'react';
 
 function App() {
+  const dispatch = useDispatch<AppDispatch>();
+  useEffect(() => {
+    dispatch(checkUserStatus());
+  }, [dispatch]);
   return (
     <BrowserRouter>
       <Routes>

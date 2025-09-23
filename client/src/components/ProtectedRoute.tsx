@@ -6,7 +6,7 @@ import { Navigate, Outlet } from 'react-router-dom';
 
 const ProtectedRoute: React.FC = () => {
   const { user, isLoading } = useSelector((state: RootState) => state.auth);
-  const dispatch = useDispatch<AppDispatch>();
+
   useEffect(() => {
     // Todo:
     // If we don't have a user and we're not loading (e.g., first time), check the status
