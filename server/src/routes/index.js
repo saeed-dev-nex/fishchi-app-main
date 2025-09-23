@@ -4,6 +4,7 @@ import projectRouter from './project.routes.js';
 import sourceRouter from './source.routes.js';
 import exportRouter from './export.routes.js';
 import noteRouter from './note.routes.js';
+import searchRouter from './search.routes.js';
 const router = Router();
 router.use('/users', authRouter);
 router.use('/projects', projectRouter);

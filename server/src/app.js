@@ -9,7 +9,7 @@ import cookieParser from 'cookie-parser';
 const app = express();
 
 // use Middlewares
-app.use(cors()); // Enable CORS for all routes
+app.use(cors({ origin: 'http://localhost:3000', credentials: true })); // Enable CORS for all routes
 app.use(express.json()); // Parse JSON request bodies
 app.use(cookieParser());
 // Routes

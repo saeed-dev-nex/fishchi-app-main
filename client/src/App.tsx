@@ -4,6 +4,10 @@ import LandingPage from './pages/public/LandingPage';
 import AppLayout from './layouts/App.layout';
 import DashboardPage from './pages/app/DashboardPage';
 import ProtectedRoute from './components/ProtectedRoute';
+import LoginPage from './pages/public/LoginPage';
+import RegisterPage from './pages/public/RegisterPage';
+import VerificationEmail from './pages/public/VerifyEmailPage';
+import ProjectsPage from './pages/app/ProjectsPage';
 
 function App() {
   return (
@@ -11,14 +15,14 @@ function App() {
       <Routes>
         <Route path='/' element={<PublicLayout />}>
           <Route index element={<LandingPage />} />
-          <Route path='login' element={<div>صفحه ورود</div>} />
-          <Route path='register' element={<div>صفحه ثبت نام</div>} />
-          <Route path='verify-email' element={<div>صفحه تایید ایمیل</div>} />
+          <Route path='login' element={<LoginPage />} />
+          <Route path='register' element={<RegisterPage />} />
+          <Route path='verify-email' element={<VerificationEmail />} />
         </Route>
         <Route element={<ProtectedRoute />}>
           <Route path='/app' element={<AppLayout />}>
             <Route index element={<DashboardPage />} />
-            <Route path='projects' element={<div>صفحه پروژه‌ها</div>} />
+            <Route path='projects' element={<ProjectsPage />} />
             <Route path='projects/:id' element={<div>صفحه جزئیات پروژه</div>} />
           </Route>
         </Route>
