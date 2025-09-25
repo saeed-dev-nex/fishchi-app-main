@@ -9,9 +9,6 @@ const baseTheme = {
     h6: { fontWeight: 700 },
     button: { fontWeight: 700, fontSize: '1rem' },
   },
-  shape: {
-    borderRadius: 4, // Explicitly define as number
-  },
 };
 
 export const getTheme = (mode: PaletteMode) => {
@@ -79,6 +76,7 @@ export const getTheme = (mode: PaletteMode) => {
               main: '#3B82F6', // blue-500
               light: '#93C5FD', // blue-300
               dark: '#1D4ED8', // blue-700
+              contrastText: '#FFFFFF',
             },
             secondary: {
               main: '#10B981', // emerald-500
@@ -89,6 +87,7 @@ export const getTheme = (mode: PaletteMode) => {
               main: '#8B5CF6', // violet-500
               light: '#A78BFA', // violet-400
               dark: '#5B21B6', // violet-700
+              contrastText: '#FFFFFF',
             },
             warning: {
               main: '#F59E0B', // amber-500
@@ -102,7 +101,7 @@ export const getTheme = (mode: PaletteMode) => {
             },
             background: {
               default: '#FFFFFF',
-              paper: '#F9FAFB', // gray-50
+              paper: '#ebebeb', // gray-50
             },
             text: {
               primary: '#111827', // gray-900

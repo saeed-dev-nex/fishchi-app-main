@@ -4,6 +4,7 @@ export interface IUser {
   name: string;
   email: string;
   password?: string;
+  avatar?: string;
 }
 
 export interface IAuthState {
@@ -69,3 +70,10 @@ export interface IProjectState {
 }
 
 export type CreateProjectData = { title: string; description?: string };
+
+export const projectSchema = z.object({
+  title: z.string().min(2, 'وارد کردن عنوان پروژه الزامی است'),
+  description: z.string().max(400, 'طول غیر مجاز').optional(),
+});
+
+export type CreateProjectFormInputs = z.infer<typeof projectSchema>;
