@@ -5,6 +5,7 @@ import {
   deleteProject,
   getProjectById,
   getProjects,
+  removeSourceFromProject,
   updateProject,
 } from '../controllers/project.controller.js';
 
@@ -16,5 +17,5 @@ router.get('/', getProjects);
 router.get('/:id', getProjectById);
 router.put('/:id', updateProject);
 router.delete('/:id', deleteProject);
-
+router.delete('/:id/sources/:sourceId', removeSourceFromProject);
 export default router;

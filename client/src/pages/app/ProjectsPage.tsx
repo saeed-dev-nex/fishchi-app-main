@@ -30,7 +30,7 @@ import {
   Paper,
   Grid,
 } from '@mui/material';
-import { Link as RouterLink } from 'react-router-dom';
+import { Link, Link as RouterLink } from 'react-router-dom';
 import {
   Edit,
   RemoveRedEyeRounded,
@@ -210,9 +210,11 @@ const ProjectsPage: React.FC = () => {
 
                 <CardContent>{project.description.slice(0, 30)}</CardContent>
                 <CardActions sx={{ justifyContent: 'space-between' }}>
-                  <IconButton size='small'>
-                    <RemoveRedEyeRounded />
-                  </IconButton>
+                  <Link to={`/app/projects/${project._id}`}>
+                    <IconButton size='small'>
+                      <RemoveRedEyeRounded />
+                    </IconButton>
+                  </Link>
                   <IconButton
                     size='small'
                     color='primary'
@@ -228,48 +230,6 @@ const ProjectsPage: React.FC = () => {
           ))}
       </Grid>
       <CreateProjectModal onClose={handleCloseModal} open={isModalOpen} />
-
-      {/* Modal for creating new project */}
-      {/* <Dialog
-        open={isModalOpen}
-        onClose={handleCloseModal}
-        maxWidth='sm'
-        fullWidth
-      >
-        <DialogTitle>پروژه جدید</DialogTitle>
-        <DialogContent>
-          <TextField
-            autoFocus
-            margin='dense'
-            label='نام پروژه'
-            fullWidth
-            variant='filled'
-            value={newProjectTitle}
-            onChange={(e) => setNewProjectTitle(e.target.value)}
-            sx={{ mb: 2 }}
-          />
-          <TextField
-            margin='dense'
-            label='توضیحات (اختیاری)'
-            fullWidth
-            multiline
-            rows={3}
-            variant='filled'
-            value={newProjectDescription}
-            onChange={(e) => setNewProjectDescription(e.target.value)}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseModal}>لغو</Button>
-          <Button
-            onClick={handleCreateProject}
-            variant='contained'
-            disabled={!newProjectTitle.trim()}
-          >
-            ایجاد پروژه
-          </Button>
-        </DialogActions>
-      </Dialog> */}
     </Container>
   );
 };

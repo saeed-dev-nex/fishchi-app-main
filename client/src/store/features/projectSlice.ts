@@ -3,11 +3,12 @@ import {
   createSlice,
   type PayloadAction,
 } from '@reduxjs/toolkit';
-import axios from 'axios';
 import type { CreateProjectData, IProject, IProjectState } from '../../types';
+import apiClient from '../../api/axios';
 
 const initialState: IProjectState = {
   projects: [],
+  selectedProject: null,
   isLoading: false,
   error: null,
 };
@@ -18,7 +19,7 @@ export const fetchProjects = createAsyncThunk(
   'projects/fetchProjectsList',
   async (_, thunkAPI) => {
     try {
-      const { data } = await axios.get('/api/v1/projects');
+      const { data } = await apiClient.get('/projects');
       console.log(data);
       return data.data as IProject[];
     } catch (error: any) {
@@ -38,7 +39,7 @@ export const createProject = createAsyncThunk(
   'projects/createProject',
   async (projectData: CreateProjectData, thunkAPI) => {
     try {
-      const { data } = await axios.post('/api/v1/projects', projectData);
+      const { data } = await apiClient.post('/projects', projectData);
       return data.data as IProject;
     } catch (error: any) {
       const message =
@@ -52,10 +53,31 @@ export const createProject = createAsyncThunk(
   }
 );
 
+// ------------ 3. Get Project By ID -----------
+export const fetchProjectById = createAsyncThunk(
+  'projects/getProjectById',
+  async (projectId: string, thunkAPI) => {
+    try {
+      const { data } = await apiClient.get(`/projects/${projectId}`);
+      return data.data as IProject;
+    } catch (error: any) {
+      const message =
+        error.response?.data?.message || error.message || error.toString();
+      return thunkAPI.rejectWithValue(message);
+    }
+  }
+);
+
+
+
 const projectSlice = createSlice({
   name: 'project',
   initialState,
-  reducers: {},
+  reducers: {
+    clearSelectedProject: (state) => {
+      state.selectedProject = null;
+    },
+  },
   extraReducers: (builder) => {
     builder
       // --- Fetch Projects ---
@@ -89,8 +111,23 @@ const projectSlice = createSlice({
       .addCase(createProject.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;
+      })
+      .addCase(fetchProjectById.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(
+        fetchProjectById.fulfilled,
+        (state, action: PayloadAction<IProject>) => {
+          state.isLoading = false;
+          state.selectedProject = action.payload;
+        }
+      )
+      .addCase(fetchProjectById.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
       });
   },
 });
-export const {} = projectSlice.actions;
+export const { clearSelectedProject } = projectSlice.actions;
 export default projectSlice.reducer;

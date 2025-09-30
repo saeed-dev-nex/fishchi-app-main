@@ -65,6 +65,7 @@ export interface IProject {
 
 export interface IProjectState {
   projects: IProject[];
+  selectedProject: IProject | null;
   isLoading: boolean;
   error: string | null;
 }
@@ -77,3 +78,42 @@ export const projectSchema = z.object({
 });
 
 export type CreateProjectFormInputs = z.infer<typeof projectSchema>;
+
+export interface IAuthor {
+  name: string;
+}
+
+export interface ISource {
+  _id: string;
+  title: string;
+  authors: IAuthor[];
+  year?: number;
+  type: string;
+}
+
+export interface SourceState {
+  sources: ISource[];
+  title: string;
+  authors: IAuthor[];
+  year?: number;
+  type: string;
+  isLoading: boolean;
+  error: string | null;
+}
+
+export type CreateSourceData = {
+  projectId: string;
+  title: string;
+  authors: IAuthor[];
+  year?: number;
+  type: string;
+};
+export type ImportSourceByDoiData = {
+  projectId: string;
+  doi: string;
+};
+
+export type ImportSourceByUrlData = {
+  projectId: string;
+  url: string;
+};

@@ -98,10 +98,23 @@ const deleteProject = asyncHandler(async (req, res) => {
   ApiResponse.success(res, null, 'پروژه با موفقیت حذف شد');
 });
 
+const removeSourceFromProject = asyncHandler(async (req, res) => {
+  const { id: projectId, sourceId } = req.params;
+
+  await checkProjectOwnership(projectId, req.user._id);
+
+  await Project.findByIdAndUpdate(projectId, {
+    $pull: { sources: sourceId }, // حذف ID منبع از آرایه پروژه
+  });
+
+  ApiResponse.success(res, null, 'منبع با موفقیت از پروژه حذف شد');
+});
+
 export {
   createProject,
   getProjects,
   getProjectById,
   updateProject,
   deleteProject,
+  removeSourceFromProject,
 };

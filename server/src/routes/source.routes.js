@@ -7,6 +7,7 @@ import {
   getSourceById,
   getSourcesByProject,
   importSourceByDOI,
+  importSourceByUrl,
   updateSource,
 } from '../controllers/source.controller.js';
 
@@ -15,6 +16,7 @@ router.use(protect);
 
 router.route('/').post(createSource).get(getSourcesByProject);
 router.route('/import-doi').post(importSourceByDOI);
+router.route('/import-url').post(importSourceByUrl);
 
 router.route('/:id').get(getSourceById).put(updateSource).delete(deleteSource);
 router.get('/:id/citation', generateCitation);

@@ -12,6 +12,7 @@ import { useDispatch } from 'react-redux';
 import type { AppDispatch } from './store';
 import { checkUserStatus } from './store/features/authSlice';
 import { useEffect } from 'react';
+import ProjectDetailPage from './pages/app/ProjectDetailPage';
 
 function App() {
   const dispatch = useDispatch<AppDispatch>();
@@ -31,7 +32,7 @@ function App() {
           <Route path='/app' element={<AppLayout />}>
             <Route index element={<DashboardPage />} />
             <Route path='projects' element={<ProjectsPage />} />
-            <Route path='projects/:id' element={<div>صفحه جزئیات پروژه</div>} />
+            <Route path="projects/:id" element={<ProjectDetailPage />} />
           </Route>
         </Route>
       </Routes>

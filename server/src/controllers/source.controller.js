@@ -1,5 +1,7 @@
 import asyncHandler from 'express-async-handler';
 import axios from 'axios';
+import * as cheerio from 'cheerio';
+import puppeteer from 'puppeteer';
 import Project from '../models/Project.model.js';
 import Source from '../models/Source.model.js';
 import ApiResponse from '../utils/apiResponse.js';
@@ -12,26 +14,26 @@ import checkProjectOwnership from '../utils/checkOwnershipProject.js';
 // @route POST /api/v1/sources
 // @access Private
 const createSource = asyncHandler(async (req, res) => {
-  const { projectId, title, authors, year, type, identifiers, abstract, tags } =
-    req.body;
-  if (!projectId || !title) {
+  const { projectId, title, authors, ...rest } = req.body;
+  if (title) {
     res.status(400);
-    throw new Error('فیلدهای projectId و title الزامی هستند');
+    throw new Error('فیلد   title الزامی است');
   }
   try {
     await checkProjectOwnership(projectId, req.user._id);
     const source = new Source({
       user: req.user._id,
-      project: projectId,
       title,
       authors,
-      year,
-      type,
-      identifiers,
-      abstract,
-      tags,
+      ...rest,
     });
     await source.save();
+    if (projectId) {
+      await checkProjectOwnership(projectId, req.user._id);
+      await Project.findByIdAndUpdate(projectId, {
+        $push: { sources: source._id }, // اضافه کردن ID منبع به آرایه پروژه
+      });
+    }
     ApiResponse.success(res, source, 'منبع با موفقیت ایجاد شد');
   } catch (error) {
     res.status(401);
@@ -52,11 +54,13 @@ const getSourcesByProject = asyncHandler(async (req, res) => {
   try {
     // Check project ownership
     await checkProjectOwnership(projectId, req.user._id);
-    const sources = await Source.find({ project: projectId }).sort({
-      createdAt: -1,
-    });
-    console.log(sources);
-    ApiResponse.success(res, sources, 'لیست منابع با موفقیت دریافت شد');
+
+    const project = await Project.findById(projectId).populate('sources');
+    if (!project) {
+      res.status(404);
+      throw new Error('پروژه یافت نشد');
+    }
+    ApiResponse.success(res, project.sources, 'لیست منابع با موفقیت دریافت شد');
   } catch (error) {
     res.status(401);
     throw new Error(error.message);
@@ -109,13 +113,11 @@ const mapCrossrefToSource = (crossrefResult) => {
 // @access Private
 const importSourceByDOI = asyncHandler(async (req, res) => {
   const { doi, projectId } = req.body;
-  if (!doi || !projectId) {
+  if (!doi) {
     res.status(400);
-    throw new Error('DOI و projectId الزامی هستند');
+    throw new Error('DOI الزامی است');
   }
   try {
-    await checkProjectOwnership(projectId, req.user._id);
-
     const crossrefUrl = `https://api.crossref.org/works/${doi}`;
     const { data } = await axios.get(crossrefUrl);
     const sourceData = mapCrossrefToSource(data.message);
@@ -125,6 +127,13 @@ const importSourceByDOI = asyncHandler(async (req, res) => {
       user: req.user._id,
     });
     await source.save();
+    if (projectId) {
+      await checkProjectOwnership(projectId, req.user._id);
+      await Project.findByIdAndUpdate(projectId, {
+        $push: { sources: source._id }, // اضافه کردن ID منبع به آرایه پروژه
+      });
+    }
+
     ApiResponse.success(res, source, 'منبع با موفقیت ایجاد شد');
   } catch (error) {
     if (error.response && error.response.status === 404) {
@@ -241,6 +250,124 @@ const generateCitation = asyncHandler(async (req, res) => {
   }
 });
 
+/**
+ * تابع کمکی برای استخراج اطلاعات از HTML سایت SID.ir
+ */
+const scrapeSID = (html) => {
+  const $ = cheerio.load(html);
+  const getMetaContent = (name) =>
+    $(`meta[name="${name}"]`).attr('content')?.trim() || null;
+  const title = getMetaContent('citation_title');
+
+  // اگر عنوان پيدا نشد، اين لينک معتبر نيست و ادامه نمي‌دهيم
+  if (!title) {
+    return null;
+  }
+
+  const authorsRaw = getMetaContent('citation_author');
+  const abstract =
+    $('meta[property="og:description"]').attr('content')?.trim() || null;
+  const journal = getMetaContent('citation_publisher');
+  const year = getMetaContent('citation_year');
+  const volume = getMetaContent('citation_volume');
+  const issue = getMetaContent('citation_issue');
+  const firstPage = getMetaContent('citation_firstpage');
+  const lastPage = getMetaContent('citation_lastpage');
+  const keywordsRaw = getMetaContent('citation_keywords');
+
+  const authors = authorsRaw
+    ? authorsRaw
+        .split(',')
+        .map((name) => ({ name: name.trim() }))
+        .filter((a) => a.name)
+    : [];
+  const tags = keywordsRaw
+    ? keywordsRaw
+        .split('،')
+        .map((tag) => tag.trim())
+        .filter((t) => t)
+    : [];
+
+  return {
+    title,
+    authors,
+    year: year ? parseInt(year, 10) : undefined,
+    abstract,
+    tags,
+    publicationDetails: {
+      journal: journal || undefined,
+      volume: volume || undefined,
+      issue: issue || undefined,
+      pages: firstPage && lastPage ? `${firstPage}-${lastPage}` : undefined,
+    },
+  };
+};
+
+// @desc    وارد کردن منبع با استفاده از URL
+// @route   POST /api/v1/sources/import-url
+// @access  Private
+const importSourceByUrl = asyncHandler(async (req, res) => {
+  const { url, projectId } = req.body;
+
+  if (!url) {
+    res.status(400);
+    throw new Error(' url   الزامی است');
+  }
+
+  let browser = null; // متغیر مرورگر را بیرون از try تعریف می‌کنیم
+  try {
+    await checkProjectOwnership(projectId, req.user._id);
+
+    // ۲. یک مرورگر Headless راه‌اندازی کن
+    browser = await puppeteer.launch({
+      headless: true, // بدون رابط کاربری
+      args: ['--no-sandbox', '--disable-setuid-sandbox'], // تنظیمات برای اجرا در محیط‌های مختلف
+    });
+    const page = await browser.newPage();
+
+    // ۳. به URL مورد نظر برو
+    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 }); // منتظر بمان تا صفحه کاملاً لود شود
+
+    // ۴. محتوای HTML صفحه را استخراج کن
+    const html = await page.content();
+
+    let scrapedData = null;
+    if (url.includes('sid.ir')) {
+      scrapedData = scrapeSID(html);
+    }
+
+    if (!scrapedData) {
+      res.status(400);
+      throw new Error('اطلاعاتی از این لینک قابل استخراج نیست.');
+    }
+
+    const source = await Source.create({
+      ...scrapedData,
+      user: req.user._id,
+      project: projectId,
+      type: 'article',
+      identifiers: { url },
+    });
+    if (projectId) {
+      await checkProjectOwnership(projectId, req.user._id);
+      await Project.findByIdAndUpdate(projectId, {
+        $push: { sources: source._id }, // اضافه کردن ID منبع به آرایه پروژه
+      });
+    }
+
+    ApiResponse.success(res, source, 'منبع با موفقیت از لینک وارد شد', 201);
+  } catch (error) {
+    console.error('Puppeteer scraping error:', error); // لاگ کردن خطای کامل برای دیباگ
+    res.status(500);
+    throw new Error(`خطا در پردازش لینک با Puppeteer: ${error.message}`);
+  } finally {
+    // ۵. در هر صورت (چه موفق چه ناموفق)، مرورگر را ببند تا منابع آزاد شوند
+    if (browser) {
+      await browser.close();
+    }
+  }
+});
+
 export {
   createSource,
   importSourceByDOI,
@@ -249,4 +376,5 @@ export {
   updateSource,
   deleteSource,
   generateCitation,
+  importSourceByUrl,
 };

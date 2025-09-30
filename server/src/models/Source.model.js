@@ -12,12 +12,7 @@ const sourceSchema = new Schema(
       ref: 'User',
       required: true,
     },
-    project: {
-      type: Schema.Types.ObjectId,
-      ref: 'Project',
-      required: true,
-    },
-    //   ---- Main Source infos
+
     title: {
       type: String,
       required: [true, 'عنوان منبع الزامی است'],

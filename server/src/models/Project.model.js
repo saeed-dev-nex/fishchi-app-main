@@ -17,6 +17,10 @@ const projectSchema = new Schema(
       trim: true,
     },
     tags: [String],
+    sources: [{
+      type: Schema.Types.ObjectId,
+      ref: 'Source', 
+    }],
   },
   {
     timestamps: true,

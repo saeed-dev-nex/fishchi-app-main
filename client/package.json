@@ -20,6 +20,7 @@
     "@mui/stylis-plugin-rtl": "^7.3.2",
     "@reduxjs/toolkit": "^2.9.0",
     "axios": "^1.12.2",
+    "cheerio": "^1.1.2",
     "framer-motion": "^12.23.16",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",

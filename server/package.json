@@ -17,6 +17,7 @@
     "@citation-js/plugin-csl": "^0.7.18",
     "axios": "^1.12.2",
     "bcryptjs": "^3.0.2",
+    "cheerio": "^1.1.2",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "docx": "^9.5.1",
@@ -25,7 +26,8 @@
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.18.1",
     "nodemailer": "^7.0.6",
-    "otp-generator": "^4.0.1"
+    "otp-generator": "^4.0.1",
+    "puppeteer": "^24.22.3"
   },
   "devDependencies": {
     "nodemon": "^3.1.10"
