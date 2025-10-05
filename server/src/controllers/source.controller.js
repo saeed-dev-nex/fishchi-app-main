@@ -10,6 +10,34 @@ import '@citation-js/plugin-csl';
 import { mapSourceToCSL } from '../utils/cslMapper.js';
 import checkProjectOwnership from '../utils/checkOwnershipProject.js';
 
+// --------- Get All Sources ----------
+// @desc get sources
+// @route GET /api/v1/sources
+// @access Private
+const getSources = asyncHandler(async (req, res) => {
+  const { projectId } = req.query;
+
+  let sources;
+
+  if (projectId) {
+    // Check project ownership
+    await checkProjectOwnership(projectId, req.user._id);
+    const project = await Project.findById(projectId).populate({
+      path: 'sources',
+      options: { sort: { createAt: -1 } },
+    });
+    if (!project) {
+      res.status(404);
+      throw new Error('پروژه یافت نشد');
+    }
+    sources = project.sources;
+    ApiResponse.success(res, sources, 'لیست منابع با موفقیت دریافت شد');
+  } else {
+    sources = await Source.find({ user: req.user._id }).sort({ createAt: -1 });
+    ApiResponse.success(res, sources, 'لیست منابع با موفقیت دریافت شد');
+  }
+});
+
 // Create new source
 // @route POST /api/v1/sources
 // @access Private
@@ -371,6 +399,7 @@ const importSourceByUrl = asyncHandler(async (req, res) => {
 export {
   createSource,
   importSourceByDOI,
+  getSources,
   getSourcesByProject,
   getSourceById,
   updateSource,

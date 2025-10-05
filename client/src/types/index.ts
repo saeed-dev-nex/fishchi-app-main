@@ -60,6 +60,7 @@ export interface IProject {
   title: string;
   description: string;
   createdAt: string;
+
   tags?: string[];
 }
 
@@ -93,10 +94,6 @@ export interface ISource {
 
 export interface SourceState {
   sources: ISource[];
-  title: string;
-  authors: IAuthor[];
-  year?: number;
-  type: string;
   isLoading: boolean;
   error: string | null;
 }

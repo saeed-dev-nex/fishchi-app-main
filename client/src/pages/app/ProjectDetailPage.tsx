@@ -1,15 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { Link as RouterLink, useParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 
 import {
   fetchProjectById,
   clearSelectedProject,
+  removeSourceFromProject,
 } from '../../store/features/projectSlice';
-import {
-  fetchSourcesByProject,
-  deleteSource,
-} from '../../store/features/sourceSlice';
+import { fetchSourcesByProject } from '../../store/features/sourceSlice';
 import {
   Box,
   Typography,
@@ -19,28 +17,39 @@ import {
   Grid,
   Card,
   CardContent,
+  CardActionArea,
   List,
   ListItem,
   ListItemText,
-  Divider,
+  ListItemButton,
   Checkbox,
   Toolbar,
-  IconButton,
   Tooltip,
   ToggleButton,
   ToggleButtonGroup,
   Paper,
+  Chip,
+  Avatar,
+  Fade,
+  Slide,
+  Container,
+  Stack,
+  alpha,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ViewListIcon from '@mui/icons-material/ViewList';
 import ViewModuleIcon from '@mui/icons-material/ViewModule';
+import FolderIcon from '@mui/icons-material/Folder';
+import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
+import DescriptionIcon from '@mui/icons-material/Description';
 import ConfirmationDialog from '../../components/common/ConfirmationDialog';
 import type { AppDispatch, RootState } from '../../store';
 import AddSourceModal from '../../components/sources/AddSourceModal';
+import { ArrowBack, ArrowBackIos, Shortcut } from '@mui/icons-material';
 
 const ProjectDetailPage: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
+  const { id: projectId } = useParams<{ id: string }>();
   const dispatch = useDispatch<AppDispatch>();
 
   // State های محلی برای مدیریت UI
@@ -61,14 +70,14 @@ const ProjectDetailPage: React.FC = () => {
   } = useSelector((state: RootState) => state.sources);
 
   useEffect(() => {
-    if (id) {
-      dispatch(fetchProjectById(id));
-      dispatch(fetchSourcesByProject(id));
+    if (projectId) {
+      dispatch(fetchProjectById(projectId));
+      dispatch(fetchSourcesByProject(projectId));
     }
     return () => {
       dispatch(clearSelectedProject());
     };
-  }, [id, dispatch]);
+  }, [projectId, dispatch]);
 
   // --- Handlers ---
   const handleViewChange = (
@@ -98,180 +107,481 @@ const ProjectDetailPage: React.FC = () => {
     setSelected([]);
   };
 
-  const handleConfirmDelete = async () => {
+  const handleConfirmRemove = async () => {
+    if (!projectId) return;
     // برای هر آیتم انتخاب شده، thunk حذف را dispatch کن
-    await Promise.all(selected.map((id) => dispatch(deleteSource(id))));
+    await Promise.all(
+      selected.map((sourceId) =>
+        dispatch(removeSourceFromProject({ projectId, sourceId }))
+      )
+    );
     setSelected([]); // پاک کردن لیست انتخاب شده‌ها
     setIsDialogOpen(false); // بستن دیالوگ
   };
 
   // --- Render Logic ---
-  if (projectLoading) return <CircularProgress />;
-  if (projectError) return <Alert severity='error'>{projectError}</Alert>;
-  if (!selectedProject) return <Typography>پروژه یافت نشد.</Typography>;
+  if (projectLoading) {
+    return (
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          minHeight: '60vh',
+        }}
+      >
+        <CircularProgress size={60} />
+      </Box>
+    );
+  }
+
+  if (projectError) {
+    return (
+      <Container maxWidth='md' sx={{ mt: 4 }}>
+        <Alert severity='error' sx={{ borderRadius: 2 }}>
+          {projectError}
+        </Alert>
+      </Container>
+    );
+  }
+
+  if (!selectedProject) {
+    return (
+      <Container maxWidth='md' sx={{ mt: 4 }}>
+        <Paper sx={{ p: 4, textAlign: 'center', borderRadius: 2 }}>
+          <Typography variant='h6' color='text.secondary'>
+            پروژه یافت نشد
+          </Typography>
+        </Paper>
+      </Container>
+    );
+  }
 
   const isSelected = (id: string) => selected.indexOf(id) !== -1;
   const numSelected = selected.length;
   const rowCount = sources.length;
 
   return (
-    <>
-      <Paper sx={{ p: 2, mb: 3 }}>
-        <Typography variant='h4' gutterBottom>
-          {selectedProject.title}
-        </Typography>
-        <Typography variant='body1' color='text.secondary' paragraph>
-          {selectedProject.description}
-        </Typography>
-      </Paper>
-
-      <Paper sx={{ p: 2 }}>
-        {/* Toolbar شرطی: بر اساس اینکه آیتمی انتخاب شده یا نه، نمایش داده می‌شود */}
-        <Toolbar
+    <Container maxWidth='xl' sx={{ py: 3 }}>
+      {/* Project Header */}
+      <Fade in timeout={600}>
+        <Paper
+          elevation={0}
           sx={{
-            pl: { sm: 2 },
-            pr: { xs: 1, sm: 1 },
-            ...(numSelected > 0 && {
-              bgcolor: (theme) => theme.palette.action.selected,
-            }),
+            p: 4,
+            mb: 4,
+            borderRadius: 3,
+            background: (theme) =>
+              `linear-gradient(135deg, ${alpha(
+                theme.palette.primary.main,
+                0.05
+              )} 0%, ${alpha(theme.palette.secondary.main, 0.05)} 100%)`,
+            border: (theme) => `1px solid ${alpha(theme.palette.divider, 0.1)}`,
           }}
         >
-          {numSelected > 0 ? (
-            <Typography
-              sx={{ flex: '1 1 100%' }}
-              color='inherit'
-              variant='subtitle1'
-              component='div'
+          <Button
+            variant='outlined'
+            startIcon={<Shortcut />}
+            component={RouterLink}
+            to='/app/projects'
+            sx={{ mb: 3, borderRadius: 2, fontWeight: 500 }}
+          >
+            بازگشت به پروژه‌ها
+          </Button>
+          <Stack direction='row' spacing={3} alignItems='flex-start'>
+            <Avatar
+              sx={{
+                width: 64,
+                height: 64,
+                bgcolor: 'primary.main',
+                fontSize: '1.5rem',
+              }}
             >
-              {numSelected} مورد انتخاب شده
-            </Typography>
-          ) : (
-            <Typography sx={{ flex: '1 1 100%' }} variant='h6' component='div'>
-              منابع پروژه
-            </Typography>
-          )}
-
-          {numSelected > 0 ? (
-            <Tooltip title='حذف'>
-              <IconButton onClick={() => setIsDialogOpen(true)}>
-                <DeleteIcon />
-              </IconButton>
-            </Tooltip>
-          ) : (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <ToggleButtonGroup
-                value={viewMode}
-                exclusive
-                onChange={handleViewChange}
-                size='small'
+              <FolderIcon />
+            </Avatar>
+            <Box sx={{ flex: 1 }}>
+              <Typography variant='h3' fontWeight='bold' gutterBottom>
+                {selectedProject.title}
+              </Typography>
+              <Typography
+                variant='body1'
+                color='text.secondary'
+                sx={{ mb: 2, lineHeight: 1.6 }}
               >
-                <ToggleButton value='list'>
-                  <ViewListIcon />
-                </ToggleButton>
-                <ToggleButton value='grid'>
-                  <ViewModuleIcon />
-                </ToggleButton>
-              </ToggleButtonGroup>
-              <Button
-                variant='contained'
-                startIcon={<AddIcon />}
-                onClick={() => setIsAddSourceModalOpen(true)}
-              >
-                افزودن منبع
-              </Button>
+                {selectedProject.description}
+              </Typography>
+              <Stack direction='row' spacing={2} flexWrap='wrap'>
+                <Chip
+                  icon={<DescriptionIcon />}
+                  label={`${sources.length} منبع`}
+                  variant='outlined'
+                  color='primary'
+                />
+                <Chip
+                  icon={<CalendarTodayIcon />}
+                  label='پروژه فعال'
+                  variant='outlined'
+                  color='success'
+                />
+              </Stack>
             </Box>
-          )}
-        </Toolbar>
+          </Stack>
+        </Paper>
+      </Fade>
 
-        {/* Checkbox انتخاب همه */}
-        {numSelected > 0 && (
-          <Checkbox
-            color='primary'
-            indeterminate={numSelected > 0 && numSelected < rowCount}
-            checked={rowCount > 0 && numSelected === rowCount}
-            onChange={handleSelectAll}
-          />
-        )}
+      {/* Sources Section */}
+      <Slide direction='up' in timeout={800}>
+        <Paper
+          elevation={0}
+          sx={{
+            borderRadius: 3,
+            border: (theme) => `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+            overflow: 'hidden',
+          }}
+        >
+          {/* Enhanced Toolbar */}
+          <Toolbar
+            sx={{
+              px: 3,
+              py: 2,
+              background: (theme) =>
+                numSelected > 0
+                  ? alpha(theme.palette.primary.main, 0.08)
+                  : 'transparent',
+              borderBottom: (theme) =>
+                `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+              transition: 'all 0.3s ease',
+            }}
+          >
+            <Box sx={{ flex: 1 }}>
+              {numSelected > 0 ? (
+                <Stack direction='row' spacing={2} alignItems='center'>
+                  <Typography
+                    variant='h6'
+                    color='primary.main'
+                    fontWeight='600'
+                  >
+                    {numSelected} مورد انتخاب شده
+                  </Typography>
+                  <Chip
+                    label={`${numSelected} از ${rowCount}`}
+                    size='small'
+                    color='primary'
+                    variant='outlined'
+                  />
+                </Stack>
+              ) : (
+                <Typography variant='h5' fontWeight='600'>
+                  منابع پروژه
+                </Typography>
+              )}
+            </Box>
 
-        {/* نمایش لیست یا گرید */}
-        {sourcesLoading && (
-          <CircularProgress sx={{ mx: 'auto', display: 'block' }} />
-        )}
-        {sourcesError && <Alert severity='error'>{sourcesError}</Alert>}
-
-        {viewMode === 'grid' ? (
-          <Grid container spacing={2} sx={{ mt: 2 }}>
-            {sources.map((source) => {
-              const selected = isSelected(source._id);
-              return (
-                <Grid size={{ xs: 12, md: 6, lg: 4 }} key={source._id}>
-                  <Card
+            <Stack direction='row' spacing={1} alignItems='center'>
+              {numSelected > 0 ? (
+                <>
+                  <Tooltip title='حذف منابع انتخاب شده'>
+                    <Button
+                      variant='outlined'
+                      color='error'
+                      startIcon={<DeleteIcon />}
+                      onClick={() => setIsDialogOpen(true)}
+                      sx={{
+                        borderRadius: 2,
+                        textTransform: 'none',
+                        fontWeight: 500,
+                      }}
+                    >
+                      حذف
+                    </Button>
+                  </Tooltip>
+                </>
+              ) : (
+                <>
+                  <ToggleButtonGroup
+                    value={viewMode}
+                    exclusive
+                    onChange={handleViewChange}
+                    size='small'
                     sx={{
-                      position: 'relative',
-                      border: selected ? '2px solid' : 'none',
-                      borderColor: 'primary.main',
+                      borderRadius: 2,
+                      '& .MuiToggleButton-root': {
+                        borderRadius: 2,
+                        border: 'none',
+                        px: 2,
+                      },
                     }}
                   >
-                    <Checkbox
-                      checked={selected}
-                      onChange={() => handleSelect(source._id)}
-                      sx={{ position: 'absolute', top: 8, right: 8 }}
-                    />
-                    <CardContent>
-                      <Typography variant='h6' noWrap>
-                        {source.title}
-                      </Typography>
-                      <Typography variant='body2' color='text.secondary'>
-                        سال: {source.year || 'N/A'}
-                      </Typography>
-                    </CardContent>
-                  </Card>
-                </Grid>
-              );
-            })}
-          </Grid>
-        ) : (
-          <List sx={{ mt: 2 }}>
-            {sources.map((source) => {
-              const selected = isSelected(source._id);
-              return (
-                <ListItem
-                  key={source._id}
-                  secondaryAction={
-                    <Checkbox
-                      checked={selected}
-                      onChange={() => handleSelect(source._id)}
-                    />
-                  }
-                  divider
-                >
-                  <ListItemText
-                    primary={source.title}
-                    secondary={`سال: ${source.year || 'N/A'}`}
-                  />
-                </ListItem>
-              );
-            })}
-          </List>
-        )}
-      </Paper>
+                    <ToggleButton value='list'>
+                      <ViewListIcon />
+                    </ToggleButton>
+                    <ToggleButton value='grid'>
+                      <ViewModuleIcon />
+                    </ToggleButton>
+                  </ToggleButtonGroup>
+                  <Button
+                    variant='contained'
+                    startIcon={<AddIcon />}
+                    onClick={() => setIsAddSourceModalOpen(true)}
+                    sx={{
+                      borderRadius: 2,
+                      textTransform: 'none',
+                      fontWeight: 500,
+                      px: 3,
+                      py: 1,
+                    }}
+                  >
+                    افزودن منبع
+                  </Button>
+                </>
+              )}
+            </Stack>
+          </Toolbar>
 
-      {/* دیالوگ تایید حذف */}
+          {/* Select All Checkbox */}
+          {numSelected > 0 && (
+            <Box sx={{ px: 3, py: 1, bgcolor: 'action.hover' }}>
+              <Stack direction='row' alignItems='center' spacing={2}>
+                <Checkbox
+                  color='primary'
+                  indeterminate={numSelected > 0 && numSelected < rowCount}
+                  checked={rowCount > 0 && numSelected === rowCount}
+                  onChange={handleSelectAll}
+                />
+                <Typography variant='body2' color='text.secondary'>
+                  انتخاب همه منابع
+                </Typography>
+              </Stack>
+            </Box>
+          )}
+
+          {/* Content Area */}
+          <Box sx={{ p: 3 }}>
+            {sourcesLoading && (
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'center',
+                  py: 8,
+                }}
+              >
+                <CircularProgress size={40} />
+              </Box>
+            )}
+
+            {sourcesError && (
+              <Alert severity='error' sx={{ borderRadius: 2, mb: 2 }}>
+                {sourcesError}
+              </Alert>
+            )}
+
+            {!sourcesLoading && !sourcesError && (
+              <>
+                {viewMode === 'grid' ? (
+                  <Grid container spacing={3}>
+                    {sources.map((source, index) => {
+                      const isItemSelected = isSelected(source._id);
+                      return (
+                        <Grid
+                          size={{
+                            xs: 12,
+                            sm: 6,
+                            md: 4,
+                            lg: 3,
+                          }}
+                          key={source._id}
+                        >
+                          <Fade in timeout={600 + index * 100}>
+                            <Card
+                              sx={{
+                                position: 'relative',
+                                borderRadius: 3,
+                                border: isItemSelected
+                                  ? '2px solid'
+                                  : '1px solid',
+                                borderColor: isItemSelected
+                                  ? 'primary.main'
+                                  : 'divider',
+                                transition: 'all 0.3s ease',
+                                '&:hover': {
+                                  transform: 'translateY(-4px)',
+                                  boxShadow: (theme) =>
+                                    `0 8px 25px ${alpha(
+                                      theme.palette.common.black,
+                                      0.15
+                                    )}`,
+                                  borderColor: 'primary.main',
+                                },
+                                ...(isItemSelected && {
+                                  bgcolor: (theme) =>
+                                    alpha(theme.palette.primary.main, 0.05),
+                                }),
+                              }}
+                            >
+                              <CardActionArea
+                                onClick={() => handleSelect(source._id)}
+                                sx={{ p: 0 }}
+                              >
+                                <Box
+                                  sx={{
+                                    position: 'absolute',
+                                    top: 12,
+                                    right: 12,
+                                    zIndex: 1,
+                                  }}
+                                >
+                                  <Checkbox
+                                    checked={isItemSelected}
+                                    onChange={() => handleSelect(source._id)}
+                                    sx={{
+                                      bgcolor: 'background.paper',
+                                      borderRadius: '50%',
+                                      '&:hover': {
+                                        bgcolor: 'background.paper',
+                                      },
+                                    }}
+                                  />
+                                </Box>
+                                <CardContent sx={{ p: 3, pt: 4 }}>
+                                  <Stack spacing={2}>
+                                    <Typography
+                                      variant='h6'
+                                      fontWeight='600'
+                                      sx={{
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis',
+                                        display: '-webkit-box',
+                                        WebkitLineClamp: 2,
+                                        WebkitBoxOrient: 'vertical',
+                                        lineHeight: 1.3,
+                                      }}
+                                    >
+                                      {source.title}
+                                    </Typography>
+                                    <Stack
+                                      direction='row'
+                                      spacing={1}
+                                      alignItems='center'
+                                    >
+                                      <CalendarTodayIcon
+                                        sx={{
+                                          fontSize: 16,
+                                          color: 'text.secondary',
+                                        }}
+                                      />
+                                      <Typography
+                                        variant='body2'
+                                        color='text.secondary'
+                                      >
+                                        {source.year || 'بدون تاریخ'}
+                                      </Typography>
+                                    </Stack>
+                                  </Stack>
+                                </CardContent>
+                              </CardActionArea>
+                            </Card>
+                          </Fade>
+                        </Grid>
+                      );
+                    })}
+                  </Grid>
+                ) : (
+                  <List sx={{ p: 0 }}>
+                    {sources.map((source, index) => {
+                      const isItemSelected = isSelected(source._id);
+                      return (
+                        <Fade in timeout={600 + index * 100} key={source._id}>
+                          <ListItem
+                            sx={{
+                              p: 0,
+                              mb: 1,
+                              borderRadius: 2,
+                              border: isItemSelected
+                                ? '2px solid'
+                                : '1px solid',
+                              borderColor: isItemSelected
+                                ? 'primary.main'
+                                : 'divider',
+                              bgcolor: isItemSelected
+                                ? (theme) =>
+                                    alpha(theme.palette.primary.main, 0.05)
+                                : 'background.paper',
+                              transition: 'all 0.3s ease',
+                              '&:hover': {
+                                borderColor: 'primary.main',
+                                bgcolor: (theme) =>
+                                  alpha(theme.palette.primary.main, 0.05),
+                              },
+                            }}
+                          >
+                            <ListItemButton
+                              onClick={() => handleSelect(source._id)}
+                              sx={{ borderRadius: 2, py: 2 }}
+                            >
+                              <ListItemText
+                                primary={
+                                  <Typography variant='h6' fontWeight='500'>
+                                    {source.title}
+                                  </Typography>
+                                }
+                                secondary={
+                                  <Stack
+                                    direction='row'
+                                    spacing={1}
+                                    alignItems='center'
+                                    sx={{ mt: 1 }}
+                                  >
+                                    <CalendarTodayIcon
+                                      sx={{
+                                        fontSize: 16,
+                                        color: 'text.secondary',
+                                      }}
+                                    />
+                                    <Typography
+                                      variant='body2'
+                                      color='text.secondary'
+                                    >
+                                      {source.year || 'بدون تاریخ'}
+                                    </Typography>
+                                  </Stack>
+                                }
+                              />
+                              <Checkbox
+                                checked={isItemSelected}
+                                onChange={() => handleSelect(source._id)}
+                                sx={{ ml: 2 }}
+                              />
+                            </ListItemButton>
+                          </ListItem>
+                        </Fade>
+                      );
+                    })}
+                  </List>
+                )}
+              </>
+            )}
+          </Box>
+        </Paper>
+      </Slide>
+
+      {/* Confirmation Dialog */}
       <ConfirmationDialog
         open={isDialogOpen}
         onClose={() => setIsDialogOpen(false)}
-        onConfirm={handleConfirmDelete}
-        title='حذف منابع انتخاب شده'
-        contentText={`آیا از حذف ${numSelected} منبع انتخاب شده اطمینان دارید؟ این عمل غیرقابل بازگشت است.`}
+        onConfirm={handleConfirmRemove}
+        title='حذف منابع از پروژه'
+        contentText={`آیا از حذف ${numSelected} منبع انتخاب شده از این پروژه اطمینان دارید؟ (منابع از کتابخانه کلی شما حذف نخواهند شد)`}
       />
-      {id && (
+
+      {/* Add Source Modal */}
+      {projectId && (
         <AddSourceModal
           open={isAddSourceModalOpen}
           onClose={() => setIsAddSourceModalOpen(false)}
-          projectId={id}
+          projectId={projectId}
         />
       )}
-    </>
+    </Container>
   );
 };
 

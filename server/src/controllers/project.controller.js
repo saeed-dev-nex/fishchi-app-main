@@ -1,6 +1,7 @@
 import asyncHandler from 'express-async-handler';
 import Project from '../models/Project.model.js';
 import ApiResponse from '../utils/apiResponse.js';
+import checkProjectOwnership from '../utils/checkOwnershipProject.js';
 
 // <-------------- CREATE NEW PROJECT ----------------------->
 
@@ -36,6 +37,24 @@ const getProjects = asyncHandler(async (req, res) => {
   ApiResponse.success(res, projects, 'لیست پروژه ها با موفقیت دریافت شد');
 });
 
+// <-------------- Add Existing Sources to Project  ----------------------->
+// @desc add existing sources to project
+// @route POST /api/v1/projects/:projectId/sources
+// @access Private
+
+const addExistingSourcesToProject = asyncHandler(async (req, res) => {
+  const { id: projectId } = req.params;
+  const { sourceIds } = req.body;
+  if (!sourceIds || !Array.isArray(sourceIds)) {
+    res.status(400);
+    throw new Error('آرایه‌ای از sourceIds الزامی است');
+  }
+  await checkProjectOwnership(projectId, req.user._id);
+  await Project.findByIdAndUpdate(projectId, {
+    $push: { sources: { $each: sourceIds } }, // اضافه کردن منابع به آرایه پروژه
+  });
+  ApiResponse.success(res, null, 'منابع با موفقیت به پروژه اضافه شد');
+});
 // <----------------------- GET PROJECT BY ID ------------------------------->
 // @desc get a project by ID
 // @route GET /api/v1/projects/:id
@@ -112,6 +131,7 @@ const removeSourceFromProject = asyncHandler(async (req, res) => {
 
 export {
   createProject,
+  addExistingSourcesToProject,
   getProjects,
   getProjectById,
   updateProject,

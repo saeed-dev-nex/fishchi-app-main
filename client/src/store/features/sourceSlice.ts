@@ -11,6 +11,7 @@ import type {
   SourceState,
 } from '../../types';
 import apiClient from '../../api/axios';
+import { removeSourceFromProject } from './projectSlice';
 
 // Create Initial State
 const initialState: SourceState = {
@@ -20,6 +21,20 @@ const initialState: SourceState = {
 };
 
 // Thunk Functions
+// ---------- 0. Get All User Sources ----------
+export const fetchAllUserSources = createAsyncThunk(
+  'source/fetchAllUserSources',
+  async (_, thunkAPI) => {
+    try {
+      const { data } = await apiClient.get('/sources');
+      return data.data as ISource[];
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : 'An error occurred';
+      return thunkAPI.rejectWithValue(message);
+    }
+  }
+);
 // ---------- 1. Get Sources By Project --------
 export const fetchSourcesByProject = createAsyncThunk(
   'source/fetchSources',
@@ -27,8 +42,9 @@ export const fetchSourcesByProject = createAsyncThunk(
     try {
       const { data } = await apiClient.get(`/sources?projectId=${projectId}`);
       return data.data as ISource[];
-    } catch (error: any) {
-      const message = error.response?.data?.message || error.message;
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : 'An error occurred';
       return rejectWithValue(message);
     }
   }
@@ -40,8 +56,9 @@ export const deleteSource = createAsyncThunk(
     try {
       await apiClient.delete(`/sources/${sourceId}`);
       return sourceId;
-    } catch (error: any) {
-      const message = error.response?.data?.message || error.message;
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : 'An error occurred';
       return thunkAPI.rejectWithValue(message);
     }
   }
@@ -55,8 +72,9 @@ export const createSource = createAsyncThunk(
       const { data } = await apiClient.post('/sources', sourceData);
 
       return data.data;
-    } catch (error: any) {
-      const message = error.response?.data?.message || error.message;
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : 'An error occurred';
       return thunkAPI.rejectWithValue(message);
     }
   }
@@ -70,8 +88,9 @@ export const importSourceByDOI = createAsyncThunk(
       const { data } = await apiClient.post('/sources/import-doi', importData);
 
       return data.data as ISource;
-    } catch (error: any) {
-      const message = error.response?.data?.message || error.message;
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : 'An error occurred';
       return thunkAPI.rejectWithValue(message);
     }
   }
@@ -83,8 +102,9 @@ export const importSourceByUrl = createAsyncThunk(
     try {
       const { data } = await apiClient.post('/sources/import-url', importData);
       return data.data as ISource;
-    } catch (error: any) {
-      const message = error.response?.data?.message || error.message;
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : 'An error occurred';
       return thunkAPI.rejectWithValue(message);
     }
   }
@@ -172,6 +192,36 @@ const sourceSlice = createSlice({
         }
       )
       .addCase(importSourceByUrl.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+      })
+      // Remove Source from Project
+      .addCase(removeSourceFromProject.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(
+        removeSourceFromProject.fulfilled,
+        (state, action: PayloadAction<string>) => {
+          state.isLoading = false;
+          state.sources = state.sources.filter(
+            (source) => source._id !== action.payload
+          );
+        }
+      )
+      .addCase(removeSourceFromProject.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+      })
+      // --- Fetch All User Sources ---
+      .addCase(fetchAllUserSources.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(fetchAllUserSources.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.sources = action.payload;
+      })
+      .addCase(fetchAllUserSources.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;
       });

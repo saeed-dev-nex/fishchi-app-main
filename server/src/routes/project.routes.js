@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { protect } from '../middlewares/auth.middleware.js';
 import {
+  addExistingSourcesToProject,
   createProject,
   deleteProject,
   getProjectById,
@@ -13,6 +14,7 @@ const router = Router();
 router.use(protect);
 
 router.post('/', createProject);
+router.post('/:id/sources', addExistingSourcesToProject);
 router.get('/', getProjects);
 router.get('/:id', getProjectById);
 router.put('/:id', updateProject);

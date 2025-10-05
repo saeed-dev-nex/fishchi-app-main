@@ -5,6 +5,7 @@ import {
   deleteSource,
   generateCitation,
   getSourceById,
+  getSources,
   getSourcesByProject,
   importSourceByDOI,
   importSourceByUrl,
@@ -14,6 +15,7 @@ import {
 const router = Router();
 router.use(protect);
 
+router.get('/', getSources);
 router.route('/').post(createSource).get(getSourcesByProject);
 router.route('/import-doi').post(importSourceByDOI);
 router.route('/import-url').post(importSourceByUrl);

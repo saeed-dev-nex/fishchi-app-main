@@ -1,6 +1,7 @@
 import {
   createAsyncThunk,
   createSlice,
+  type AnyListenerPredicate,
   type PayloadAction,
 } from '@reduxjs/toolkit';
 import type { CreateProjectData, IProject, IProjectState } from '../../types';
@@ -68,8 +69,56 @@ export const fetchProjectById = createAsyncThunk(
   }
 );
 
+// --------- 4. Delete Project -------------
+export const deleteProject = createAsyncThunk(
+  'projects/deleteProject',
+  async (projectId: string, thunkAPI) => {
+    try {
+      await apiClient.delete(`/projects/${projectId}`);
+      return projectId;
+    } catch (error: any) {
+      const message =
+        error.response?.data?.message || error.message || error.toString();
+      return thunkAPI.rejectWithValue(message);
+    }
+  }
+);
 
+// ----------- 5. Remove Source From Project -----------
+export const removeSourceFromProject = createAsyncThunk(
+  'projects/removeSourceFromProject',
+  async (
+    { projectId, sourceId }: { projectId: string; sourceId: string },
+    thunkAPI
+  ) => {
+    try {
+      await apiClient.delete(`/projects/${projectId}/sources/${sourceId}`);
+      return sourceId;
+    } catch (error: any) {
+      const message =
+        error.response?.data?.message || error.message || error.toString();
+      return thunkAPI.rejectWithValue(message);
+    }
+  }
+);
 
+// ----------- 6. Add Existing Sources To Project -----------
+export const addExistingSourcesToProject = createAsyncThunk(
+  'projects/addExistingSourcesToProject',
+  async (
+    { projectId, sourceIds }: { projectId: string; sourceIds: string[] },
+    thunkAPI
+  ) => {
+    try {
+      await apiClient.post(`/projects/${projectId}/sources`, { sourceIds });
+      return sourceIds;
+    } catch (error: any) {
+      const message =
+        error.response?.data?.message || error.message || error.toString();
+      return thunkAPI.rejectWithValue(message);
+    }
+  }
+);
 const projectSlice = createSlice({
   name: 'project',
   initialState,
@@ -124,6 +173,24 @@ const projectSlice = createSlice({
         }
       )
       .addCase(fetchProjectById.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+      })
+      // Delete Project
+      .addCase(deleteProject.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(
+        deleteProject.fulfilled,
+        (state, action: PayloadAction<string>) => {
+          state.isLoading = false;
+          state.projects = state.projects.filter(
+            (project) => project._id !== action.payload
+          );
+        }
+      )
+      .addCase(deleteProject.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;
       });
