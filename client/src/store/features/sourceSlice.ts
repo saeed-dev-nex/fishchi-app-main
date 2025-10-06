@@ -11,11 +11,15 @@ import type {
   SourceState,
 } from '../../types';
 import apiClient from '../../api/axios';
-import { removeSourceFromProject } from './projectSlice';
+import {
+  removeSourceFromProject,
+  addExistingSourcesToProject,
+} from './projectSlice';
 
 // Create Initial State
 const initialState: SourceState = {
   sources: [],
+  sourcesByProject: [],
   isLoading: false,
   error: null,
 };
@@ -126,7 +130,7 @@ const sourceSlice = createSlice({
       })
       .addCase(fetchSourcesByProject.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.sources = action.payload;
+        state.sourcesByProject = action.payload;
       })
       .addCase(fetchSourcesByProject.rejected, (state, action) => {
         state.isLoading = false;
@@ -160,6 +164,10 @@ const sourceSlice = createSlice({
         (state, action: PayloadAction<ISource>) => {
           state.isLoading = false;
           state.sources.unshift(action.payload);
+          // Add to sourcesByProject if it's for a specific project
+          if (action.payload.projectId) {
+            state.sourcesByProject.unshift(action.payload);
+          }
         }
       )
       .addCase(createSource.rejected, (state, action) => {
@@ -175,6 +183,10 @@ const sourceSlice = createSlice({
         (state, action: PayloadAction<ISource>) => {
           state.isLoading = false;
           state.sources.unshift(action.payload);
+          // Add to sourcesByProject if it's for a specific project
+          if (action.payload.projectId) {
+            state.sourcesByProject.unshift(action.payload);
+          }
         }
       )
       .addCase(importSourceByDOI.rejected, (state, action) => {
@@ -189,6 +201,10 @@ const sourceSlice = createSlice({
         (state, action: PayloadAction<ISource>) => {
           state.isLoading = false;
           state.sources.unshift(action.payload);
+          // Add to sourcesByProject if it's for a specific project
+          if (action.payload.projectId) {
+            state.sourcesByProject.unshift(action.payload);
+          }
         }
       )
       .addCase(importSourceByUrl.rejected, (state, action) => {
@@ -204,6 +220,11 @@ const sourceSlice = createSlice({
         removeSourceFromProject.fulfilled,
         (state, action: PayloadAction<string>) => {
           state.isLoading = false;
+          // Remove from sourcesByProject (this is what we need for the UI)
+          state.sourcesByProject = state.sourcesByProject.filter(
+            (source) => source._id !== action.payload
+          );
+          // Also remove from general sources list
           state.sources = state.sources.filter(
             (source) => source._id !== action.payload
           );
@@ -222,6 +243,34 @@ const sourceSlice = createSlice({
         state.sources = action.payload;
       })
       .addCase(fetchAllUserSources.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+      })
+      // --- Add Existing Sources To Project ---
+      .addCase(addExistingSourcesToProject.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(
+        addExistingSourcesToProject.fulfilled,
+        (state, action: PayloadAction<string[]>) => {
+          state.isLoading = false;
+          // Add the sources to sourcesByProject
+          const addedSources = state.sources.filter((source) =>
+            action.payload.includes(source._id)
+          );
+          // Add sources that are not already in sourcesByProject
+          addedSources.forEach((source) => {
+            const exists = state.sourcesByProject.some(
+              (s) => s._id === source._id
+            );
+            if (!exists) {
+              state.sourcesByProject.unshift(source);
+            }
+          });
+        }
+      )
+      .addCase(addExistingSourcesToProject.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;
       });

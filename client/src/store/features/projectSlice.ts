@@ -193,6 +193,46 @@ const projectSlice = createSlice({
       .addCase(deleteProject.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;
+      })
+      // --- Remove Source From Project ---
+      .addCase(removeSourceFromProject.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(
+        removeSourceFromProject.fulfilled,
+        (state, action: PayloadAction<string>) => {
+          state.isLoading = false;
+          // Remove source from selectedProject.sources if it exists
+          if (state.selectedProject) {
+            state.selectedProject.sources =
+              state.selectedProject.sources.filter(
+                (source) => source._id !== action.payload
+              );
+          }
+        }
+      )
+      .addCase(removeSourceFromProject.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+      })
+      // --- Add Existing Sources To Project ---
+      .addCase(addExistingSourcesToProject.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(
+        addExistingSourcesToProject.fulfilled,
+        (state, action: PayloadAction<string[]>) => {
+          state.isLoading = false;
+          // Note: We don't have the actual source objects here,
+          // so we'll need to refetch the project data
+          // This will be handled by the component
+        }
+      )
+      .addCase(addExistingSourcesToProject.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
       });
   },
 });

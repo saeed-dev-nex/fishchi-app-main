@@ -61,7 +61,7 @@ const addExistingSourcesToProject = asyncHandler(async (req, res) => {
 // @access Private
 
 const getProjectById = asyncHandler(async (req, res) => {
-  const project = await Project.findById(req.params.id);
+  const project = await Project.findById(req.params.id).populate('sources');
   if (project) {
     // check current requested project crate by current logged in user
     if (project.user.toString() !== req.user._id.toString()) {

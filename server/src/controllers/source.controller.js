@@ -1,7 +1,8 @@
 import asyncHandler from 'express-async-handler';
 import axios from 'axios';
 import * as cheerio from 'cheerio';
-import puppeteer from 'puppeteer';
+import puppeteer from 'puppeteer-extra';
+import StealthPlugin from 'puppeteer-extra-plugin-stealth';
 import Project from '../models/Project.model.js';
 import Source from '../models/Source.model.js';
 import ApiResponse from '../utils/apiResponse.js';
@@ -43,18 +44,19 @@ const getSources = asyncHandler(async (req, res) => {
 // @access Private
 const createSource = asyncHandler(async (req, res) => {
   const { projectId, title, authors, ...rest } = req.body;
+  console.log('create source data ----> ', req.body);
   if (title) {
     res.status(400);
     throw new Error('فیلد   title الزامی است');
   }
   try {
-    await checkProjectOwnership(projectId, req.user._id);
     const source = new Source({
       user: req.user._id,
       title,
       authors,
       ...rest,
     });
+    console.log('create source Object ----> ', source);
     await source.save();
     if (projectId) {
       await checkProjectOwnership(projectId, req.user._id);
@@ -330,7 +332,7 @@ const scrapeSID = (html) => {
     },
   };
 };
-
+puppeteer.use(StealthPlugin());
 // @desc    وارد کردن منبع با استفاده از URL
 // @route   POST /api/v1/sources/import-url
 // @access  Private
@@ -344,15 +346,17 @@ const importSourceByUrl = asyncHandler(async (req, res) => {
 
   let browser = null; // متغیر مرورگر را بیرون از try تعریف می‌کنیم
   try {
-    await checkProjectOwnership(projectId, req.user._id);
-
     // ۲. یک مرورگر Headless راه‌اندازی کن
     browser = await puppeteer.launch({
       headless: true, // بدون رابط کاربری
       args: ['--no-sandbox', '--disable-setuid-sandbox'], // تنظیمات برای اجرا در محیط‌های مختلف
     });
     const page = await browser.newPage();
-
+    await page.setExtraHTTPHeaders({
+      'User-Agent':
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Safari/537.36',
+      'Accept-Language': 'en-US,en;q=0.9,fa;q=0.8',
+    });
     // ۳. به URL مورد نظر برو
     await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 60000 }); // منتظر بمان تا صفحه کاملاً لود شود
 
@@ -372,7 +376,7 @@ const importSourceByUrl = asyncHandler(async (req, res) => {
     const source = await Source.create({
       ...scrapedData,
       user: req.user._id,
-      project: projectId,
+
       type: 'article',
       identifiers: { url },
     });

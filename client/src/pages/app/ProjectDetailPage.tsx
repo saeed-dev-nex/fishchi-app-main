@@ -46,7 +46,7 @@ import DescriptionIcon from '@mui/icons-material/Description';
 import ConfirmationDialog from '../../components/common/ConfirmationDialog';
 import type { AppDispatch, RootState } from '../../store';
 import AddSourceModal from '../../components/sources/AddSourceModal';
-import { ArrowBack, ArrowBackIos, Shortcut } from '@mui/icons-material';
+import { Shortcut } from '@mui/icons-material';
 
 const ProjectDetailPage: React.FC = () => {
   const { id: projectId } = useParams<{ id: string }>();
@@ -63,8 +63,10 @@ const ProjectDetailPage: React.FC = () => {
     isLoading: projectLoading,
     error: projectError,
   } = useSelector((state: RootState) => state.projects);
+
+  // const sources = selectedProject?.sources || [];
   const {
-    sources,
+    sourcesByProject,
     isLoading: sourcesLoading,
     error: sourcesError,
   } = useSelector((state: RootState) => state.sources);
@@ -81,7 +83,7 @@ const ProjectDetailPage: React.FC = () => {
 
   // --- Handlers ---
   const handleViewChange = (
-    event: React.MouseEvent<HTMLElement>,
+    _event: React.MouseEvent<HTMLElement, MouseEvent>,
     newView: 'grid' | 'list' | null
   ) => {
     if (newView !== null) setViewMode(newView);
@@ -100,7 +102,7 @@ const ProjectDetailPage: React.FC = () => {
 
   const handleSelectAll = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.checked) {
-      const newSelecteds = sources.map((s) => s._id);
+      const newSelecteds = sourcesByProject.map((s) => s._id);
       setSelected(newSelecteds);
       return;
     }
@@ -117,6 +119,8 @@ const ProjectDetailPage: React.FC = () => {
     );
     setSelected([]); // پاک کردن لیست انتخاب شده‌ها
     setIsDialogOpen(false); // بستن دیالوگ
+    // منابع را دوباره واکشی کن تا UI به‌روزرسانی شود
+    dispatch(fetchSourcesByProject(projectId));
   };
 
   // --- Render Logic ---
@@ -159,7 +163,7 @@ const ProjectDetailPage: React.FC = () => {
 
   const isSelected = (id: string) => selected.indexOf(id) !== -1;
   const numSelected = selected.length;
-  const rowCount = sources.length;
+  const rowCount = sourcesByProject.length;
 
   return (
     <Container maxWidth='xl' sx={{ py: 3 }}>
@@ -213,7 +217,7 @@ const ProjectDetailPage: React.FC = () => {
               <Stack direction='row' spacing={2} flexWrap='wrap'>
                 <Chip
                   icon={<DescriptionIcon />}
-                  label={`${sources.length} منبع`}
+                  label={`${sourcesByProject.length} منبع`}
                   variant='outlined'
                   color='primary'
                 />
@@ -379,7 +383,7 @@ const ProjectDetailPage: React.FC = () => {
               <>
                 {viewMode === 'grid' ? (
                   <Grid container spacing={3}>
-                    {sources.map((source, index) => {
+                    {sourcesByProject.map((source, index) => {
                       const isItemSelected = isSelected(source._id);
                       return (
                         <Grid
@@ -487,7 +491,7 @@ const ProjectDetailPage: React.FC = () => {
                   </Grid>
                 ) : (
                   <List sx={{ p: 0 }}>
-                    {sources.map((source, index) => {
+                    {sourcesByProject.map((source, index) => {
                       const isItemSelected = isSelected(source._id);
                       return (
                         <Fade in timeout={600 + index * 100} key={source._id}>

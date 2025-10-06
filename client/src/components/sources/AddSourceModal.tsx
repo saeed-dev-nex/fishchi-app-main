@@ -32,6 +32,7 @@ import {
   clearError,
   importSourceByUrl,
   fetchAllUserSources,
+  fetchSourcesByProject,
 } from '../../store/features/sourceSlice';
 import { addExistingSourcesToProject } from '../../store/features/projectSlice';
 import {
@@ -47,7 +48,7 @@ import {
 interface AddSourceModalProps {
   open: boolean;
   onClose: () => void;
-  projectId: string;
+  projectId?: string;
 }
 
 // انواع فرم‌ها
@@ -61,9 +62,11 @@ const AddSourceModal: React.FC<AddSourceModalProps> = ({
 }) => {
   const dispatch = useDispatch<AppDispatch>();
   const { isLoading, error } = useSelector((state: RootState) => state.sources);
-  const { sources: projectSources } = useSelector(
-    (state: RootState) => state.sources
-  );
+  const { selectedProject } = useSelector((state: RootState) => state.projects);
+  console.log(selectedProject);
+
+  const projectSources = selectedProject?.sources || [];
+
   const [activeTab, setActiveTab] = useState(0);
   const { sources: librarySources, isLoading: libraryLoading } = useSelector(
     (state: RootState) => state.sources
@@ -75,6 +78,7 @@ const AddSourceModal: React.FC<AddSourceModalProps> = ({
     (source) =>
       !projectSources.some((projectSource) => projectSource._id === source._id)
   );
+  console.log('available sources: ', availableLibrarySources);
   // فرم برای افزودن دستی
   const {
     register: registerManual,
@@ -113,6 +117,10 @@ const AddSourceModal: React.FC<AddSourceModalProps> = ({
       addExistingSourcesToProject({ projectId, sourceIds: selectedLibrary })
     );
     handleClose();
+    // منابع پروژه را دوباره واکشی کن تا UI به‌روزرسانی شود
+    if (projectId) {
+      dispatch(fetchSourcesByProject(projectId));
+    }
   };
 
   const handleLibrarySourceChange = (
@@ -138,13 +146,19 @@ const AddSourceModal: React.FC<AddSourceModalProps> = ({
     const processedData = {
       projectId,
       title: data.title,
-      type: 'manual',
+      type: 'article',
       authors: data.authors.split(',').map((name) => ({ name: name.trim() })),
       year: Number(data.year) || undefined,
     };
+    console.log('add source manual data ----> ', processedData);
     const result = await dispatch(createSource(processedData));
+    console.log('add source manual result ----> ', result);
     if (createSource.fulfilled.match(result)) {
       handleClose();
+      // منابع پروژه را دوباره واکشی کن تا UI به‌روزرسانی شود
+      if (projectId) {
+        dispatch(fetchSourcesByProject(projectId));
+      }
     }
   };
 
@@ -153,6 +167,10 @@ const AddSourceModal: React.FC<AddSourceModalProps> = ({
     const result = await dispatch(importSourceByDOI({ ...data, projectId }));
     if (importSourceByDOI.fulfilled.match(result)) {
       handleClose();
+      // منابع پروژه را دوباره واکشی کن تا UI به‌روزرسانی شود
+      if (projectId) {
+        dispatch(fetchSourcesByProject(projectId));
+      }
     }
   };
 
@@ -161,6 +179,10 @@ const AddSourceModal: React.FC<AddSourceModalProps> = ({
     const result = await dispatch(importSourceByUrl({ ...data, projectId }));
     if (importSourceByUrl.fulfilled.match(result)) {
       handleClose();
+      // منابع پروژه را دوباره واکشی کن تا UI به‌روزرسانی شود
+      if (projectId) {
+        dispatch(fetchSourcesByProject(projectId));
+      }
     }
   };
 
@@ -248,14 +270,16 @@ const AddSourceModal: React.FC<AddSourceModalProps> = ({
                 </Stack>
               }
             />
-            <Tab
-              label={
-                <Stack direction='row' spacing={1} alignItems='center'>
-                  <SearchIcon fontSize='small' />
-                  <span>کتابخانه</span>
-                </Stack>
-              }
-            />
+            {projectId && (
+              <Tab
+                label={
+                  <Stack direction='row' spacing={1} alignItems='center'>
+                    <SearchIcon fontSize='small' />
+                    <span>کتابخانه</span>
+                  </Stack>
+                }
+              />
+            )}
           </Tabs>
         </Paper>
 
@@ -377,112 +401,122 @@ const AddSourceModal: React.FC<AddSourceModalProps> = ({
           </Fade>
 
           {/* Library Tab */}
-          <Fade in={activeTab === 3} timeout={300}>
-            <Box hidden={activeTab !== 3}>
-              <Stack spacing={3}>
-                {libraryLoading ? (
-                  <Box
-                    sx={{ display: 'flex', justifyContent: 'center', py: 4 }}
-                  >
-                    <CircularProgress />
-                  </Box>
-                ) : (
-                  <>
-                    <Autocomplete
-                      multiple
-                      options={availableLibrarySources}
-                      getOptionLabel={(option) => option.title}
-                      value={availableLibrarySources.filter((source) =>
-                        selectedLibrary.includes(source._id)
-                      )}
-                      onChange={handleLibrarySourceChange}
-                      renderInput={(params) => (
-                        <TextField
-                          {...params}
-                          label='جستجو و انتخاب منابع'
-                          placeholder='نام منبع را تایپ کنید...'
-                          variant='outlined'
-                          sx={{
-                            '& .MuiOutlinedInput-root': {
-                              borderRadius: 2,
-                            },
-                          }}
-                        />
-                      )}
-                      renderOption={(props, option) => (
-                        <Box component='li' {...props}>
-                          <Stack spacing={1}>
-                            <Typography variant='body1' fontWeight='500'>
-                              {option.title}
-                            </Typography>
-                            <Stack direction='row' spacing={2}>
-                              {option.authors && option.authors.length > 0 && (
-                                <Chip
-                                  icon={<PersonIcon />}
-                                  label={option.authors
-                                    .map((a) => a.name)
-                                    .join(', ')}
-                                  size='small'
-                                  variant='outlined'
-                                />
-                              )}
-                              {option.year && (
-                                <Chip
-                                  icon={<CalendarIcon />}
-                                  label={option.year}
-                                  size='small'
-                                  variant='outlined'
-                                />
-                              )}
-                            </Stack>
-                          </Stack>
-                        </Box>
-                      )}
-                      renderTags={(value, getTagProps) =>
-                        value.map((option, index) => (
-                          <Chip
-                            {...getTagProps({ index })}
-                            key={option._id}
-                            label={option.title}
-                            size='small'
-                            color='primary'
+          {projectId && (
+            <Fade in={activeTab === 3} timeout={300}>
+              <Box hidden={activeTab !== 3}>
+                <Stack spacing={3}>
+                  {libraryLoading ? (
+                    <Box
+                      sx={{ display: 'flex', justifyContent: 'center', py: 4 }}
+                    >
+                      <CircularProgress />
+                    </Box>
+                  ) : (
+                    <>
+                      <Autocomplete
+                        multiple
+                        options={librarySources.filter(
+                          (option) =>
+                            !projectSources.some(
+                              (projectSource) =>
+                                projectSource._id === option._id
+                            )
+                        )}
+                        getOptionLabel={(option) => option.title}
+                        value={availableLibrarySources.filter((source) =>
+                          selectedLibrary.includes(source._id)
+                        )}
+                        onChange={handleLibrarySourceChange}
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            label='جستجو و انتخاب منابع'
+                            placeholder='نام منبع را تایپ کنید...'
                             variant='outlined'
+                            sx={{
+                              '& .MuiOutlinedInput-root': {
+                                borderRadius: 2,
+                              },
+                            }}
                           />
-                        ))
-                      }
-                      noOptionsText='منبعی یافت نشد'
-                      loadingText='در حال بارگذاری...'
-                    />
+                        )}
+                        renderOption={(props, option) => (
+                          <Box component='li' {...props}>
+                            <Stack spacing={1}>
+                              <Typography variant='body1' fontWeight='500'>
+                                {option.title}
+                              </Typography>
+                              <Stack direction='row' spacing={2}>
+                                {option.authors &&
+                                  option.authors.length > 0 && (
+                                    <Chip
+                                      icon={<PersonIcon />}
+                                      label={option.authors
+                                        .map((a) => a.name)
+                                        .join(', ')}
+                                      size='small'
+                                      variant='outlined'
+                                    />
+                                  )}
+                                {option.year && (
+                                  <Chip
+                                    icon={<CalendarIcon />}
+                                    label={option.year}
+                                    size='small'
+                                    variant='outlined'
+                                  />
+                                )}
+                              </Stack>
+                            </Stack>
+                          </Box>
+                        )}
+                        renderTags={(value, getTagProps) =>
+                          value.map((option, index) => (
+                            <Chip
+                              {...getTagProps({ index })}
+                              key={option._id}
+                              label={option.title}
+                              size='small'
+                              color='primary'
+                              variant='outlined'
+                            />
+                          ))
+                        }
+                        noOptionsText='منبعی یافت نشد'
+                        loadingText='در حال بارگذاری...'
+                      />
 
-                    {availableLibrarySources.length === 0 && (
-                      <Paper
-                        elevation={0}
-                        sx={{
-                          p: 4,
-                          textAlign: 'center',
-                          border: (theme) =>
-                            `2px dashed ${alpha(theme.palette.divider, 0.3)}`,
-                          bgcolor: (theme) =>
-                            alpha(theme.palette.action.hover, 0.3),
-                        }}
-                      >
-                        <Typography
-                          variant='h6'
-                          color='text.secondary'
-                          gutterBottom
+                      {availableLibrarySources.length === 0 && (
+                        <Paper
+                          elevation={0}
+                          sx={{
+                            p: 4,
+                            textAlign: 'center',
+                            border: (theme) =>
+                              `2px dashed ${alpha(theme.palette.divider, 0.3)}`,
+                            bgcolor: (theme) =>
+                              alpha(theme.palette.action.hover, 0.3),
+                          }}
                         >
-                          هیچ منبعی در کتابخانه شما وجود ندارد
-                        </Typography>
-                        <Typography variant='body2' color='text.secondary'>
-                          ابتدا منابعی را به صورت دستی یا از طریق DOI اضافه کنید
-                        </Typography>
-                      </Paper>
-                    )}
-                  </>
-                )}
-              </Stack>
-            </Box>
-          </Fade>
+                          <Typography
+                            variant='h6'
+                            color='text.secondary'
+                            gutterBottom
+                          >
+                            هیچ منبعی در کتابخانه شما وجود ندارد
+                          </Typography>
+                          <Typography variant='body2' color='text.secondary'>
+                            ابتدا منابعی را به صورت دستی یا از طریق DOI اضافه
+                            کنید
+                          </Typography>
+                        </Paper>
+                      )}
+                    </>
+                  )}
+                </Stack>
+              </Box>
+            </Fade>
+          )}
         </Box>
       </DialogContent>
 

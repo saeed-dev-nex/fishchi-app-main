@@ -60,6 +60,7 @@ export interface IProject {
   title: string;
   description: string;
   createdAt: string;
+  sources: ISource[];
 
   tags?: string[];
 }
@@ -94,6 +95,7 @@ export interface ISource {
 
 export interface SourceState {
   sources: ISource[];
+  sourcesByProject: ISource[];
   isLoading: boolean;
   error: string | null;
 }

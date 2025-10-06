@@ -30,7 +30,7 @@ import {
   AccountCircle,
   Brightness4,
   Brightness7,
-  ChevronLeft,
+  Source,
   Notifications,
 } from '@mui/icons-material';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
@@ -58,8 +58,14 @@ const navigationItems: NavigationItem[] = [
     text: 'پروژه‌ها',
     icon: <FolderOpen />,
     path: '/app/projects',
-    badge: 3,
+
   },
+    {
+        text:'منابع',
+        icon:<Source/> ,
+        path:'/app/library',
+
+    },
   {
     text: 'تنظیمات',
     icon: <Settings />,
