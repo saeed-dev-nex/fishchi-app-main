@@ -147,7 +147,9 @@ const AddSourceModal: React.FC<AddSourceModalProps> = ({
       projectId,
       title: data.title,
       type: 'article',
-      authors: data.authors.split(',').map((name) => ({ name: name.trim() })),
+      authors: data.authors
+        .split('|'.trim() || ','.trim() || '،'.trim())
+        .map((name) => ({ name: name.trim() })),
       year: Number(data.year) || undefined,
     };
     console.log('add source manual data ----> ', processedData);
@@ -347,7 +349,7 @@ const AddSourceModal: React.FC<AddSourceModalProps> = ({
                   />
                   <TextField
                     label='نویسندگان'
-                    placeholder='نام نویسندگان (با کاما جدا کنید)'
+                    placeholder='نام نویسندگان با ("," یا "،" یا "|" ) جدا کنید)'
                     fullWidth
                     variant='outlined'
                     {...registerManual('authors')}
@@ -356,7 +358,7 @@ const AddSourceModal: React.FC<AddSourceModalProps> = ({
                         borderRadius: 2,
                       },
                     }}
-                    helperText='نام نویسندگان را با کاما جدا کنید'
+                    helperText='نام نویسندگان را با ("," یا "،" یا "|" )جدا کنید'
                   />
                   <TextField
                     label='سال انتشار'

@@ -44,31 +44,26 @@ const getSources = asyncHandler(async (req, res) => {
 // @access Private
 const createSource = asyncHandler(async (req, res) => {
   const { projectId, title, authors, ...rest } = req.body;
-  console.log('create source data ----> ', req.body);
-  if (title) {
+  if (!title) {
     res.status(400);
     throw new Error('فیلد   title الزامی است');
   }
-  try {
-    const source = new Source({
-      user: req.user._id,
-      title,
-      authors,
-      ...rest,
+
+  const source = await Source.create({
+    user: req.user._id,
+    title,
+    authors,
+    ...rest,
+  });
+
+  // await source.save();
+  if (projectId) {
+    await checkProjectOwnership(projectId, req.user._id);
+    await Project.findByIdAndUpdate(projectId, {
+      $push: { sources: source._id }, // اضافه کردن ID منبع به آرایه پروژه
     });
-    console.log('create source Object ----> ', source);
-    await source.save();
-    if (projectId) {
-      await checkProjectOwnership(projectId, req.user._id);
-      await Project.findByIdAndUpdate(projectId, {
-        $push: { sources: source._id }, // اضافه کردن ID منبع به آرایه پروژه
-      });
-    }
-    ApiResponse.success(res, source, 'منبع با موفقیت ایجاد شد');
-  } catch (error) {
-    res.status(401);
-    throw new Error(error.message);
   }
+  ApiResponse.success(res, source, 'منبع با موفقیت ایجاد شد');
 });
 
 // @desc get all references by Project
