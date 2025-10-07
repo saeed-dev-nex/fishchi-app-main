@@ -1,7 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import type { AppDispatch, RootState } from '../../store';
-import { fetchProjects } from '../../store/features/projectSlice';
+import {
+  deleteProject,
+  fetchProjects,
+} from '../../store/features/projectSlice';
 import {
   Box,
   Typography,
@@ -45,8 +48,11 @@ import {
   School,
   Assignment,
   AccessTime,
+  ArrowBack,
+  Delete,
 } from '@mui/icons-material';
 import CreateProjectModal from '../../components/projects/CreateProjectModal';
+import ConfirmationDialog from '../../components/common/ConfirmationDialog';
 
 const ProjectsPage: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -56,6 +62,10 @@ const ProjectsPage: React.FC = () => {
 
   // State for new project modal
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isWarningDialogOpen, setIsWarningDialogOpen] = useState(false);
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(
+    null
+  );
 
   // State for view mode (list or card)
   const [viewMode, setViewMode] = useState<'list' | 'card'>('card');
@@ -80,6 +90,16 @@ const ProjectsPage: React.FC = () => {
     }
   };
 
+  const handleOpenWarningDialog = () => {
+    setIsWarningDialogOpen(true);
+  };
+  const handleCloseWarningDialog = () => {
+    setIsWarningDialogOpen(false);
+  };
+  const handleDeleteProject = (projectId: string) => {
+    dispatch(deleteProject(projectId));
+    handleCloseWarningDialog();
+  };
   return (
     <Container maxWidth='xl' sx={{ py: 3 }}>
       {/* Modern Header Section */}
@@ -359,8 +379,8 @@ const ProjectsPage: React.FC = () => {
                           }}
                         >
                           <CardActionArea
-                            component={Link}
-                            to={`/app/projects/${project._id}`}
+                            // component={Link}
+                            // to={`/app/projects/${project._id}`}
                             sx={{
                               height: '100%',
                               display: 'flex',
@@ -457,7 +477,12 @@ const ProjectsPage: React.FC = () => {
                               </Stack>
                             </CardContent>
 
-                            <CardActions sx={{ p: 2.5, pt: 0 }}>
+                            <CardActions
+                              sx={{
+                                p: 2.5,
+                                pt: 0,
+                              }}
+                            >
                               <Stack
                                 direction='row'
                                 spacing={1}
@@ -485,11 +510,13 @@ const ProjectsPage: React.FC = () => {
                                   </IconButton>
                                 </Tooltip>
 
-                                <Tooltip title='ویرایش پروژه'>
+                                <Tooltip title='حذف پروژه'>
                                   <IconButton
+                                    onClick={() => {
+                                      handleOpenWarningDialog();
+                                      setSelectedProjectId(project._id);
+                                    }}
                                     size='small'
-                                    component={RouterLink}
-                                    to={`/projects/${project._id}`}
                                     sx={{
                                       borderRadius: 1.5,
                                       border: '1px solid',
@@ -497,29 +524,23 @@ const ProjectsPage: React.FC = () => {
                                       px: 2,
                                       py: 1,
                                       '&:hover': {
-                                        borderColor: 'primary.main',
+                                        borderColor: 'error.main',
                                         bgcolor: (theme) =>
-                                          alpha(
-                                            theme.palette.primary.main,
-                                            0.05
-                                          ),
+                                          alpha(theme.palette.error.main, 0.05),
                                         transform: 'scale(1.05)',
                                       },
                                     }}
                                   >
-                                    <Edit fontSize='small' />
+                                    <Delete
+                                      fontSize='small'
+                                      sx={{
+                                        '&:hover': { color: 'error.main' },
+                                      }}
+                                    />
                                   </IconButton>
                                 </Tooltip>
 
                                 <Box sx={{ flex: 1 }} />
-
-                                <ArrowForward
-                                  sx={{
-                                    fontSize: 18,
-                                    color: 'text.secondary',
-                                    opacity: 0.7,
-                                  }}
-                                />
                               </Stack>
                             </CardActions>
                           </CardActionArea>
@@ -653,24 +674,23 @@ const ProjectsPage: React.FC = () => {
                                   <RemoveRedEyeRounded fontSize='small' />
                                 </IconButton>
                               </Tooltip>
-                              <Tooltip title='ویرایش پروژه'>
+                              <Tooltip title='حذف پروژه'>
                                 <IconButton
                                   size='small'
-                                  component={RouterLink}
-                                  to={`/projects/${project._id}`}
+                                  onClick={handleOpenWarningDialog}
                                   sx={{
                                     borderRadius: 1.5,
                                     border: '1px solid',
                                     borderColor: 'divider',
                                     '&:hover': {
-                                      borderColor: 'primary.main',
+                                      borderColor: 'error.main',
                                       bgcolor: (theme) =>
-                                        alpha(theme.palette.primary.main, 0.05),
+                                        alpha(theme.palette.error.main, 0.05),
                                       transform: 'scale(1.1)',
                                     },
                                   }}
                                 >
-                                  <Edit fontSize='small' />
+                                  <Delete fontSize='small' />
                                 </IconButton>
                               </Tooltip>
                             </Stack>
@@ -691,6 +711,13 @@ const ProjectsPage: React.FC = () => {
 
       {/* Create Project Modal */}
       <CreateProjectModal onClose={handleCloseModal} open={isModalOpen} />
+      <ConfirmationDialog
+        open={isWarningDialogOpen}
+        onClose={handleCloseWarningDialog}
+        onConfirm={() => handleDeleteProject(selectedProjectId as string)}
+        title='حذف پروژه'
+        contentText='آیا مطمئن هستید که می خواهید این پروژه را حذف کنید؟'
+      />
     </Container>
   );
 };

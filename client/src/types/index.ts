@@ -10,7 +10,7 @@ export interface IUser {
 export interface IAuthState {
   user: IUser | null;
   isLoading: boolean;
-  isRegistered: Boolean;
+  isRegistered: boolean;
   error: string | null;
   message: string | null;
 }
@@ -26,7 +26,7 @@ export type LoginData = {
   password: string;
 };
 
-const verifySchema = z.object({
+export const verifySchema = z.object({
   email: z.string().email('ایمیل معتبر نیست'),
   code: z.string().min(8, 'کد تأیید باید حداقل 8 رقمی باشد'),
 });
@@ -87,6 +87,7 @@ export interface IAuthor {
 
 export interface ISource {
   _id: string;
+  projectId?: string;
   title: string;
   authors: IAuthor[];
   year?: number;

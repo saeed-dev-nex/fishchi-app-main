@@ -148,7 +148,7 @@ const AddSourceModal: React.FC<AddSourceModalProps> = ({
       title: data.title,
       type: 'article',
       authors: data.authors
-        .split('|'.trim() || ','.trim() || '،'.trim())
+        .split(/[,،|]/)
         .map((name) => ({ name: name.trim() })),
       year: Number(data.year) || undefined,
     };

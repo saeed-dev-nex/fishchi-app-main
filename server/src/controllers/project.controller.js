@@ -113,7 +113,7 @@ const deleteProject = asyncHandler(async (req, res) => {
     res.status(401);
     throw new Error('شما مجاز به حذف این پروژه نیستید');
   }
-  await project.remove();
+  await project.deleteOne();
   ApiResponse.success(res, null, 'پروژه با موفقیت حذف شد');
 });
 
