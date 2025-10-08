@@ -66,13 +66,23 @@ export interface IProject {
 }
 
 export interface IProjectState {
+  title: string;
+  description: string;
+  createdAt: string;
+  sources: ISource[];
+  tags?: string[];
   projects: IProject[];
   selectedProject: IProject | null;
   isLoading: boolean;
   error: string | null;
 }
 
-export type CreateProjectData = { title: string; description?: string };
+export type CreateProjectData = {
+  title: string;
+  description?: string;
+  tags?: string[];
+  _id?: string;
+};
 
 export const projectSchema = z.object({
   title: z.string().min(2, 'وارد کردن عنوان پروژه الزامی است'),
@@ -92,16 +102,23 @@ export interface ISource {
   authors: IAuthor[];
   year?: number;
   type: string;
+  tags?: string[];
+  abstract?: string;
+  identifiers?: {
+    url: string;
+  };
 }
 
 export interface SourceState {
   sources: ISource[];
   sourcesByProject: ISource[];
+  selectedSource: ISource | null;
   isLoading: boolean;
   error: string | null;
 }
 
 export type CreateSourceData = {
+  _id?: string;
   projectId: string;
   title: string;
   authors: IAuthor[];
@@ -116,4 +133,35 @@ export type ImportSourceByDoiData = {
 export type ImportSourceByUrlData = {
   projectId: string;
   url: string;
+};
+
+export interface INote {
+  _id: string;
+  content: string;
+  pageRef?: string;
+  tags?: string[];
+  source?: string; // Source ID
+  project: string; // Project ID
+  createdAt: string;
+}
+
+export interface NoteState {
+  notes: INote[];
+  isLoading: boolean;
+  error: string | null;
+}
+
+// Data types for API calls
+export type FetchNotesParams = { projectId: string; sourceId?: string };
+export type CreateNoteData = {
+  projectId: string;
+  content: string;
+  sourceId?: string;
+  pageRef?: string;
+};
+export type UpdateNoteData = {
+  id: string;
+  content?: string;
+  pageRef?: string;
+  tags?: string[];
 };

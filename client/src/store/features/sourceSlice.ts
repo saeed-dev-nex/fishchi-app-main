@@ -20,6 +20,7 @@ import {
 const initialState: SourceState = {
   sources: [],
   sourcesByProject: [],
+  selectedSource: null,
   isLoading: false,
   error: null,
 };
@@ -113,7 +114,38 @@ export const importSourceByUrl = createAsyncThunk(
     }
   }
 );
-
+// ---------- 6. Get Source By ID ----------
+export const fetchSourceById = createAsyncThunk(
+  'sources/getSourceById',
+  async (sourceId: string, thunkAPI) => {
+    try {
+      const { data } = await apiClient.get(`/sources/${sourceId}`);
+      return data.data as ISource;
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : 'An error occurred';
+      return thunkAPI.rejectWithValue(message);
+    }
+  }
+);
+// ---------- 7. Update Source By ID ----------
+export const updateSourceById = createAsyncThunk(
+  'sources/updateSourceById',
+  async (sourceData: CreateSourceData, thunkAPI) => {
+    console.log('sourceData:', sourceData);
+    try {
+      const { data } = await apiClient.put(
+        `/sources/${sourceData._id}`,
+        sourceData
+      );
+      return data.data as ISource;
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : 'An error occurred';
+      return thunkAPI.rejectWithValue(message);
+    }
+  }
+);
 // create Slice
 const sourceSlice = createSlice({
   name: 'source',
@@ -121,6 +153,9 @@ const sourceSlice = createSlice({
   reducers: {
     clearError: (state) => {
       state.error = null;
+    },
+    clearSelectedSource: (state) => {
+      state.selectedSource = null;
     },
   },
   extraReducers: (builder) => {
@@ -273,9 +308,35 @@ const sourceSlice = createSlice({
       .addCase(addExistingSourcesToProject.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;
+      })
+      // ----- Fetch Source By Id -----
+      .addCase(fetchSourceById.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(fetchSourceById.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.selectedSource = action.payload;
+      })
+      .addCase(fetchSourceById.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+      })
+      // ----- Update Source By Id -----
+      .addCase(updateSourceById.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(updateSourceById.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.selectedSource = action.payload;
+      })
+      .addCase(updateSourceById.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
       });
   },
 });
-export const { clearError } = sourceSlice.actions;
+export const { clearError, clearSelectedSource } = sourceSlice.actions;
 
 export default sourceSlice.reducer;

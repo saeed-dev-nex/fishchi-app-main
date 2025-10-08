@@ -34,21 +34,18 @@ import {
   ListItemAvatar,
   Divider,
 } from '@mui/material';
-import { Link, Link as RouterLink } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router-dom';
 import {
-  Edit,
   RemoveRedEyeRounded,
   Add,
   FolderOpen,
   TrendingUp,
   Description,
-  ArrowForward,
   ViewList,
   ViewModule,
   School,
   Assignment,
   AccessTime,
-  ArrowBack,
   Delete,
 } from '@mui/icons-material';
 import CreateProjectModal from '../../components/projects/CreateProjectModal';
@@ -59,7 +56,7 @@ const ProjectsPage: React.FC = () => {
   const { projects, isLoading, error } = useSelector(
     (state: RootState) => state.projects
   );
-
+  
   // State for new project modal
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isWarningDialogOpen, setIsWarningDialogOpen] = useState(false);
@@ -491,7 +488,7 @@ const ProjectsPage: React.FC = () => {
                                 <Tooltip title='مشاهده پروژه'>
                                   <IconButton
                                     size='small'
-                                    component={Link}
+                                    component={RouterLink}
                                     to={`/app/projects/${project._id}`}
                                     sx={{
                                       borderRadius: 1.5,
@@ -565,8 +562,6 @@ const ProjectsPage: React.FC = () => {
                       <React.Fragment key={project._id}>
                         <Fade in timeout={600 + index * 100}>
                           <ListItem
-                            component={Link}
-                            to={`/app/projects/${project._id}`}
                             sx={{
                               py: 3,
                               px: 3,
@@ -659,7 +654,7 @@ const ProjectsPage: React.FC = () => {
                               <Tooltip title='مشاهده پروژه'>
                                 <IconButton
                                   size='small'
-                                  component={Link}
+                                  component={RouterLink}
                                   to={`/app/projects/${project._id}`}
                                   sx={{
                                     borderRadius: 1.5,
@@ -677,7 +672,10 @@ const ProjectsPage: React.FC = () => {
                               <Tooltip title='حذف پروژه'>
                                 <IconButton
                                   size='small'
-                                  onClick={handleOpenWarningDialog}
+                                  onClick={() => {
+                                    handleOpenWarningDialog();
+                                    setSelectedProjectId(project._id);
+                                  }}
                                   sx={{
                                     borderRadius: 1.5,
                                     border: '1px solid',

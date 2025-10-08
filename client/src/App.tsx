@@ -12,9 +12,9 @@ import { useDispatch } from 'react-redux';
 import type { AppDispatch } from './store';
 import { checkUserStatus } from './store/features/authSlice';
 import { useEffect } from 'react';
-import ProjectDetailPage from './pages/app/ProjectDetailPage';
+import ProjectDetailPage from './pages/app/ProjectDetailPage.tsx';
 import SourcesLibraryPage from './pages/app/SourcesLibraryPage';
-import SourceDetailPage from "./pages/app/SourceDetailPage.tsx";
+import SourceDetailPage from './pages/app/SourceDetailPage.tsx';
 
 function App() {
   const dispatch = useDispatch<AppDispatch>();
@@ -36,7 +36,7 @@ function App() {
             <Route path='projects' element={<ProjectsPage />} />
             <Route path='projects/:id' element={<ProjectDetailPage />} />
             <Route path='library' element={<SourcesLibraryPage />} />
-              <Route path='library/:id' element={<SourceDetailPage />} />
+            <Route path='library/:id' element={<SourceDetailPage />} />
           </Route>
         </Route>
       </Routes>

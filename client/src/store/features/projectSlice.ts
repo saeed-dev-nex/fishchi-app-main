@@ -1,7 +1,6 @@
 import {
   createAsyncThunk,
   createSlice,
-  type AnyListenerPredicate,
   type PayloadAction,
 } from '@reduxjs/toolkit';
 import type { CreateProjectData, IProject, IProjectState } from '../../types';
@@ -119,6 +118,24 @@ export const addExistingSourcesToProject = createAsyncThunk(
     }
   }
 );
+// ----------------------------- 7. Update Project -----------------------------
+export const updateProject = createAsyncThunk(
+  'projects/updateProject',
+  async (projectData: CreateProjectData, thunkAPI) => {
+    try {
+      const { data } = await apiClient.put(
+        `/projects/${projectData._id}`,
+        projectData
+      );
+      return data.data as IProject;
+    } catch (error: any) {
+      const message =
+        error.response?.data?.message || error.message || error.toString();
+      return thunkAPI.rejectWithValue(message);
+    }
+  }
+);
+
 const projectSlice = createSlice({
   name: 'project',
   initialState,

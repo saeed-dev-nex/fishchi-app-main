@@ -163,7 +163,7 @@ const SourcesLibraryPage: React.FC = () => {
                 >
                   <LibraryBooks />
                 </Avatar>
-                <Box>
+    <Box>
                   <Typography
                     variant='h3'
                     component='h1'
@@ -318,14 +318,14 @@ const SourcesLibraryPage: React.FC = () => {
                 }}
               >
                 <Avatar
-                  sx={{
+        sx={{
                     width: 80,
                     height: 80,
                     bgcolor: 'action.disabled',
                     mx: 'auto',
-                    mb: 3,
-                  }}
-                >
+          mb: 3,
+        }}
+      >
                   <LibraryBooks sx={{ fontSize: 40 }} />
                 </Avatar>
                 <Typography variant='h5' fontWeight='600' gutterBottom>
@@ -337,7 +337,7 @@ const SourcesLibraryPage: React.FC = () => {
                   sx={{ mb: 3 }}
                 >
                   اولین منبع خود را اضافه کنید و شروع به مطالعه کنید
-                </Typography>
+        </Typography>
                 <Button
                   variant='contained'
                   startIcon={<Add />}
@@ -350,7 +350,7 @@ const SourcesLibraryPage: React.FC = () => {
                   }}
                 >
                   افزودن اولین منبع
-                </Button>
+        </Button>
               </Paper>
             </Slide>
           ) : (
@@ -456,7 +456,7 @@ const SourcesLibraryPage: React.FC = () => {
                                     >
                                       {source.title || 'بدون توضیحات'}
                                     </Typography>
-                                  </Box>
+      </Box>
                                 </Stack>
 
                                 {/* Academic Stats */}
@@ -617,7 +617,7 @@ const SourcesLibraryPage: React.FC = () => {
                                 {getSourceTypeIcon(source.type || 'default')}
                               </Avatar>
                             </ListItemAvatar>
-                            <ListItemText
+              <ListItemText
                               primary={
                                 <Typography
                                   variant='h6'
@@ -726,14 +726,14 @@ const SourcesLibraryPage: React.FC = () => {
                                 </IconButton>
                               </Tooltip>
                             </Stack>
-                          </ListItem>
+            </ListItem>
                         </Fade>
                         {index < sources.length - 1 && (
                           <Divider sx={{ mx: 3 }} />
                         )}
                       </React.Fragment>
-                    ))}
-                  </List>
+          ))}
+      </List>
                 </Paper>
               )}
             </Slide>
