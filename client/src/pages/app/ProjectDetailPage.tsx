@@ -18,6 +18,7 @@ import {
   Button,
   Stack,
   Typography,
+  Box,
 } from '@mui/material';
 
 // --- Redux Imports ---
@@ -28,15 +29,13 @@ import {
   removeSourceFromProject,
   updateProject,
 } from '../../store/features/projectSlice';
-import { fetchSourcesByProject } from '../../store/features/sourceSlice';
 import {
-  clearNotes,
-  createNote,
-  deleteNote,
-  fetchNotes,
-} from '../../store/features/noteSlice';
+  clearSourcesByProject,
+  fetchSourcesByProject,
+} from '../../store/features/sourceSlice';
+import { clearNotes, fetchNotes } from '../../store/features/noteSlice';
 
-// --- Import کامپوننت‌های بازسازی شده ---
+// --- Import reusable components ---
 import { LoadingState } from '../../components/common/LoadingState';
 import { ErrorState } from '../../components/common/ErrorState';
 import { NotFoundState } from '../../components/common/NotFoundState';
@@ -45,26 +44,28 @@ import { ProjectDetails } from '../../components/projects/ProjectDetails';
 import { ProjectSidebar } from '../../components/projects/ProjectSidebar';
 import { SourcesSection } from '../../components/sources/SourcesSection';
 
-// --- Import کامپوننت‌های Modal و Dialog ---
+// --- Import Modal and Dialog components ---
 import ConfirmationDialog from '../../components/common/ConfirmationDialog';
 import AddSourceModal from '../../components/sources/AddSourceModal';
+import NoteWorkspace from '../../components/notes/NoteWorkspace';
 
 //======================================================================
-// کامپوننت اصلی صفحه جزئیات پروژه
+// Main Project Detail Page component
 //======================================================================
 const ProjectDetailPage: React.FC = () => {
   const { id: projectId } = useParams<{ id: string }>();
   const dispatch = useDispatch<AppDispatch>();
 
   //-----------------------------------------------------
-  // بخش ۱: State های محلی برای مدیریت UI
+  // Section 1: Local state for managing UI
   //-----------------------------------------------------
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [selectedSources, setSelectedSources] = useState<string[]>([]);
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
-
-  // State برای مدیریت باز و بسته بودن Dialog ها
+  // for saving active source id
+  const [activeSourceId, setActiveSourceId] = useState<string | null>(null);
+  // State for managing the open/close state of dialogs
   const [dialogs, setDialogs] = useState({
     deleteConfirmation: false,
     addSource: false,
@@ -72,14 +73,14 @@ const ProjectDetailPage: React.FC = () => {
     shareProject: false,
   });
 
-  // State برای مدیریت Snackbar (پیام‌های اطلاع‌رسانی)
+  // State for the snackbar (notification messages)
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: '',
     severity: 'success' as 'success' | 'error' | 'info' | 'warning',
   });
 
-  // State برای فرم ویرایش پروژه
+  // State for the edit project form
   const [editForm, setEditForm] = useState({
     title: '',
     description: '',
@@ -87,7 +88,7 @@ const ProjectDetailPage: React.FC = () => {
   });
 
   //-----------------------------------------------------
-  // بخش ۲: واکشی داده‌ها از Redux Store
+  // Section 2: Fetch data from Redux Store
   //-----------------------------------------------------
   const {
     selectedProject,
@@ -102,22 +103,23 @@ const ProjectDetailPage: React.FC = () => {
   } = useSelector((state: RootState) => state.sources);
 
   //-----------------------------------------------------
-  // بخش ۳: مدیریت چرخه حیات (Lifecycle) با useEffect
+  // Section 3: Lifecycle management with useEffect
   //-----------------------------------------------------
-  // واکشی داده‌های پروژه و منابع هنگام بارگذاری کامپوننت
+  // Fetch project and sources data when the component loads
   useEffect(() => {
     if (projectId) {
       dispatch(fetchProjectById(projectId));
       dispatch(fetchSourcesByProject(projectId));
     }
-    // تابع پاکسازی (Cleanup): هنگام خروج از صفحه اجرا می‌شود
+    // Cleanup function: runs when leaving the page
     return () => {
       dispatch(clearSelectedProject());
-      dispatch(clearNotes()); // اگر از یادداشت‌ها استفاده می‌کنید
+      dispatch(clearSourcesByProject());
+      dispatch(clearNotes());
     };
   }, [projectId, dispatch]);
 
-  // پر کردن فرم ویرایش و خواندن وضعیت‌ها از LocalStorage پس از بارگذاری پروژه
+  // Fill the edit form and read the statuses from LocalStorage after loading the project
   useEffect(() => {
     if (selectedProject) {
       setEditForm({
@@ -133,11 +135,20 @@ const ProjectDetailPage: React.FC = () => {
     }
   }, [selectedProject]);
 
+  // Fetch Notes when change active source
+  useEffect(() => {
+    if (projectId && activeSourceId) {
+      dispatch(fetchNotes({ projectId, sourceId: activeSourceId }));
+    } else {
+      dispatch(clearNotes()); // اگر منبعی انتخاب نشده، لیست فیش‌ها را پاک کن
+    }
+  }, [activeSourceId, projectId, dispatch]);
+
   //-----------------------------------------------------
-  // بخش ۴: توابع مدیریت رویداد (Event Handlers)
+  // Section 4: Event management functions (Event Handlers)
   //-----------------------------------------------------
 
-  // --- Handlers مربوط به لیست منابع ---
+  // --- Handlers related to the sources list ---
   const handleViewChange = (
     _event: React.MouseEvent<HTMLElement>,
     newView: 'grid' | 'list' | null
@@ -176,7 +187,7 @@ const ProjectDetailPage: React.FC = () => {
     );
     setSelectedSources([]);
     setDialogs((prev) => ({ ...prev, deleteConfirmation: false }));
-    dispatch(fetchSourcesByProject(projectId)); // رفرش لیست منابع
+    dispatch(fetchSourcesByProject(projectId)); // Refresh the sources list
     setSnackbar({
       open: true,
       message: 'منابع با موفقیت از پروژه حذف شدند',
@@ -184,7 +195,7 @@ const ProjectDetailPage: React.FC = () => {
     });
   };
 
-  // --- Handlers مربوط به عملیات پروژه ---
+  // --- Handlers related to the project operations ---
   const handleDownload = () => {
     if (!selectedProject) return;
     const content = `پروژه: ${selectedProject.title}\nتوضیحات: ${
@@ -276,10 +287,11 @@ const ProjectDetailPage: React.FC = () => {
   const handleCloseSnackbar = () => setSnackbar({ ...snackbar, open: false });
 
   //-----------------------------------------------------
-  // بخش ۵: منطق رندر (Render Logic)
+  // Section 5: Render logic
   //-----------------------------------------------------
-
-  // --- حالت‌های بارگذاری، خطا و یافت نشدن ---
+  // Find the active source
+  const activeSource = sourcesByProject.find((s) => s._id === activeSourceId);
+  // --- Loading, error and not found states ---
   if (projectLoading)
     return <LoadingState message='در حال بارگذاری پروژه...' />;
   if (projectError) return <ErrorState message={projectError} />;
@@ -292,10 +304,10 @@ const ProjectDetailPage: React.FC = () => {
       />
     );
 
-  // --- رندر اصلی صفحه ---
+  // --- Main page render ---
   return (
-    <Container maxWidth='xl' sx={{ py: 3 }}>
-      {/* هدر صفحه */}
+    <Container maxWidth='xl' sx={{ py: 3, height: 'calc(100vh - 112px)' }}>
+      {/* Header */}
       <Fade in timeout={600}>
         <div>
           <ProjectHeader
@@ -317,7 +329,7 @@ const ProjectDetailPage: React.FC = () => {
         </div>
       </Fade>
 
-      {/* بخش اصلی محتوا (جزئیات و سایدبار) */}
+      {/* Main content (details and sidebar) */}
       <Slide direction='up' in timeout={800}>
         <Grid container spacing={3}>
           <Grid size={{ xs: 12, lg: 8 }}>
@@ -341,34 +353,58 @@ const ProjectDetailPage: React.FC = () => {
         </Grid>
       </Slide>
 
-      {/* بخش منابع پروژه */}
+      {/* Sources section */}
       <Slide direction='up' in timeout={1000}>
-        <div>
-          <SourcesSection
-            sources={sourcesByProject}
-            isLoading={sourcesLoading}
-            error={sourcesError}
-            viewMode={viewMode}
-            selected={selectedSources}
-            onViewChange={(newView) => handleViewChange(null, newView)}
-            onSelect={handleSelectSource}
-            onSelectAll={handleSelectAllSources}
-            onOpenAddSourceModal={() =>
-              setDialogs((prev) => ({ ...prev, addSource: true }))
-            }
-            onOpenDeleteDialog={() =>
-              setDialogs((prev) => ({ ...prev, deleteConfirmation: true }))
-            }
-            onClearSelection={() => setSelectedSources([])}
-          />
-        </div>
+        <Grid container spacing={3}>
+          <Grid
+            size={{ xs: 12, md: 4 }}
+            sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}
+          >
+            <SourcesSection
+              sources={sourcesByProject}
+              isLoading={sourcesLoading}
+              error={sourcesError}
+              viewMode={viewMode}
+              selected={selectedSources}
+              onSelectSource={setActiveSourceId}
+              onViewChange={handleViewChange}
+              onSelect={handleSelectSource}
+              onSelectAll={handleSelectAllSources}
+              onOpenAddSourceModal={() =>
+                setDialogs((prev) => ({ ...prev, addSource: true }))
+              }
+              onOpenDeleteDialog={() =>
+                setDialogs((prev) => ({ ...prev, deleteConfirmation: true }))
+              }
+              onClearSelection={() => setSelectedSources([])}
+            />
+          </Grid>
+
+          <Grid size={{ xs: 12, md: 8 }} sx={{ height: '100%' }}>
+            {activeSourceId && projectId ? (
+              <NoteWorkspace projectId={projectId} sourceId={activeSourceId} />
+            ) : (
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  height: '100%',
+                }}
+              >
+                <Typography variant='h6' color='text.secondary'>
+                  برای شروع، یک منبع را از لیست انتخاب کنید.
+                </Typography>
+              </Box>
+            )}
+          </Grid>
+        </Grid>
       </Slide>
-
       {/* --------------------------------------------------- */}
-      {/* بخش ۶: رندر کردن Dialog ها، Modal ها و Snackbar */}
+      {/* Section 6: Render Dialogs, Modals and Snackbar */}
       {/* --------------------------------------------------- */}
 
-      {/* دیالوگ حذف منابع */}
+      {/* Delete sources dialog */}
       <ConfirmationDialog
         open={dialogs.deleteConfirmation}
         onClose={() =>
@@ -379,7 +415,7 @@ const ProjectDetailPage: React.FC = () => {
         contentText={`آیا از حذف ${selectedSources.length} منبع انتخاب شده از این پروژه اطمینان دارید؟`}
       />
 
-      {/* مدال افزودن منبع */}
+      {/* Add source modal */}
       {projectId && (
         <AddSourceModal
           open={dialogs.addSource}
@@ -388,7 +424,7 @@ const ProjectDetailPage: React.FC = () => {
         />
       )}
 
-      {/* دیالوگ ویرایش پروژه */}
+      {/* Edit project dialog */}
       <Dialog
         open={dialogs.editProject}
         onClose={() => setDialogs((prev) => ({ ...prev, editProject: false }))}
@@ -447,7 +483,7 @@ const ProjectDetailPage: React.FC = () => {
         </DialogActions>
       </Dialog>
 
-      {/* دیالوگ اشتراک‌گذاری */}
+      {/* Share project dialog */}
       <Dialog
         open={dialogs.shareProject}
         onClose={() => setDialogs((prev) => ({ ...prev, shareProject: false }))}
@@ -481,7 +517,7 @@ const ProjectDetailPage: React.FC = () => {
         </DialogActions>
       </Dialog>
 
-      {/* پیام‌های اطلاع‌رسانی */}
+      {/* Notification messages */}
       <Snackbar
         open={snackbar.open}
         autoHideDuration={6000}

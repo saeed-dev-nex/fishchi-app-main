@@ -157,6 +157,9 @@ const sourceSlice = createSlice({
     clearSelectedSource: (state) => {
       state.selectedSource = null;
     },
+    clearSourcesByProject: (state) => {
+      state.sourcesByProject = [];
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -337,6 +340,7 @@ const sourceSlice = createSlice({
       });
   },
 });
-export const { clearError, clearSelectedSource } = sourceSlice.actions;
+export const { clearError, clearSelectedSource, clearSourcesByProject } =
+  sourceSlice.actions;
 
 export default sourceSlice.reducer;

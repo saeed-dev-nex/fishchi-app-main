@@ -66,11 +66,6 @@ export interface IProject {
 }
 
 export interface IProjectState {
-  title: string;
-  description: string;
-  createdAt: string;
-  sources: ISource[];
-  tags?: string[];
   projects: IProject[];
   selectedProject: IProject | null;
   isLoading: boolean;

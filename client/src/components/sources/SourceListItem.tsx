@@ -51,16 +51,18 @@ interface SourceListItemProps {
   source: ISource;
   isSelected: boolean;
   onSelect: (id: string) => void;
+  onSelectSource: (id: string) => void;
 }
 
 export const SourceListItem: React.FC<SourceListItemProps> = ({
   source,
   isSelected,
   onSelect,
+  onSelectSource,
 }) => {
-  console.log('source', source);
   return (
     <ListItem
+      onClick={() => onSelectSource(source._id)}
       sx={{
         borderRadius: 2,
         mb: 1,

@@ -20,12 +20,14 @@ interface SourceGridItemProps {
   source: ISource;
   isSelected: boolean;
   onSelect: (id: string) => void;
+  onSelectSource: (id: string) => void;
 }
 
 export const SourceGridItem: React.FC<SourceGridItemProps> = ({
   source,
   isSelected,
   onSelect,
+  onSelectSource,
 }) => {
   return (
     <Grid
@@ -52,8 +54,7 @@ export const SourceGridItem: React.FC<SourceGridItemProps> = ({
         }}
       >
         <CardActionArea
-          component={RouterLink}
-          to={`/app/library/${source._id}`}
+          onClick={() => onSelectSource(source._id)}
           sx={{ p: 3 }}
         >
           <Stack spacing={2} alignItems='center'>
@@ -61,10 +62,17 @@ export const SourceGridItem: React.FC<SourceGridItemProps> = ({
               {getSourceTypeIcon(source.type)}
             </Avatar>
             <Typography
+              component={RouterLink}
+              to={`/app/library/${source._id}`}
               variant='h6'
               fontWeight='600'
               textAlign='center'
-              sx={{ minHeight: '3em' }}
+              sx={{
+                minHeight: '3em',
+                cursor: 'pointer',
+                textDecoration: 'none',
+                color: 'text.primary',
+              }}
             >
               {source.title}
             </Typography>

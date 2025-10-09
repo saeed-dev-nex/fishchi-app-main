@@ -30,6 +30,7 @@ interface SourcesSectionProps {
   onOpenAddSourceModal: () => void;
   onOpenDeleteDialog: () => void;
   onClearSelection: () => void;
+  onSelectSource: (id: string) => void;
 }
 
 export const SourcesSection: React.FC<SourcesSectionProps> = ({
@@ -44,6 +45,7 @@ export const SourcesSection: React.FC<SourcesSectionProps> = ({
   onOpenAddSourceModal,
   onOpenDeleteDialog,
   onClearSelection,
+  onSelectSource,
 }) => {
   const numSelected = selected.length;
   const sourceCount = sources.length;
@@ -93,6 +95,7 @@ export const SourcesSection: React.FC<SourcesSectionProps> = ({
               source={source}
               isSelected={selected.includes(source._id)}
               onSelect={onSelect}
+              onSelectSource={onSelectSource}
             />
           ))}
         </Grid>
@@ -107,6 +110,7 @@ export const SourcesSection: React.FC<SourcesSectionProps> = ({
             source={source}
             isSelected={selected.includes(source._id)}
             onSelect={onSelect}
+            onSelectSource={onSelectSource}
           />
         ))}
       </List>
@@ -131,6 +135,7 @@ export const SourcesSection: React.FC<SourcesSectionProps> = ({
         onOpenAddSourceModal={onOpenAddSourceModal}
         onOpenDeleteDialog={onOpenDeleteDialog}
         onClearSelection={onClearSelection}
+        onSelectSource={onSelectSource}
       />
       <Box sx={{ p: 3 }}>{renderContent()}</Box>
     </Paper>

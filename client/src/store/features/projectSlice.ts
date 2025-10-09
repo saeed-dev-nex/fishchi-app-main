@@ -242,9 +242,6 @@ const projectSlice = createSlice({
         addExistingSourcesToProject.fulfilled,
         (state, action: PayloadAction<string[]>) => {
           state.isLoading = false;
-          // Note: We don't have the actual source objects here,
-          // so we'll need to refetch the project data
-          // This will be handled by the component
         }
       )
       .addCase(addExistingSourcesToProject.rejected, (state, action) => {
