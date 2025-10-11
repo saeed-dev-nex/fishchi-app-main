@@ -109,14 +109,4 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
   );
 };
 
-// افزودن استایل‌های ضروری به صورت سراسری
-const globalStyles = `
-  .tiptap-editor .ProseMirror:focus { outline: none; }
-  .tiptap-editor .ProseMirror p { margin: 0 0 0.5rem 0; }
-  .tiptap-editor .ProseMirror blockquote { border-right: 3px solid rgba(0,0,0,0.1); margin-right: 1rem; padding-right: 1rem; }
-`;
-const styleSheet = document.createElement('style');
-styleSheet.innerText = globalStyles;
-document.head.appendChild(styleSheet);
-
 export default RichTextEditor;
