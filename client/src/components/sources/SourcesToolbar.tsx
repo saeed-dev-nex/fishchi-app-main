@@ -15,10 +15,7 @@ interface SourcesToolbarProps {
   numSelected: number;
   sourceCount: number;
   viewMode: 'grid' | 'list';
-  onViewChange: (
-    event: React.MouseEvent<HTMLElement>,
-    newView: 'grid' | 'list' | null
-  ) => void;
+  onViewChange: (newView: 'grid' | 'list') => void;
   onSelectAll: (event: React.ChangeEvent<HTMLInputElement>) => void;
   onOpenAddSourceModal: () => void;
   onOpenDeleteDialog: () => void;
@@ -70,7 +67,9 @@ export const SourcesToolbar: React.FC<SourcesToolbarProps> = ({
               <ToggleButtonGroup
                 value={viewMode}
                 exclusive
-                onChange={onViewChange}
+                onChange={(event, newView) => {
+                  if (newView) onViewChange(newView);
+                }}
                 size='small'
               >
                 <ToggleButton value='list'>

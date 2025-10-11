@@ -4,6 +4,7 @@ import {
   addExistingSourcesToProject,
   createProject,
   deleteProject,
+  generateProjectCitations,
   getProjectById,
   getProjects,
   removeSourceFromProject,
@@ -20,4 +21,5 @@ router.get('/:id', getProjectById);
 router.put('/:id', updateProject);
 router.delete('/:id', deleteProject);
 router.delete('/:id/sources/:sourceId', removeSourceFromProject);
+router.get('/:id/citations', generateProjectCitations);
 export default router;

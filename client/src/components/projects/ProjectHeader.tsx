@@ -26,6 +26,7 @@ import {
   BookmarkBorder,
   Visibility,
   VisibilityOff,
+  FormatQuoteOutlined,
 } from '@mui/icons-material';
 import type { IProject } from '../../types';
 
@@ -41,6 +42,7 @@ interface ProjectHeaderProps {
   onPrint: () => void;
   onBookmark: () => void;
   onToggleVisibility: () => void;
+  onCite: () => void;
 }
 
 export const ProjectHeader: React.FC<ProjectHeaderProps> = ({
@@ -54,6 +56,7 @@ export const ProjectHeader: React.FC<ProjectHeaderProps> = ({
   onPrint,
   onBookmark,
   onToggleVisibility,
+  onCite,
 }) => {
   return (
     <Paper
@@ -128,9 +131,9 @@ export const ProjectHeader: React.FC<ProjectHeaderProps> = ({
                 <Share />
               </IconButton>
             </Tooltip>
-            <Tooltip title='دانلود'>
-              <IconButton onClick={onDownload}>
-                <Download />
+            <Tooltip title='استخراج منابع'>
+              <IconButton onClick={onCite}>
+                <FormatQuoteOutlined />
               </IconButton>
             </Tooltip>
             <Tooltip title='چاپ'>

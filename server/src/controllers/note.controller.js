@@ -26,38 +26,40 @@ import Source from '../models/Source.model.js';
 
 const createNote = asyncHandler(async (req, res) => {
   const { projectId, sourceId, content, pageRef, tags } = req.body;
+  console.log('NOTE request body', req.body);
   const userId = req.user._id;
   if (!projectId || !content) {
     res.status(400);
     throw new Error('فیلدهای projectId و content الزامی هستند');
   }
-  try {
-    await checkProjectOwnership(projectId, userId);
-    if (sourceId) {
-      const source = await Source.findById(sourceId);
-      if (!source) {
-        res.status(404);
-        throw new Error('منبعی با این شناسه یافت نشد');
-      }
-      if (source.user.toString() !== userId.toString()) {
-        res.status(401);
-        throw new Error('شما مجاز به انجام این عملیات نیستید');
-      }
+
+  await checkProjectOwnership(projectId, userId);
+  console.log('userId', userId);
+  console.log(await checkProjectOwnership(projectId, userId));
+
+  if (sourceId) {
+    const source = await Source.findById(sourceId);
+    console.log('source.user', source.user);
+    if (!source) {
+      res.status(404);
+      throw new Error('منبعی با این شناسه یافت نشد');
     }
-    const note = new Note({
-      user: userId,
-      project: projectId,
-      source: sourceId,
-      content,
-      pageRef,
-      tags,
-    });
-    await note.save();
-    ApiResponse.success(res, note, 'فیش با موفقیت ایجاد شد');
-  } catch (error) {
-    res.status(401);
-    throw new Error(error.message);
+    if (source.user.toString() !== userId.toString()) {
+      res.status(401);
+      throw new Error('شما مجاز به انجام این عملیات نیستید');
+    }
   }
+  const note = new Note({
+    user: userId,
+    project: projectId,
+    source: sourceId,
+    content,
+    pageRef,
+    tags,
+  });
+  await note.save();
+  console.log('note', note);
+  ApiResponse.success(res, note, 'فیش با موفقیت ایجاد شد');
 });
 
 /**
@@ -122,9 +124,15 @@ const updateNote = asyncHandler(async (req, res) => {
  * @access Private
  */
 const deleteNote = asyncHandler(async (req, res) => {
-  await checkNoteOwnership(note._id, req.user._id);
+  const { id } = req.params;
 
-  const note = await Note.findByIdAndDelete(req.params.id);
+  const note = await Note.findById(id);
+  if (!note) {
+    res.status(404);
+    throw new Error('فیش یافت نشد');
+  }
+  await checkNoteOwnership(note._id, req.user._id);
+  await note.deleteOne();
   ApiResponse.success(res, null, 'فیش با موفقیت حذف شد');
 });
 

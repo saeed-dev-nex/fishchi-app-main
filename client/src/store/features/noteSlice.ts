@@ -25,7 +25,9 @@ export const fetchNotes = createAsyncThunk(
       return data.data as INote[];
     } catch (error: unknown) {
       const message =
-        error instanceof Error ? error.message : 'An error occurred';
+        error instanceof Error
+          ? error.response.data.message
+          : 'An error occurred';
       return thunkAPI.rejectWithValue(message);
     }
   }

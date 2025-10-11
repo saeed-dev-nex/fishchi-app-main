@@ -68,6 +68,7 @@ export interface IProject {
 export interface IProjectState {
   projects: IProject[];
   selectedProject: IProject | null;
+  generatedCitation: string | null;
   isLoading: boolean;
   error: string | null;
 }

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import {
   ListItem,
@@ -52,6 +52,7 @@ interface SourceListItemProps {
   isSelected: boolean;
   onSelect: (id: string) => void;
   onSelectSource: (id: string) => void;
+  activeSourceId: string | null;
 }
 
 export const SourceListItem: React.FC<SourceListItemProps> = ({
@@ -59,18 +60,41 @@ export const SourceListItem: React.FC<SourceListItemProps> = ({
   isSelected,
   onSelect,
   onSelectSource,
+  activeSourceId,
 }) => {
+  const handleSelectSource = () => {
+    if (activeSourceId === source._id) {
+      onSelectSource(null);
+    } else {
+      onSelectSource(source._id);
+    }
+  };
+  console.log('activeSourceId', activeSourceId);
+  console.log('Source ID', source._id);
   return (
     <ListItem
-      onClick={() => onSelectSource(source._id)}
+      onClick={handleSelectSource}
       sx={{
-        borderRadius: 2,
-        mb: 1,
+        borderRadius: 3,
+        mb: 2,
         border: isSelected ? '2px solid' : '1px solid',
-        borderColor: isSelected ? 'primary.main' : 'divider',
+        borderColor:
+          isSelected || activeSourceId === source._id
+            ? 'primary.main'
+            : 'divider',
         bgcolor: isSelected
-          ? (theme) => alpha(theme.palette.primary.main, 0.05)
-          : 'transparent',
+          ? (theme) => alpha(theme.palette.primary.main, 0.08)
+          : (theme) => alpha(theme.palette.background.paper, 0.6),
+        backdropFilter: 'blur(10px)',
+        transition: 'all 0.3s ease',
+        cursor: 'pointer',
+        '&:hover': {
+          borderColor: 'primary.main',
+          bgcolor: (theme) => alpha(theme.palette.primary.main, 0.05),
+          transform: 'translateY(-2px)',
+          boxShadow: (theme) =>
+            `0 4px 20px ${alpha(theme.palette.common.black, 0.1)}`,
+        },
       }}
     >
       <ListItemAvatar>

@@ -19,7 +19,21 @@ import {
   Stack,
   Typography,
   Box,
+  Paper,
+  Avatar,
+  Chip,
+  ToggleButtonGroup,
+  ToggleButton,
+  CircularProgress,
+  alpha,
 } from '@mui/material';
+import {
+  Add as AddIcon,
+  ViewList as ViewListIcon,
+  ViewModule as ViewModuleIcon,
+  Description as DescriptionIcon,
+  ArrowBackIos,
+} from '@mui/icons-material';
 
 // --- Redux Imports ---
 import type { AppDispatch, RootState } from '../../store';
@@ -33,7 +47,11 @@ import {
   clearSourcesByProject,
   fetchSourcesByProject,
 } from '../../store/features/sourceSlice';
-import { clearNotes, fetchNotes } from '../../store/features/noteSlice';
+import {
+  clearError,
+  clearNotes,
+  fetchNotes,
+} from '../../store/features/noteSlice';
 
 // --- Import reusable components ---
 import { LoadingState } from '../../components/common/LoadingState';
@@ -48,6 +66,7 @@ import { SourcesSection } from '../../components/sources/SourcesSection';
 import ConfirmationDialog from '../../components/common/ConfirmationDialog';
 import AddSourceModal from '../../components/sources/AddSourceModal';
 import NoteWorkspace from '../../components/notes/NoteWorkspace';
+import ProjectCitationModal from '../../components/projects/ProjectCitationModal';
 
 //======================================================================
 // Main Project Detail Page component
@@ -65,6 +84,7 @@ const ProjectDetailPage: React.FC = () => {
   const [isVisible, setIsVisible] = useState(true);
   // for saving active source id
   const [activeSourceId, setActiveSourceId] = useState<string | null>(null);
+  const [citationModalOpen, setCitationModalOpen] = useState(false);
   // State for managing the open/close state of dialogs
   const [dialogs, setDialogs] = useState({
     deleteConfirmation: false,
@@ -97,7 +117,7 @@ const ProjectDetailPage: React.FC = () => {
   } = useSelector((state: RootState) => state.projects);
 
   const {
-    sourcesByProject,
+    sourcesByProject = [],
     isLoading: sourcesLoading,
     error: sourcesError,
   } = useSelector((state: RootState) => state.sources);
@@ -118,6 +138,12 @@ const ProjectDetailPage: React.FC = () => {
       dispatch(clearNotes());
     };
   }, [projectId, dispatch]);
+
+  useEffect(() => {
+    if (selectedSources) {
+      dispatch(clearError());
+    }
+  }, [selectedSources]);
 
   // Fill the edit form and read the statuses from LocalStorage after loading the project
   useEffect(() => {
@@ -149,11 +175,8 @@ const ProjectDetailPage: React.FC = () => {
   //-----------------------------------------------------
 
   // --- Handlers related to the sources list ---
-  const handleViewChange = (
-    _event: React.MouseEvent<HTMLElement>,
-    newView: 'grid' | 'list' | null
-  ) => {
-    if (newView !== null) setViewMode(newView);
+  const handleViewChange = (newView: 'grid' | 'list') => {
+    setViewMode(newView);
   };
 
   const handleSelectSource = (sourceId: string) => {
@@ -171,7 +194,7 @@ const ProjectDetailPage: React.FC = () => {
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
     if (event.target.checked) {
-      const allSourceIds = sourcesByProject.map((s) => s._id);
+      const allSourceIds = sourcesByProject?.map((s) => s._id) || [];
       setSelectedSources(allSourceIds);
       return;
     }
@@ -200,7 +223,7 @@ const ProjectDetailPage: React.FC = () => {
     if (!selectedProject) return;
     const content = `پروژه: ${selectedProject.title}\nتوضیحات: ${
       selectedProject.description || 'ندارد'
-    }\nمنابع: ${sourcesByProject.length} عدد`;
+    }\nمنابع: ${sourcesByProject?.length || 0} عدد`;
     const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -289,8 +312,8 @@ const ProjectDetailPage: React.FC = () => {
   //-----------------------------------------------------
   // Section 5: Render logic
   //-----------------------------------------------------
-  // Find the active source
-  const activeSource = sourcesByProject.find((s) => s._id === activeSourceId);
+  // Find the active source (currently not used but kept for future use)
+  // const activeSource = sourcesByProject?.find((s) => s._id === activeSourceId);
   // --- Loading, error and not found states ---
   if (projectLoading)
     return <LoadingState message='در حال بارگذاری پروژه...' />;
@@ -312,7 +335,7 @@ const ProjectDetailPage: React.FC = () => {
         <div>
           <ProjectHeader
             project={selectedProject}
-            sourceCount={sourcesByProject.length}
+            sourceCount={sourcesByProject?.length || 0}
             isBookmarked={isBookmarked}
             isVisible={isVisible}
             onEdit={() =>
@@ -325,6 +348,7 @@ const ProjectDetailPage: React.FC = () => {
             onPrint={handlePrint}
             onBookmark={handleBookmark}
             onToggleVisibility={handleToggleVisibility}
+            onCite={() => setCitationModalOpen(true)}
           />
         </div>
       </Fade>
@@ -338,7 +362,7 @@ const ProjectDetailPage: React.FC = () => {
           <Grid size={{ xs: 12, lg: 4 }} className='no-print'>
             <ProjectSidebar
               project={selectedProject}
-              sourceCount={sourcesByProject.length}
+              sourceCount={sourcesByProject?.length || 0}
               onAddSource={() =>
                 setDialogs((prev) => ({ ...prev, addSource: true }))
               }
@@ -353,50 +377,282 @@ const ProjectDetailPage: React.FC = () => {
         </Grid>
       </Slide>
 
-      {/* Sources section */}
+      {/* Modern Sources and Notes Section */}
       <Slide direction='up' in timeout={1000}>
-        <Grid container spacing={3}>
-          <Grid
-            size={{ xs: 12, md: 4 }}
-            sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}
-          >
-            <SourcesSection
-              sources={sourcesByProject}
-              isLoading={sourcesLoading}
-              error={sourcesError}
-              viewMode={viewMode}
-              selected={selectedSources}
-              onSelectSource={setActiveSourceId}
-              onViewChange={handleViewChange}
-              onSelect={handleSelectSource}
-              onSelectAll={handleSelectAllSources}
-              onOpenAddSourceModal={() =>
-                setDialogs((prev) => ({ ...prev, addSource: true }))
-              }
-              onOpenDeleteDialog={() =>
-                setDialogs((prev) => ({ ...prev, deleteConfirmation: true }))
-              }
-              onClearSelection={() => setSelectedSources([])}
-            />
-          </Grid>
-
-          <Grid size={{ xs: 12, md: 8 }} sx={{ height: '100%' }}>
-            {activeSourceId && projectId ? (
-              <NoteWorkspace projectId={projectId} sourceId={activeSourceId} />
-            ) : (
+        <Grid
+          container
+          spacing={3}
+          sx={{
+            marginTop: 3,
+          }}
+        >
+          {/* Sources Panel - Modern Sidebar */}
+          <Grid size={{ xs: 12, md: 4 }}>
+            <Paper
+              elevation={0}
+              sx={{
+                flex: 1,
+                borderRadius: 3,
+                border: (theme) =>
+                  `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+                background: (theme) =>
+                  `linear-gradient(135deg, ${alpha(
+                    theme.palette.background.paper,
+                    0.8
+                  )} 0%, ${alpha(theme.palette.background.default, 0.4)} 100%)`,
+                backdropFilter: 'blur(10px)',
+                display: 'flex',
+                flexDirection: 'column',
+                overflow: 'hidden',
+              }}
+            >
+              {/* Sources Header */}
               <Box
                 sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  height: '100%',
+                  p: 3,
+                  borderBottom: (theme) =>
+                    `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+                  background: (theme) =>
+                    `linear-gradient(90deg, ${alpha(
+                      theme.palette.primary.main,
+                      0.05
+                    )} 0%, transparent 100%)`,
                 }}
               >
-                <Typography variant='h6' color='text.secondary'>
-                  برای شروع، یک منبع را از لیست انتخاب کنید.
-                </Typography>
+                <Stack
+                  direction='row'
+                  justifyContent='space-between'
+                  alignItems='center'
+                  sx={{ mb: 2 }}
+                >
+                  <Typography variant='h6' fontWeight='600' color='primary'>
+                    منابع پروژه
+                  </Typography>
+                  <Chip
+                    label={`${sourcesByProject?.length || 0} منبع`}
+                    size='small'
+                    color='primary'
+                    variant='outlined'
+                  />
+                </Stack>
+
+                {/* Quick Actions */}
+                <Stack direction='row' spacing={1}>
+                  <ToggleButtonGroup
+                    value={viewMode}
+                    exclusive
+                    onChange={(_event, newView) => {
+                      if (newView) handleViewChange(newView);
+                    }}
+                    size='small'
+                    sx={{
+                      '& .MuiToggleButton-root': {
+                        borderRadius: 2,
+                        border: 'none',
+                        px: 2,
+                        py: 0.5,
+                      },
+                    }}
+                  >
+                    <ToggleButton value='list'>
+                      <ViewListIcon fontSize='small' />
+                    </ToggleButton>
+                    <ToggleButton value='grid'>
+                      <ViewModuleIcon fontSize='small' />
+                    </ToggleButton>
+                  </ToggleButtonGroup>
+
+                  <Button
+                    variant='contained'
+                    size='small'
+                    startIcon={<AddIcon />}
+                    onClick={() =>
+                      setDialogs((prev) => ({ ...prev, addSource: true }))
+                    }
+                    sx={{
+                      borderRadius: 2,
+                      textTransform: 'none',
+                      fontWeight: 500,
+                      px: 2,
+                    }}
+                  >
+                    افزودن
+                  </Button>
+                </Stack>
               </Box>
-            )}
+
+              {/* Sources Content */}
+              <Box
+                sx={{
+                  flex: 1,
+                  overflow: 'hidden',
+                  display: 'flex',
+                  flexDirection: 'column',
+                }}
+              >
+                {sourcesLoading ? (
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      flex: 1,
+                    }}
+                  >
+                    <CircularProgress size={40} />
+                  </Box>
+                ) : sourcesError ? (
+                  <Alert severity='error' sx={{ m: 2, borderRadius: 2 }}>
+                    {sourcesError}
+                  </Alert>
+                ) : (
+                  <Box sx={{ flex: 1, overflow: 'auto', p: 2 }}>
+                    {sourcesByProject?.length === 0 ? (
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          height: '100%',
+                          textAlign: 'center',
+                          py: 4,
+                        }}
+                      >
+                        <Avatar
+                          sx={{
+                            width: 80,
+                            height: 80,
+                            bgcolor: (theme) =>
+                              alpha(theme.palette.primary.main, 0.1),
+                            mb: 3,
+                          }}
+                        >
+                          <DescriptionIcon
+                            sx={{ fontSize: 40, color: 'primary.main' }}
+                          />
+                        </Avatar>
+                        <Typography variant='h6' fontWeight='600' gutterBottom>
+                          هیچ منبعی وجود ندارد
+                        </Typography>
+                        <Typography
+                          variant='body2'
+                          color='text.secondary'
+                          sx={{ mb: 3 }}
+                        >
+                          اولین منبع را به پروژه اضافه کنید
+                        </Typography>
+                        <Button
+                          variant='contained'
+                          startIcon={<AddIcon />}
+                          onClick={() =>
+                            setDialogs((prev) => ({ ...prev, addSource: true }))
+                          }
+                          sx={{ borderRadius: 2 }}
+                        >
+                          افزودن منبع
+                        </Button>
+                      </Box>
+                    ) : (
+                      <SourcesSection
+                        sources={sourcesByProject || []}
+                        isLoading={false}
+                        error={null}
+                        viewMode={viewMode}
+                        selected={selectedSources}
+                        onViewChange={handleViewChange}
+                        onSelect={handleSelectSource}
+                        onSelectAll={handleSelectAllSources}
+                        onOpenAddSourceModal={() =>
+                          setDialogs((prev) => ({ ...prev, addSource: true }))
+                        }
+                        onOpenDeleteDialog={() =>
+                          setDialogs((prev) => ({
+                            ...prev,
+                            deleteConfirmation: true,
+                          }))
+                        }
+                        onClearSelection={() => setSelectedSources([])}
+                        onSelectSource={(id: string) => setActiveSourceId(id)}
+                        activeSourceId={activeSourceId}
+                      />
+                    )}
+                  </Box>
+                )}
+              </Box>
+            </Paper>
+          </Grid>
+
+          {/* Notes Panel - Main Content */}
+          <Grid size={{ xs: 12, md: 8 }}>
+            <Paper
+              elevation={0}
+              sx={{
+                flex: 1,
+                borderRadius: 3,
+                border: (theme) =>
+                  `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+                background: (theme) =>
+                  `linear-gradient(135deg, ${alpha(
+                    theme.palette.background.paper,
+                    0.8
+                  )} 0%, ${alpha(theme.palette.background.default, 0.4)} 100%)`,
+                backdropFilter: 'blur(10px)',
+                display: 'flex',
+                flexDirection: 'column',
+                overflow: 'hidden',
+              }}
+            >
+              {activeSourceId && projectId ? (
+                <NoteWorkspace
+                  projectId={projectId}
+                  sourceId={activeSourceId}
+                />
+              ) : (
+                <Box
+                  sx={{
+                    flex: 1,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    textAlign: 'center',
+                    p: 4,
+                  }}
+                >
+                  <Avatar
+                    sx={{
+                      width: 120,
+                      height: 120,
+                      bgcolor: (theme) =>
+                        alpha(theme.palette.secondary.main, 0.1),
+                      mb: 4,
+                    }}
+                  >
+                    <DescriptionIcon
+                      sx={{ fontSize: 60, color: 'secondary.main' }}
+                    />
+                  </Avatar>
+                  <Typography variant='h5' fontWeight='600' gutterBottom>
+                    فیش‌های پژوهشی
+                  </Typography>
+                  <Typography
+                    variant='body1'
+                    color='text.secondary'
+                    sx={{ mb: 4, maxWidth: 400 }}
+                  >
+                    برای شروع نوشتن فیش، ابتدا یک منبع را از پنل سمت راست انتخاب
+                    کنید
+                  </Typography>
+                  <Stack direction='row' spacing={2} alignItems='center'>
+                    <ArrowBackIos sx={{ color: 'text.secondary' }} />
+                    <Typography variant='body2' color='text.secondary'>
+                      منبع مورد نظر را انتخاب کنید
+                    </Typography>
+                  </Stack>
+                </Box>
+              )}
+            </Paper>
           </Grid>
         </Grid>
       </Slide>
@@ -532,6 +788,14 @@ const ProjectDetailPage: React.FC = () => {
           {snackbar.message}
         </Alert>
       </Snackbar>
+      {/* Render the modal */}
+      {projectId && (
+        <ProjectCitationModal
+          open={citationModalOpen}
+          onClose={() => setCitationModalOpen(false)}
+          projectId={projectId}
+        />
+      )}
     </Container>
   );
 };

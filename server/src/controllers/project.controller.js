@@ -2,6 +2,10 @@ import asyncHandler from 'express-async-handler';
 import Project from '../models/Project.model.js';
 import ApiResponse from '../utils/apiResponse.js';
 import checkProjectOwnership from '../utils/checkOwnershipProject.js';
+import { Cite } from '@citation-js/core';
+import '@citation-js/plugin-csl';
+import { mapSourceToCSL } from '../utils/cslMapper.js';
+import Source from '../models/Source.model.js';
 
 // <-------------- CREATE NEW PROJECT ----------------------->
 
@@ -128,6 +132,53 @@ const removeSourceFromProject = asyncHandler(async (req, res) => {
 
   ApiResponse.success(res, null, 'منبع با موفقیت از پروژه حذف شد');
 });
+// <----------------------- GENERATE PROJECT CITATIONS ------------------------------->
+// @desc    Generate citations for all sources in a project
+// @route   GET /api/v1/projects/:id/citations
+// @access  Private
+const generateProjectCitations = asyncHandler(async (req, res) => {
+  const { id: projectId } = req.params;
+  const { style = 'apa', format = 'html' } = req.query;
+
+  // 1. Check ownership and fetch project with sources
+  await checkProjectOwnership(projectId, req.user._id);
+  const project = await Project.findById(projectId).populate('sources');
+
+  if (!project) {
+    res.status(404);
+    throw new Error('پروژه یافت نشد');
+  }
+
+  if (project.sources.length === 0) {
+    ApiResponse.success(res, { citation: '' }, 'پروژه منبعی برای استناد ندارد');
+    return;
+  }
+
+  // 2. Convert all sources to CSL-JSON format
+  const cslData = project.sources.map((source) => {
+    return source.rawCSL && Object.keys(source.rawCSL).length > 0
+      ? source.rawCSL
+      : mapSourceToCSL(source);
+  });
+
+  // 3. Generate bibliography using citation-js
+  try {
+    const cite = new Cite(cslData);
+    const output = cite.format('bibliography', {
+      format: format,
+      template: style,
+      lang: 'en-US',
+    });
+    ApiResponse.success(
+      res,
+      { citation: output },
+      'استناد پروژه با موفقیت تولید شد'
+    );
+  } catch (error) {
+    res.status(500);
+    throw new Error(`خطا در تولید استناد: ${error.message}`);
+  }
+});
 
 export {
   createProject,
@@ -137,4 +188,5 @@ export {
   updateProject,
   deleteProject,
   removeSourceFromProject,
+  generateProjectCitations,
 };

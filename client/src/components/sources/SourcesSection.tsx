@@ -10,6 +10,8 @@ import {
   Button,
   Avatar,
   alpha,
+  Stack,
+  Chip,
 } from '@mui/material';
 import { LibraryBooks, Add } from '@mui/icons-material';
 import { SourcesToolbar } from './SourcesToolbar'; // کامپوننت تولبار
@@ -24,6 +26,7 @@ interface SourcesSectionProps {
   error: string | null;
   viewMode: 'grid' | 'list';
   selected: string[];
+  activeSourceId: string | null;
   onViewChange: (newView: 'grid' | 'list') => void;
   onSelect: (id: string) => void;
   onSelectAll: (event: React.ChangeEvent<HTMLInputElement>) => void;
@@ -46,6 +49,7 @@ export const SourcesSection: React.FC<SourcesSectionProps> = ({
   onOpenDeleteDialog,
   onClearSelection,
   onSelectSource,
+  activeSourceId,
 }) => {
   const numSelected = selected.length;
   const sourceCount = sources.length;
@@ -86,22 +90,6 @@ export const SourcesSection: React.FC<SourcesSectionProps> = ({
       );
     }
 
-    if (viewMode === 'grid') {
-      return (
-        <Grid container spacing={3}>
-          {sources.map((source, index) => (
-            <SourceGridItem
-              key={source._id}
-              source={source}
-              isSelected={selected.includes(source._id)}
-              onSelect={onSelect}
-              onSelectSource={onSelectSource}
-            />
-          ))}
-        </Grid>
-      );
-    }
-
     return (
       <List>
         {sources.map((source, index) => (
@@ -111,6 +99,7 @@ export const SourcesSection: React.FC<SourcesSectionProps> = ({
             isSelected={selected.includes(source._id)}
             onSelect={onSelect}
             onSelectSource={onSelectSource}
+            activeSourceId={activeSourceId}
           />
         ))}
       </List>
@@ -118,26 +107,54 @@ export const SourcesSection: React.FC<SourcesSectionProps> = ({
   };
 
   return (
-    <Paper
-      elevation={0}
-      sx={{
-        mt: 4,
-        borderRadius: 3,
-        border: (theme) => `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-      }}
-    >
-      <SourcesToolbar
-        numSelected={numSelected}
-        sourceCount={sourceCount}
-        viewMode={viewMode}
-        onViewChange={onViewChange}
-        onSelectAll={onSelectAll}
-        onOpenAddSourceModal={onOpenAddSourceModal}
-        onOpenDeleteDialog={onOpenDeleteDialog}
-        onClearSelection={onClearSelection}
-        onSelectSource={onSelectSource}
-      />
-      <Box sx={{ p: 3 }}>{renderContent()}</Box>
-    </Paper>
+    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+      {/* Selection Toolbar */}
+      {numSelected > 0 && (
+        <Box
+          sx={{
+            p: 2,
+            borderBottom: (theme) =>
+              `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+            background: (theme) =>
+              `linear-gradient(90deg, ${alpha(
+                theme.palette.primary.main,
+                0.08
+              )} 0%, transparent 100%)`,
+          }}
+        >
+          <Stack direction='row' spacing={2} alignItems='center'>
+            <Typography variant='body1' fontWeight='600' color='primary'>
+              {numSelected} مورد انتخاب شده
+            </Typography>
+            <Chip
+              label={`${numSelected} از ${sourceCount}`}
+              size='small'
+              color='primary'
+              variant='outlined'
+            />
+            <Button
+              variant='outlined'
+              color='error'
+              size='small'
+              onClick={onOpenDeleteDialog}
+              sx={{ borderRadius: 2, textTransform: 'none' }}
+            >
+              حذف
+            </Button>
+            <Button
+              variant='outlined'
+              size='small'
+              onClick={onClearSelection}
+              sx={{ borderRadius: 2, textTransform: 'none' }}
+            >
+              لغو انتخاب
+            </Button>
+          </Stack>
+        </Box>
+      )}
+
+      {/* Content */}
+      <Box sx={{ flex: 1, overflow: 'auto' }}>{renderContent()}</Box>
+    </Box>
   );
 };

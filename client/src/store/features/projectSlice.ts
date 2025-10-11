@@ -9,6 +9,7 @@ import apiClient from '../../api/axios';
 const initialState: IProjectState = {
   projects: [],
   selectedProject: null,
+  generatedCitation: null,
   isLoading: false,
   error: null,
 };
@@ -135,6 +136,23 @@ export const updateProject = createAsyncThunk(
     }
   }
 );
+// ------------------ Generate Project Citations ------------------
+export const generateProjectCitations = createAsyncThunk(
+  'projects/generateCitations',
+  async (
+    { projectId, style }: { projectId: string; style: string },
+    { rejectWithValue }
+  ) => {
+    try {
+      const { data } = await apiClient.get(
+        `/projects/${projectId}/citations?style=${style}&format=html`
+      );
+      return data.data.citation as string;
+    } catch (error: unknown) {
+      return rejectWithValue(error.response.data.message);
+    }
+  }
+);
 
 const projectSlice = createSlice({
   name: 'project',
@@ -247,6 +265,16 @@ const projectSlice = createSlice({
       .addCase(addExistingSourcesToProject.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;
+      })
+      // --- Generate Project Citations ---
+      .addCase(generateProjectCitations.pending, (state) => {
+        state.generatedCitation = 'در حال تولید...';
+      })
+      .addCase(generateProjectCitations.fulfilled, (state, action) => {
+        state.generatedCitation = action.payload;
+      })
+      .addCase(generateProjectCitations.rejected, (state, action) => {
+        state.generatedCitation = action.payload as string;
       });
   },
 });

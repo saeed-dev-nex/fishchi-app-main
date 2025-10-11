@@ -23,7 +23,6 @@ const noteSchema = new Schema(
     },
     pageRef: {
       type: String,
-      required: true,
     },
     tags: [String],
   },

@@ -33,9 +33,7 @@ export const SourceGridItem: React.FC<SourceGridItemProps> = ({
     <Grid
       size={{
         xs: 12,
-        sm: 6,
-        md: 4,
-        lg: 3,
+        md: 6,
       }}
     >
       <Card
@@ -44,12 +42,18 @@ export const SourceGridItem: React.FC<SourceGridItemProps> = ({
           borderRadius: 3,
           border: isSelected ? '2px solid' : '1px solid',
           borderColor: isSelected ? 'primary.main' : 'divider',
+          bgcolor: isSelected
+            ? (theme) => alpha(theme.palette.primary.main, 0.08)
+            : (theme) => alpha(theme.palette.background.paper, 0.6),
+          backdropFilter: 'blur(10px)',
           transition: 'all 0.3s ease',
+          cursor: 'pointer',
           '&:hover': {
-            transform: 'translateY(-4px)',
+            transform: 'translateY(-6px)',
             boxShadow: (theme) =>
-              `0 8px 25px ${alpha(theme.palette.common.black, 0.15)}`,
+              `0 12px 30px ${alpha(theme.palette.common.black, 0.15)}`,
             borderColor: 'primary.main',
+            bgcolor: (theme) => alpha(theme.palette.primary.main, 0.05),
           },
         }}
       >
