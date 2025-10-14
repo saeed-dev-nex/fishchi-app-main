@@ -12,31 +12,131 @@ import { mapSourceToCSL } from '../utils/cslMapper.js';
 import checkProjectOwnership from '../utils/checkOwnershipProject.js';
 
 // --------- Get All Sources ----------
-// @desc get sources
+// @desc get sources with pagination, sorting and search
 // @route GET /api/v1/sources
 // @access Private
 const getSources = asyncHandler(async (req, res) => {
-  const { projectId } = req.query;
+  const {
+    projectId,
+    page = 1,
+    limit = 10,
+    sortBy = 'createdAt',
+    sortOrder = 'desc',
+    search = '',
+    searchFields = 'title,authors,tags,year',
+  } = req.query;
 
-  let sources;
+  // Parse pagination parameters
+  const pageNum = parseInt(page);
+  const limitNum = parseInt(limit);
+  const skip = (pageNum - 1) * limitNum;
+
+  // Parse sort parameters
+  const sortField =
+    sortBy === 'title'
+      ? 'title'
+      : sortBy === 'year'
+      ? 'year'
+      : sortBy === 'createdAt'
+      ? 'createdAt'
+      : 'createdAt';
+  const sortDirection = sortOrder === 'asc' ? 1 : -1;
+
+  // Build search query
+  let searchQuery = { user: req.user._id };
+
+  if (search && search.trim()) {
+    const searchRegex = new RegExp(search.trim(), 'i');
+    const searchFieldsArray = searchFields.split(',');
+
+    const searchConditions = [];
+
+    if (searchFieldsArray.includes('title')) {
+      searchConditions.push({ title: searchRegex });
+    }
+    if (searchFieldsArray.includes('authors')) {
+      searchConditions.push({ 'authors.name': searchRegex });
+    }
+    if (searchFieldsArray.includes('tags')) {
+      searchConditions.push({ tags: searchRegex });
+    }
+    if (searchFieldsArray.includes('year')) {
+      const yearNum = parseInt(search.trim());
+      if (!isNaN(yearNum)) {
+        searchConditions.push({ year: yearNum });
+      }
+    }
+
+    if (searchConditions.length > 0) {
+      searchQuery.$or = searchConditions;
+    }
+  }
+
+  let sources, totalCount;
 
   if (projectId) {
     // Check project ownership
     await checkProjectOwnership(projectId, req.user._id);
     const project = await Project.findById(projectId).populate({
       path: 'sources',
-      options: { sort: { createAt: -1 } },
+      match: searchQuery,
+      options: {
+        sort: { [sortField]: sortDirection },
+        skip: skip,
+        limit: limitNum,
+      },
     });
+
     if (!project) {
       res.status(404);
       throw new Error('پروژه یافت نشد');
     }
+
     sources = project.sources;
-    ApiResponse.success(res, sources, 'لیست منابع با موفقیت دریافت شد');
+
+    // Get total count for pagination
+    const projectWithAllSources = await Project.findById(projectId).populate({
+      path: 'sources',
+      match: searchQuery,
+    });
+    totalCount = projectWithAllSources
+      ? projectWithAllSources.sources.length
+      : 0;
   } else {
-    sources = await Source.find({ user: req.user._id }).sort({ createAt: -1 });
-    ApiResponse.success(res, sources, 'لیست منابع با موفقیت دریافت شد');
+    sources = await Source.find(searchQuery)
+      .sort({ [sortField]: sortDirection })
+      .skip(skip)
+      .limit(limitNum);
+
+    totalCount = await Source.countDocuments(searchQuery);
   }
+
+  // Calculate pagination info
+  const totalPages = Math.ceil(totalCount / limitNum);
+  const hasNextPage = pageNum < totalPages;
+  const hasPrevPage = pageNum > 1;
+
+  const responseData = {
+    sources,
+    pagination: {
+      currentPage: pageNum,
+      totalPages,
+      totalCount,
+      hasNextPage,
+      hasPrevPage,
+      limit: limitNum,
+    },
+    search: {
+      query: search,
+      fields: searchFields,
+    },
+    sort: {
+      field: sortField,
+      order: sortOrder,
+    },
+  };
+
+  ApiResponse.success(res, responseData, 'لیست منابع با موفقیت دریافت شد');
 });
 
 // Create new source
@@ -224,18 +324,71 @@ const updateSource = asyncHandler(async (req, res) => {
  * @access Private
  */
 const deleteSource = asyncHandler(async (req, res) => {
-  const source = await Source.findByIdAndDelete(req.params.id);
+  const sourceId = req.params.id;
+
+  // Find the source first
+  const source = await Source.findById(sourceId);
   if (!source) {
     res.status(404);
     throw new Error('منبع یافت نشد');
   }
+
+  // Check ownership
   if (source.user.toString() !== req.user._id.toString()) {
     res.status(401);
     throw new Error('شما مجاز به حذف این منبع نیستید');
   }
 
+  // Check if source is used in any projects
+  const projectsUsingSource = await Project.find({
+    user: req.user._id,
+    sources: sourceId,
+  }).select('title _id');
+
+  if (projectsUsingSource.length > 0) {
+    res.status(400);
+    throw new Error(
+      `این منبع در ${projectsUsingSource.length} پروژه استفاده شده است. ابتدا باید از پروژه‌ها حذف شود.`
+    );
+  }
+
+  // Delete the source
   await source.deleteOne();
   ApiResponse.success(res, {}, 'منبع با موفقیت حذف شد');
+});
+
+/**
+ * @ desc Get projects using a source
+ * @route GET /api/v1/sources/:id/projects
+ * @access Private
+ */
+const getSourceProjects = asyncHandler(async (req, res) => {
+  const sourceId = req.params.id;
+
+  // Find the source first
+  const source = await Source.findById(sourceId);
+  if (!source) {
+    res.status(404);
+    throw new Error('منبع یافت نشد');
+  }
+
+  // Check ownership
+  if (source.user.toString() !== req.user._id.toString()) {
+    res.status(401);
+    throw new Error('شما مجاز به دسترسی به این منبع نیستید');
+  }
+
+  // Find projects using this source
+  const projectsUsingSource = await Project.find({
+    user: req.user._id,
+    sources: sourceId,
+  }).select('title _id createdAt');
+
+  ApiResponse.success(
+    res,
+    projectsUsingSource,
+    'لیست پروژه‌های استفاده‌کننده از منبع دریافت شد'
+  );
 });
 
 /**
@@ -403,6 +556,7 @@ export {
   getSourceById,
   updateSource,
   deleteSource,
+  getSourceProjects,
   generateCitation,
   importSourceByUrl,
 };

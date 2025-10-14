@@ -51,8 +51,18 @@ const sourceSchema = new Schema(
   { timestamps: true }
 );
 
-// Add index  for fast searching
-sourceSchema.index({ title: 'text', abstract: 'text', 'authors.name': 'text' });
+// Add indexes for fast searching and sorting
+sourceSchema.index({
+  title: 'text',
+  abstract: 'text',
+  'authors.name': 'text',
+  tags: 'text',
+});
+sourceSchema.index({ user: 1, createdAt: -1 });
+sourceSchema.index({ user: 1, title: 1 });
+sourceSchema.index({ user: 1, year: -1 });
+sourceSchema.index({ user: 1, 'authors.name': 1 });
+sourceSchema.index({ user: 1, tags: 1 });
 
 const Source = model('Source', sourceSchema);
 export default Source;

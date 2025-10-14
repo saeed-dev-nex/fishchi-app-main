@@ -112,3 +112,5 @@ export const SourceGridItem: React.FC<SourceGridItemProps> = ({
     </Grid>
   );
 };
+
+export default SourceGridItem;

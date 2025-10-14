@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>تست اکستنشن فیشچی</title>
+    <style>
+      body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        background: #f5f5f5;
+      }
+      .container {
+        background: white;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+      h1 {
+        color: #333;
+        text-align: center;
+        margin-bottom: 30px;
+      }
+      .test-section {
+        margin-bottom: 30px;
+        padding: 20px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+      }
+      .test-section h2 {
+        color: #667eea;
+        margin-bottom: 15px;
+      }
+      button {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 14px;
+        margin: 5px;
+      }
+      button:hover {
+        opacity: 0.9;
+      }
+      .result {
+        margin-top: 15px;
+        padding: 15px;
+        background: #f8f9fa;
+        border-radius: 6px;
+        border-left: 4px solid #667eea;
+      }
+      .error {
+        border-left-color: #dc3545;
+        background: #f8d7da;
+      }
+      .success {
+        border-left-color: #28a745;
+        background: #d4edda;
+      }
+      input {
+        width: 100%;
+        padding: 10px;
+        margin: 5px 0;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        box-sizing: border-box;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>🧪 تست اکستنشن فیشچی</h1>
+
+      <div
+        class="test-section"
+        style="background: #fff3cd; border-color: #ffeaa7"
+      >
+        <h2>⚠️ راهنمای استفاده</h2>
+        <p><strong>این فایل باید از طریق اکستنشن اجرا شود:</strong></p>
+        <ol>
+          <li>اکستنشن را در Developer Mode نصب کنید</li>
+          <li>روی آیکون اکستنشن کلیک راست کنید</li>
+          <li>"Inspect popup" را انتخاب کنید</li>
+          <li>در Console این دستور را اجرا کنید:</li>
+        </ol>
+        <code
+          style="
+            background: #f8f9fa;
+            padding: 10px;
+            display: block;
+            margin: 10px 0;
+          "
+        >
+          chrome.tabs.create({url: chrome.runtime.getURL('test.html')})
+        </code>
+        <p><strong>یا مستقیماً از popup استفاده کنید:</strong></p>
+        <p>روی آیکون اکستنشن کلیک کنید و از رابط کاربری استفاده کنید.</p>
+      </div>
+
+      <div class="test-section">
+        <h2>1. تست احراز هویت</h2>
+        <input
+          type="email"
+          id="testEmail"
+          placeholder="ایمیل"
+          value="test@example.com"
+        />
+        <input
+          type="password"
+          id="testPassword"
+          placeholder="رمز عبور"
+          value="password123"
+        />
+        <button onclick="testLogin()">تست ورود</button>
+        <button onclick="testLogout()">تست خروج</button>
+        <button onclick="testAuthStatus()">بررسی وضعیت احراز هویت</button>
+        <div id="authResult" class="result" style="display: none"></div>
+      </div>
+
+      <div class="test-section">
+        <h2>2. تست دریافت پروژه‌ها</h2>
+        <button onclick="testGetProjects()">دریافت پروژه‌ها</button>
+        <div id="projectsResult" class="result" style="display: none"></div>
+      </div>
+
+      <div class="test-section">
+        <h2>3. تست ایجاد منبع</h2>
+        <button onclick="testCreateSource()">ایجاد منبع تست</button>
+        <div id="sourceResult" class="result" style="display: none"></div>
+      </div>
+
+      <div class="test-section">
+        <h2>4. تست استخراج از صفحه</h2>
+        <p>برای تست این بخش، به یکی از سایت‌های زیر بروید:</p>
+        <ul>
+          <li>
+            <a href="https://www.sid.ir/paper/1394147/fa" target="_blank"
+              >SID.ir</a
+            >
+          </li>
+          <li>
+            <a href="https://civilica.com/doc/2396591/" target="_blank"
+              >Civilica.com</a
+            >
+          </li>
+          <li>
+            <a
+              href="https://www.noormags.ir/view/fa/articlepage/446775"
+              target="_blank"
+              >Noormags.ir</a
+            >
+          </li>
+        </ul>
+        <p>سپس روی آیکون اکستنشن کلیک کنید.</p>
+      </div>
+
+      <div class="test-section">
+        <h2>5. لاگ‌های سیستم</h2>
+        <button onclick="clearLogs()">پاک کردن لاگ‌ها</button>
+        <div
+          id="logs"
+          class="result"
+          style="max-height: 200px; overflow-y: auto"
+        ></div>
+      </div>
+    </div>
+
+    <script>
+      // Check if extension context is available
+      function checkExtensionContext() {
+        if (typeof chrome === 'undefined' || !chrome.runtime) {
+          showResult(
+            'authResult',
+            {
+              error:
+                'اکستنشن در دسترس نیست. لطفاً این فایل را از طریق اکستنشن باز کنید.',
+              instructions:
+                'برای تست: 1) اکستنشن را نصب کنید 2) روی آیکون اکستنشن کلیک راست کنید 3) "Inspect popup" را انتخاب کنید 4) در Console این فایل را اجرا کنید',
+            },
+            false
+          );
+          return false;
+        }
+        return true;
+      }
+
+      // Test functions
+      async function testLogin() {
+        if (!checkExtensionContext()) return;
+
+        const email = document.getElementById('testEmail').value;
+        const password = document.getElementById('testPassword').value;
+
+        try {
+          const response = await chrome.runtime.sendMessage({
+            action: 'login',
+            email: email,
+            password: password,
+          });
+
+          showResult('authResult', response, response.success);
+        } catch (error) {
+          showResult('authResult', { error: error.message }, false);
+        }
+      }
+
+      async function testLogout() {
+        if (!checkExtensionContext()) return;
+
+        try {
+          const response = await chrome.runtime.sendMessage({
+            action: 'logout',
+          });
+
+          showResult('authResult', response, response.success);
+        } catch (error) {
+          showResult('authResult', { error: error.message }, false);
+        }
+      }
+
+      async function testAuthStatus() {
+        if (!checkExtensionContext()) return;
+
+        try {
+          const response = await chrome.runtime.sendMessage({
+            action: 'checkAuth',
+          });
+
+          showResult('authResult', response, response.authenticated);
+        } catch (error) {
+          showResult('authResult', { error: error.message }, false);
+        }
+      }
+
+      async function testGetProjects() {
+        if (!checkExtensionContext()) return;
+
+        try {
+          const response = await chrome.runtime.sendMessage({
+            action: 'getProjects',
+          });
+
+          showResult('projectsResult', response, response.success);
+        } catch (error) {
+          showResult('projectsResult', { error: error.message }, false);
+        }
+      }
+
+      async function testCreateSource() {
+        if (!checkExtensionContext()) return;
+
+        const testSource = {
+          title: 'منبع تست اکستنشن',
+          authors: [{ name: 'نویسنده تست' }],
+          year: 2024,
+          type: 'article',
+          abstract: 'این یک منبع تست است',
+          tags: ['تست', 'اکستنشن'],
+        };
+
+        try {
+          const response = await chrome.runtime.sendMessage({
+            action: 'createSource',
+            sourceInfo: testSource,
+          });
+
+          showResult('sourceResult', response, response.success);
+        } catch (error) {
+          showResult('sourceResult', { error: error.message }, false);
+        }
+      }
+
+      function showResult(elementId, data, isSuccess) {
+        const element = document.getElementById(elementId);
+        element.style.display = 'block';
+        element.className = `result ${isSuccess ? 'success' : 'error'}`;
+        element.innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+
+        // Add to logs
+        addLog(`${elementId}: ${isSuccess ? 'SUCCESS' : 'ERROR'}`, data);
+      }
+
+      function addLog(message, data) {
+        const logsElement = document.getElementById('logs');
+        const timestamp = new Date().toLocaleTimeString();
+        const logEntry = document.createElement('div');
+        logEntry.innerHTML = `<strong>[${timestamp}]</strong> ${message}<br><pre>${JSON.stringify(
+          data,
+          null,
+          2
+        )}</pre>`;
+        logsElement.appendChild(logEntry);
+        logsElement.scrollTop = logsElement.scrollHeight;
+      }
+
+      function clearLogs() {
+        document.getElementById('logs').innerHTML = '';
+      }
+
+      // Listen for console messages from background script
+      chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+        if (message.type === 'log') {
+          addLog('Background Log', message.data);
+        }
+      });
+
+      // Initial log
+      addLog('Test page loaded', { timestamp: new Date().toISOString() });
+    </script>
+  </body>
+</html>

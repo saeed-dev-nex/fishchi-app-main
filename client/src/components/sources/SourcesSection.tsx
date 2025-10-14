@@ -1,8 +1,6 @@
 import React from 'react';
 import {
   Box,
-  Paper,
-  Grid,
   List,
   CircularProgress,
   Alert,
@@ -14,9 +12,7 @@ import {
   Chip,
 } from '@mui/material';
 import { LibraryBooks, Add } from '@mui/icons-material';
-import { SourcesToolbar } from './SourcesToolbar'; // کامپوننت تولبار
-import { SourceGridItem } from './SourceGridItem'; // کامپوننت آیتم گرید
-import { SourceListItem } from './SourceListItem'; // کامپوننت آیتم لیست
+import SourceListItem from './SourceListItem'; // کامپوننت آیتم لیست
 import type { ISource } from '../../types';
 
 // تعریف Props
@@ -24,12 +20,9 @@ interface SourcesSectionProps {
   sources: ISource[];
   isLoading: boolean;
   error: string | null;
-  viewMode: 'grid' | 'list';
   selected: string[];
   activeSourceId: string | null;
-  onViewChange: (newView: 'grid' | 'list') => void;
   onSelect: (id: string) => void;
-  onSelectAll: (event: React.ChangeEvent<HTMLInputElement>) => void;
   onOpenAddSourceModal: () => void;
   onOpenDeleteDialog: () => void;
   onClearSelection: () => void;
@@ -40,14 +33,11 @@ export const SourcesSection: React.FC<SourcesSectionProps> = ({
   sources,
   isLoading,
   error,
-  viewMode,
   selected,
-  onViewChange,
-  onSelect,
-  onSelectAll,
   onOpenAddSourceModal,
   onOpenDeleteDialog,
   onClearSelection,
+  onSelect,
   onSelectSource,
   activeSourceId,
 }) => {
@@ -92,7 +82,7 @@ export const SourcesSection: React.FC<SourcesSectionProps> = ({
 
     return (
       <List>
-        {sources.map((source, index) => (
+        {sources.map((source) => (
           <SourceListItem
             key={source._id}
             source={source}

@@ -5,6 +5,12 @@ export interface IUser {
   email: string;
   password?: string;
   avatar?: string;
+  university?: string;
+  fieldOfStudy?: string;
+  degree?: string;
+  bio?: string;
+  isVerified?: boolean;
+  createdAt?: string;
 }
 
 export interface IAuthState {
@@ -61,7 +67,7 @@ export interface IProject {
   description: string;
   createdAt: string;
   sources: ISource[];
-
+  status?: 'active' | 'completed' | 'archived';
   tags?: string[];
 }
 
@@ -100,15 +106,47 @@ export interface ISource {
   type: string;
   tags?: string[];
   abstract?: string;
+  createdAt?: string;
+  status?: 'pending' | 'completed' | 'reviewed';
   identifiers?: {
     url: string;
   };
+}
+
+export interface PaginationInfo {
+  currentPage: number;
+  totalPages: number;
+  totalCount: number;
+  hasNextPage: boolean;
+  hasPrevPage: boolean;
+  limit: number;
+}
+
+export interface SearchInfo {
+  query: string;
+  fields: string;
+}
+
+export interface SortInfo {
+  field: string;
+  order: string;
+}
+
+export interface SourcesResponse {
+  sources: ISource[];
+  pagination: PaginationInfo;
+  search: SearchInfo;
+  sort: SortInfo;
 }
 
 export interface SourceState {
   sources: ISource[];
   sourcesByProject: ISource[];
   selectedSource: ISource | null;
+  pagination: PaginationInfo | null;
+  search: SearchInfo | null;
+  sort: SortInfo | null;
+  sourceProjects: { [sourceId: string]: IProject[] };
   isLoading: boolean;
   error: string | null;
 }

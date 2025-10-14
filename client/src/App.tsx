@@ -15,6 +15,7 @@ import { useEffect } from 'react';
 import ProjectDetailPage from './pages/app/ProjectDetailPage.tsx';
 import SourcesLibraryPage from './pages/app/SourcesLibraryPage';
 import SourceDetailPage from './pages/app/SourceDetailPage.tsx';
+import ProfilePage from './pages/app/ProfilePage';
 
 function App() {
   const dispatch = useDispatch<AppDispatch>();
@@ -37,6 +38,7 @@ function App() {
             <Route path='projects/:id' element={<ProjectDetailPage />} />
             <Route path='library' element={<SourcesLibraryPage />} />
             <Route path='library/:id' element={<SourceDetailPage />} />
+            <Route path='profile' element={<ProfilePage />} />
           </Route>
         </Route>
       </Routes>

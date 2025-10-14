@@ -46,29 +46,57 @@ import {
   LibraryBooks,
   Description,
   TrendingUp,
+  Delete,
 } from '@mui/icons-material';
 import type { AppDispatch, RootState } from '../../store';
+import type { ISource } from '../../types';
 
-import {Link as ReactLink} from 'react-router-dom';
-import AddSourceModal from "../../components/sources/AddSourceModal.tsx";
+import { Link as ReactLink } from 'react-router-dom';
+import AddSourceModal from '../../components/sources/AddSourceModal.tsx';
+import SourcesToolbar from '../../components/sources/SourcesToolbar.tsx';
+import SourcesPagination from '../../components/sources/SourcesPagination.tsx';
+import DeleteSourceDialog from '../../components/sources/DeleteSourceDialog.tsx';
 
 const SourcesLibraryPage: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
-  const { sources, isLoading, error } = useSelector(
+  const { sources, isLoading, error, pagination } = useSelector(
     (state: RootState) => state.sources
   );
 
   // State for view mode (list or card)
   const [viewMode, setViewMode] = useState<'list' | 'card'>('card');
-    const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [sourceToDelete, setSourceToDelete] = useState<ISource | null>(null);
 
+  // State for search and pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(12);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState('createdAt');
+  const [sortOrder, setSortOrder] = useState('desc');
+
+  // Load sources with current filters
   useEffect(() => {
-    dispatch(fetchAllUserSources());
-  }, [dispatch]);
-    // Handle modal close
-    const handleCloseModal = () => {
-        setIsModalOpen(false);
-    };
+    dispatch(
+      fetchAllUserSources({
+        page: currentPage,
+        limit: pageSize,
+        sortBy,
+        sortOrder,
+        search: searchQuery,
+        searchFields: 'title,authors,tags,year',
+      })
+    );
+  }, [dispatch, currentPage, pageSize, sortBy, sortOrder, searchQuery]);
+
+  // Reset to first page when search or sort changes
+  useEffect(() => {
+    if (currentPage !== 1) {
+      setCurrentPage(1);
+    }
+  }, [searchQuery, sortBy, sortOrder]);
+
   // Handle view mode change
   const handleViewModeChange = (
     _event: React.MouseEvent<HTMLElement>,
@@ -77,6 +105,58 @@ const SourcesLibraryPage: React.FC = () => {
     if (newViewMode !== null) {
       setViewMode(newViewMode);
     }
+  };
+
+  // Handle search change
+  const handleSearchChange = (query: string) => {
+    setSearchQuery(query);
+  };
+
+  // Handle sort change
+  const handleSortChange = (newSortBy: string, newSortOrder: string) => {
+    setSortBy(newSortBy);
+    setSortOrder(newSortOrder);
+  };
+
+  // Handle page change
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  // Handle clear filters
+  const handleClearFilters = () => {
+    setSearchQuery('');
+    setSortBy('createdAt');
+    setSortOrder('desc');
+    setCurrentPage(1);
+  };
+
+  // Handle delete source
+  const handleDeleteSource = (source: ISource) => {
+    setSourceToDelete(source);
+    setDeleteDialogOpen(true);
+  };
+
+  // Handle close delete dialog
+  const handleCloseDeleteDialog = () => {
+    setDeleteDialogOpen(false);
+    setSourceToDelete(null);
+  };
+
+  // Handle delete success
+  const handleDeleteSuccess = () => {
+    // Always refresh the sources list with current page
+    // The pagination will be updated automatically by the API response
+    dispatch(
+      fetchAllUserSources({
+        page: currentPage,
+        limit: pageSize,
+        sortBy,
+        sortOrder,
+        search: searchQuery,
+        searchFields: 'title,authors,tags,year',
+      })
+    );
   };
 
   // Get source type icon
@@ -163,7 +243,7 @@ const SourcesLibraryPage: React.FC = () => {
                 >
                   <LibraryBooks />
                 </Avatar>
-    <Box>
+                <Box>
                   <Typography
                     variant='h3'
                     component='h1'
@@ -186,7 +266,7 @@ const SourcesLibraryPage: React.FC = () => {
               <Stack direction='row' spacing={2} flexWrap='wrap'>
                 <Chip
                   icon={<LibraryBooks />}
-                  label={`${sources.length} منبع`}
+                  label={`${pagination?.totalCount || sources.length} منبع`}
                   variant='outlined'
                   color='primary'
                 />
@@ -263,6 +343,17 @@ const SourcesLibraryPage: React.FC = () => {
         </Paper>
       </Fade>
 
+      {/* Search and Sort Toolbar */}
+      <SourcesToolbar
+        searchQuery={searchQuery}
+        sortBy={sortBy}
+        sortOrder={sortOrder}
+        onSearchChange={handleSearchChange}
+        onSortChange={handleSortChange}
+        onClearFilters={handleClearFilters}
+        totalCount={pagination?.totalCount || sources.length}
+      />
+
       {/* Loading State */}
       {isLoading && (
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
@@ -318,14 +409,14 @@ const SourcesLibraryPage: React.FC = () => {
                 }}
               >
                 <Avatar
-        sx={{
+                  sx={{
                     width: 80,
                     height: 80,
                     bgcolor: 'action.disabled',
                     mx: 'auto',
-          mb: 3,
-        }}
-      >
+                    mb: 3,
+                  }}
+                >
                   <LibraryBooks sx={{ fontSize: 40 }} />
                 </Avatar>
                 <Typography variant='h5' fontWeight='600' gutterBottom>
@@ -337,7 +428,7 @@ const SourcesLibraryPage: React.FC = () => {
                   sx={{ mb: 3 }}
                 >
                   اولین منبع خود را اضافه کنید و شروع به مطالعه کنید
-        </Typography>
+                </Typography>
                 <Button
                   variant='contained'
                   startIcon={<Add />}
@@ -350,7 +441,7 @@ const SourcesLibraryPage: React.FC = () => {
                   }}
                 >
                   افزودن اولین منبع
-        </Button>
+                </Button>
               </Paper>
             </Slide>
           ) : (
@@ -403,18 +494,33 @@ const SourcesLibraryPage: React.FC = () => {
                                     sx={{
                                       width: 56,
                                       height: 56,
-                                      bgcolor: `${getSourceTypeColor(
-                                        source.type || 'default'
-                                      )}.main`,
+                                      bgcolor: (theme) => {
+                                        const color = getSourceTypeColor(
+                                          source.type || 'default'
+                                        );
+                                        const colorPalette =
+                                          theme.palette[
+                                            color as keyof typeof theme.palette
+                                          ];
+                                        return typeof colorPalette ===
+                                          'object' && 'main' in colorPalette
+                                          ? colorPalette.main
+                                          : theme.palette.primary.main;
+                                      },
                                       fontSize: '1.4rem',
                                       boxShadow: (theme) => {
                                         const color = getSourceTypeColor(
                                           source.type || 'default'
                                         );
-                                        return `0 4px 12px ${alpha(
+                                        const colorPalette =
                                           theme.palette[
                                             color as keyof typeof theme.palette
-                                          ].main,
+                                          ];
+                                        return `0 4px 12px ${alpha(
+                                          typeof colorPalette === 'object' &&
+                                            'main' in colorPalette
+                                            ? colorPalette.main
+                                            : theme.palette.primary.main,
                                           0.3
                                         )}`;
                                       },
@@ -456,7 +562,7 @@ const SourcesLibraryPage: React.FC = () => {
                                     >
                                       {source.title || 'بدون توضیحات'}
                                     </Typography>
-      </Box>
+                                  </Box>
                                 </Stack>
 
                                 {/* Academic Stats */}
@@ -502,7 +608,7 @@ const SourcesLibraryPage: React.FC = () => {
                                 spacing={1}
                                 sx={{ width: '100%' }}
                               >
-                                <Tooltip title='مشاهده منبع' >
+                                <Tooltip title='مشاهده منبع'>
                                   <IconButton
                                     size='small'
                                     component={ReactLink}
@@ -545,6 +651,28 @@ const SourcesLibraryPage: React.FC = () => {
                                     }}
                                   >
                                     <Edit fontSize='small' />
+                                  </IconButton>
+                                </Tooltip>
+
+                                <Tooltip title='حذف منبع'>
+                                  <IconButton
+                                    size='small'
+                                    onClick={() => handleDeleteSource(source)}
+                                    sx={{
+                                      borderRadius: 1.5,
+                                      border: '1px solid',
+                                      borderColor: 'divider',
+                                      px: 2,
+                                      py: 1,
+                                      '&:hover': {
+                                        borderColor: 'error.main',
+                                        bgcolor: (theme) =>
+                                          alpha(theme.palette.error.main, 0.05),
+                                        transform: 'scale(1.05)',
+                                      },
+                                    }}
+                                  >
+                                    <Delete fontSize='small' />
                                   </IconButton>
                                 </Tooltip>
 
@@ -597,18 +725,33 @@ const SourcesLibraryPage: React.FC = () => {
                                 sx={{
                                   width: 64,
                                   height: 64,
-                                  bgcolor: `${getSourceTypeColor(
-                                    source.type || 'default'
-                                  )}.main`,
+                                  bgcolor: (theme) => {
+                                    const color = getSourceTypeColor(
+                                      source.type || 'default'
+                                    );
+                                    const colorPalette =
+                                      theme.palette[
+                                        color as keyof typeof theme.palette
+                                      ];
+                                    return typeof colorPalette === 'object' &&
+                                      'main' in colorPalette
+                                      ? (colorPalette as { main: string }).main
+                                      : theme.palette.primary.main;
+                                  },
                                   fontSize: '1.5rem',
                                   boxShadow: (theme) => {
                                     const color = getSourceTypeColor(
                                       source.type || 'default'
                                     );
-                                    return `0 4px 12px ${alpha(
+                                    const colorPalette =
                                       theme.palette[
                                         color as keyof typeof theme.palette
-                                      ].main,
+                                      ];
+                                    return `0 4px 12px ${alpha(
+                                      typeof colorPalette === 'object' &&
+                                        'main' in colorPalette
+                                        ? colorPalette.main
+                                        : theme.palette.primary.main,
                                       0.3
                                     )}`;
                                   },
@@ -617,7 +760,7 @@ const SourcesLibraryPage: React.FC = () => {
                                 {getSourceTypeIcon(source.type || 'default')}
                               </Avatar>
                             </ListItemAvatar>
-              <ListItemText
+                            <ListItemText
                               primary={
                                 <Typography
                                   variant='h6'
@@ -725,27 +868,60 @@ const SourcesLibraryPage: React.FC = () => {
                                   <Edit fontSize='small' />
                                 </IconButton>
                               </Tooltip>
+                              <Tooltip title='حذف منبع'>
+                                <IconButton
+                                  size='small'
+                                  onClick={() => handleDeleteSource(source)}
+                                  sx={{
+                                    borderRadius: 1.5,
+                                    border: '1px solid',
+                                    borderColor: 'divider',
+                                    '&:hover': {
+                                      borderColor: 'error.main',
+                                      bgcolor: (theme) =>
+                                        alpha(theme.palette.error.main, 0.05),
+                                      transform: 'scale(1.1)',
+                                    },
+                                  }}
+                                >
+                                  <Delete fontSize='small' />
+                                </IconButton>
+                              </Tooltip>
                             </Stack>
-            </ListItem>
+                          </ListItem>
                         </Fade>
                         {index < sources.length - 1 && (
                           <Divider sx={{ mx: 3 }} />
                         )}
                       </React.Fragment>
-          ))}
-      </List>
+                    ))}
+                  </List>
                 </Paper>
               )}
             </Slide>
           )}
         </>
       )}
-        <AddSourceModal
-            open={isModalOpen}
 
-            onClose={() => setIsModalOpen(false)}
-
+      {/* Pagination */}
+      {!isLoading && !error && pagination && pagination.totalPages > 1 && (
+        <SourcesPagination
+          pagination={pagination}
+          onPageChange={handlePageChange}
         />
+      )}
+
+      <AddSourceModal
+        open={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+      />
+
+      <DeleteSourceDialog
+        open={deleteDialogOpen}
+        onClose={handleCloseDeleteDialog}
+        source={sourceToDelete}
+        onDeleteSuccess={handleDeleteSuccess}
+      />
     </Container>
   );
 };

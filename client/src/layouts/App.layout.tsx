@@ -58,14 +58,12 @@ const navigationItems: NavigationItem[] = [
     text: 'پروژه‌ها',
     icon: <FolderOpen />,
     path: '/app/projects',
-
   },
-    {
-        text:'منابع',
-        icon:<Source/> ,
-        path:'/app/library',
-
-    },
+  {
+    text: 'منابع',
+    icon: <Source />,
+    path: '/app/library',
+  },
   {
     text: 'تنظیمات',
     icon: <Settings />,
@@ -190,7 +188,12 @@ const AppLayout: React.FC = () => {
             p: 2,
             backgroundColor: 'background.default',
             borderRadius: 2,
+            cursor: 'pointer',
+            '&:hover': {
+              backgroundColor: 'action.hover',
+            },
           }}
+          onClick={() => navigate('/app/profile')}
         >
           <Stack direction='row' spacing={2} alignItems='center'>
             <Avatar
@@ -200,8 +203,13 @@ const AppLayout: React.FC = () => {
                 bgcolor: 'primary.dark',
                 color: 'text.primary',
               }}
+              src={
+                user?.avatar
+                  ? `http://localhost:5000/uploads/avatars/${user.avatar}`
+                  : undefined
+              }
             >
-              {user?.avatar || user?.name?.[0]}
+              {!user?.avatar && user?.name?.[0]}
             </Avatar>
             <Box sx={{ flexGrow: 1, minWidth: 0 }}>
               <Typography variant='subtitle2' noWrap>
@@ -293,7 +301,12 @@ const AppLayout: React.FC = () => {
         open={Boolean(anchorEl)}
         onClose={handleProfileMenuClose}
       >
-        <MenuItem onClick={handleProfileMenuClose}>
+        <MenuItem
+          onClick={() => {
+            handleProfileMenuClose();
+            navigate('/app/profile');
+          }}
+        >
           <ListItemIcon>
             <AccountCircle fontSize='small' />
           </ListItemIcon>

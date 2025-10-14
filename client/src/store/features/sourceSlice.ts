@@ -9,6 +9,10 @@ import type {
   ImportSourceByUrlData,
   ISource,
   SourceState,
+  SourcesResponse,
+  PaginationInfo,
+  SearchInfo,
+  SortInfo,
 } from '../../types';
 import apiClient from '../../api/axios';
 import {
@@ -21,18 +25,44 @@ const initialState: SourceState = {
   sources: [],
   sourcesByProject: [],
   selectedSource: null,
+  pagination: null,
+  search: null,
+  sort: null,
+  sourceProjects: {},
   isLoading: false,
   error: null,
 };
 
 // Thunk Functions
-// ---------- 0. Get All User Sources ----------
+// ---------- 0. Get All User Sources with Pagination ----------
 export const fetchAllUserSources = createAsyncThunk(
   'source/fetchAllUserSources',
-  async (_, thunkAPI) => {
+  async (
+    params: {
+      page?: number;
+      limit?: number;
+      sortBy?: string;
+      sortOrder?: string;
+      search?: string;
+      searchFields?: string;
+    } = {},
+    thunkAPI
+  ) => {
     try {
-      const { data } = await apiClient.get('/sources');
-      return data.data as ISource[];
+      const queryParams = new URLSearchParams();
+
+      if (params.page) queryParams.append('page', params.page.toString());
+      if (params.limit) queryParams.append('limit', params.limit.toString());
+      if (params.sortBy) queryParams.append('sortBy', params.sortBy);
+      if (params.sortOrder) queryParams.append('sortOrder', params.sortOrder);
+      if (params.search) queryParams.append('search', params.search);
+      if (params.searchFields)
+        queryParams.append('searchFields', params.searchFields);
+
+      const { data } = await apiClient.get(
+        `/sources?${queryParams.toString()}`
+      );
+      return data.data as SourcesResponse;
     } catch (error: unknown) {
       const message =
         error instanceof Error ? error.message : 'An error occurred';
@@ -139,6 +169,21 @@ export const updateSourceById = createAsyncThunk(
         sourceData
       );
       return data.data as ISource;
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : 'An error occurred';
+      return thunkAPI.rejectWithValue(message);
+    }
+  }
+);
+
+// ---------- 8. Get Source Projects ----------
+export const fetchSourceProjects = createAsyncThunk(
+  'sources/fetchSourceProjects',
+  async (sourceId: string, thunkAPI) => {
+    try {
+      const { data } = await apiClient.get(`/sources/${sourceId}/projects`);
+      return { sourceId, projects: data.data };
     } catch (error: unknown) {
       const message =
         error instanceof Error ? error.message : 'An error occurred';
@@ -278,7 +323,10 @@ const sourceSlice = createSlice({
       })
       .addCase(fetchAllUserSources.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.sources = action.payload;
+        state.sources = action.payload.sources;
+        state.pagination = action.payload.pagination;
+        state.search = action.payload.search;
+        state.sort = action.payload.sort;
       })
       .addCase(fetchAllUserSources.rejected, (state, action) => {
         state.isLoading = false;
@@ -335,6 +383,19 @@ const sourceSlice = createSlice({
         state.selectedSource = action.payload;
       })
       .addCase(updateSourceById.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+      })
+      // ----- Fetch Source Projects -----
+      .addCase(fetchSourceProjects.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(fetchSourceProjects.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.sourceProjects[action.payload.sourceId] = action.payload.projects;
+      })
+      .addCase(fetchSourceProjects.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;
       });

@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="fa">
+  <head>
+    <meta charset="utf-8" />
+    <title>تست استخراج اطلاعات از نورمگ</title>
+  </head>
+  <body>
+    <h1>مقایسه قدرت پیش بینی بحران مالی توسط تکنیک های مختلف هوش مصنوعی</h1>
+
+    <div class="article-creator">
+      <span>نویسنده</span>:
+      <span itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">پورزمانی، زهرا</span> </span
+      >؛
+      <span itemprop="author" itemscope itemtype="http://schema.org/Person">
+        <span itemprop="name">کلانتری، حسن</span> </span
+      >؛
+    </div>
+
+    <div class="mag-info">
+      <p>
+        پژوهش های حسابداری مالی و حسابرسی بهار 1392 - شماره 17
+        <span>(32 صفحه - از 33 تا 64)</span>
+      </p>
+    </div>
+
+    <div class="keyword-list-wrapper">
+      <p class="keyword-list">
+        <span class="text-sm">کلیدواژه ها</span>:
+        <a class="btn btn-default btn-xs keyword-item" href="#"
+          ><span>شبکه عصبی</span></a
+        >
+        <a class="btn btn-default btn-xs keyword-item" href="#"
+          ><span>پیش بینی ورشکستگی</span></a
+        >
+        <a class="btn btn-default btn-xs keyword-item" href="#"
+          ><span>الگوریتم ژنتیک خطی</span></a
+        >
+        <a class="btn btn-default btn-xs keyword-item" href="#"
+          ><span>الگوریتم ژنتیک غیرخطی</span></a
+        >
+      </p>
+    </div>
+
+    <div id="abstractfa" property="description" class="p-summary">
+      <p><b>چکیده: </b></p>
+      <p>
+        امروزه پیشرفت سریع فن آوری و تغییرات محیطی وسیع، منجر به رقابت روزافزون
+        شده و دستیابی به سود را محدود و احتمال دچار شدن به بحران مالی را افزایش
+        داده است. هدف این تحقیق بررسی قدرت پیش بینی بحران مالی توسط تکنیک های
+        مختلف هوش مصنوعی(الگوریتم ژنتیک خطی و غیر خطی و شبکه عصبی) است.
+      </p>
+    </div>
+
+    <p property="description" class="p-summary-m">
+      <b>خلاصه ماشینی:</b>
+      هدف اين تحقيق بررسي قدرت پيش بيني بحران مالي توسط تکنيکهاي مختلف هوش
+      مصنوعي (الگوريتم ژنتيک خطي و غير خطي و شبکه عصبي ) است.
+    </p>
+
+    <script>
+      // تست کد استخراج
+      console.log('تست استخراج اطلاعات از نورمگ');
+
+      // تست استخراج عنوان
+      const titleElement = document.querySelector('h1');
+      console.log('عنوان:', titleElement?.textContent?.trim());
+
+      // تست استخراج نویسندگان
+      const authorElements = document.querySelectorAll(
+        '.article-creator span[itemprop="name"]'
+      );
+      const authors = Array.from(authorElements)
+        .map((el) => el.textContent?.trim())
+        .filter((t) => t);
+      console.log('نویسندگان:', authors);
+
+      // تست استخراج کلیدواژه ها
+      const keywordElements = document.querySelectorAll('.keyword-item span');
+      const keywords = Array.from(keywordElements)
+        .map((el) => el.textContent?.trim())
+        .filter((t) => t);
+      console.log('کلیدواژه ها:', keywords);
+
+      // تست استخراج چکیده
+      const abstractFaElement = document.querySelector('#abstractfa');
+      if (abstractFaElement) {
+        // Look for all paragraphs inside abstractfa
+        const paragraphs = abstractFaElement.querySelectorAll('p');
+        for (const paragraph of paragraphs) {
+          const text = paragraph.textContent.trim();
+          // Skip paragraphs that contain "چکیده:" or are too short
+          if (text && text.length > 50 && !text.includes('چکیده:')) {
+            console.log('چکیده:', text.substring(0, 100) + '...');
+            break;
+          }
+        }
+      }
+
+      // تست استخراج خلاصه ماشینی
+      const summaryElement = document.querySelector(
+        'p[property="description"].p-summary-m'
+      );
+      if (summaryElement) {
+        const text = summaryElement.textContent.trim();
+        const cleanText = text.replace(/^خلاصه ماشینی\s*:?\s*/g, '').trim();
+        console.log('خلاصه ماشینی:', cleanText.substring(0, 100) + '...');
+      }
+    </script>
+  </body>
+</html>

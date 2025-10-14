@@ -3,6 +3,7 @@ import authReducer from './features/authSlice';
 import projectReducer from './features/projectSlice';
 import sourceReducer from './features/sourceSlice';
 import noteReducer from './features/noteSlice';
+import profileReducer from './features/profileSlice';
 
 export const store = configureStore({
   reducer: {
@@ -10,6 +11,7 @@ export const store = configureStore({
     projects: projectReducer,
     sources: sourceReducer,
     notes: noteReducer,
+    profile: profileReducer,
   },
 });
 

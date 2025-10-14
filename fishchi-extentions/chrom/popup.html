@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>فیشچی - استخراج منابع</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <div class="container">
+      <!-- Header -->
+      <div class="header">
+        <div class="logo">
+          <img src="images/icon48.png" alt="فیشچی" class="logo-img" />
+          <h1>فیشچی</h1>
+        </div>
+        <div class="status-indicator" id="statusIndicator">
+          <span class="status-dot"></span>
+          <span class="status-text">در حال بررسی...</span>
+        </div>
+      </div>
+
+      <!-- Main Content -->
+      <div class="main-content">
+        <!-- Login Section -->
+        <div class="section" id="loginSection">
+          <div class="section-header">
+            <h2>ورود به فیشچی</h2>
+            <p>برای استفاده از اکستنشن ابتدا وارد حساب کاربری خود شوید</p>
+          </div>
+          <div class="form-group">
+            <label for="email">ایمیل:</label>
+            <input
+              type="email"
+              id="email"
+              placeholder="ایمیل خود را وارد کنید"
+            />
+          </div>
+          <div class="form-group">
+            <label for="password">رمز عبور:</label>
+            <input
+              type="password"
+              id="password"
+              placeholder="رمز عبور خود را وارد کنید"
+            />
+          </div>
+          <button class="btn btn-primary" id="loginBtn">
+            <span class="btn-text">ورود</span>
+            <div class="btn-loader" style="display: none"></div>
+          </button>
+          <div class="auth-links">
+            <a href="#" id="registerLink">ثبت نام</a>
+            <a href="#" id="forgotPasswordLink">فراموشی رمز عبور</a>
+          </div>
+        </div>
+
+        <!-- Extract Section -->
+        <div class="section" id="extractSection" style="display: none">
+          <div class="section-header">
+            <h2>استخراج منبع</h2>
+            <p>اطلاعات منبع از صفحه فعلی استخراج می‌شود</p>
+          </div>
+
+          <!-- Source Info Preview -->
+          <div class="source-preview" id="sourcePreview">
+            <div class="preview-item">
+              <label>عنوان:</label>
+              <span id="previewTitle">در حال بارگذاری...</span>
+            </div>
+            <div class="preview-item">
+              <label>نویسندگان:</label>
+              <span id="previewAuthors">در حال بارگذاری...</span>
+            </div>
+            <div class="preview-item">
+              <label>سال:</label>
+              <span id="previewYear">در حال بارگذاری...</span>
+            </div>
+            <div class="preview-item">
+              <label>نوع:</label>
+              <span id="previewType">در حال بارگذاری...</span>
+            </div>
+          </div>
+
+          <!-- Project Selection -->
+          <div class="form-group">
+            <label for="projectSelect">انتخاب پروژه (اختیاری):</label>
+            <select id="projectSelect">
+              <option value="">بدون پروژه</option>
+            </select>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="action-buttons">
+            <button class="btn btn-secondary" id="refreshBtn">
+              <span class="btn-icon">🔄</span>
+              <span class="btn-text">بروزرسانی</span>
+            </button>
+            <button class="btn btn-primary" id="extractBtn">
+              <span class="btn-icon">💾</span>
+              <span class="btn-text">ذخیره در فیشچی</span>
+              <div class="btn-loader" style="display: none"></div>
+            </button>
+          </div>
+        </div>
+
+        <!-- Success Section -->
+        <div class="section" id="successSection" style="display: none">
+          <div class="success-content">
+            <div class="success-icon">✅</div>
+            <h2>موفقیت!</h2>
+            <p>منبع با موفقیت به فیشچی اضافه شد</p>
+            <button class="btn btn-primary" id="newExtractBtn">
+              استخراج منبع جدید
+            </button>
+          </div>
+        </div>
+
+        <!-- Error Section -->
+        <div class="section" id="errorSection" style="display: none">
+          <div class="error-content">
+            <div class="error-icon">❌</div>
+            <h2>خطا</h2>
+            <p id="errorMessage">خطایی رخ داده است</p>
+            <button class="btn btn-secondary" id="retryBtn">تلاش مجدد</button>
+          </div>
+        </div>
+
+        <!-- Debug Section -->
+        <div class="section" id="debugSection" style="display: none">
+          <div class="section-header">
+            <h2>🔧 حالت دیباگ</h2>
+            <p>برای توسعه‌دهندگان</p>
+          </div>
+
+          <div class="form-group">
+            <label for="debugEmail">ایمیل تست:</label>
+            <input
+              type="email"
+              id="debugEmail"
+              placeholder="test@example.com"
+              value="test@example.com"
+            />
+          </div>
+          <div class="form-group">
+            <label for="debugPassword">رمز عبور تست:</label>
+            <input
+              type="password"
+              id="debugPassword"
+              placeholder="password123"
+              value="password123"
+            />
+          </div>
+
+          <div class="action-buttons">
+            <button class="btn btn-secondary" id="debugLoginBtn">
+              تست ورود
+            </button>
+            <button class="btn btn-secondary" id="debugProjectsBtn">
+              تست پروژه‌ها
+            </button>
+            <button class="btn btn-secondary" id="debugSourceBtn">
+              تست منبع
+            </button>
+            <button class="btn btn-secondary" id="debugContentBtn">
+              تست Content Script
+            </button>
+            <button class="btn btn-secondary" id="debugExtractBtn">
+              تست استخراج
+            </button>
+          </div>
+
+          <div class="source-preview" id="debugResult" style="display: none">
+            <h4>نتیجه:</h4>
+            <pre id="debugOutput"></pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="footer">
+        <div class="footer-links">
+          <a href="#" id="settingsLink">تنظیمات</a>
+          <a href="#" id="helpLink">راهنما</a>
+          <a href="#" id="testLink">تست</a>
+        </div>
+        <div class="version">نسخه 1.0.0</div>
+      </div>
+    </div>
+
+    <script src="popup.js"></script>
+  </body>
+</html>

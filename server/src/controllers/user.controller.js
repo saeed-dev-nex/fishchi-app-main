@@ -1,5 +1,8 @@
 import asyncHandler from 'express-async-handler';
 import otpGenerator from 'otp-generator';
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
 import User from '../models/User.model.js';
 import ApiResponse from '../utils/apiResponse.js';
 import sendEmail from '../utils/sendEmail.js';
@@ -140,7 +143,13 @@ const getUserProfile = asyncHandler(async (req, res) => {
       _id: user._id,
       name: user.name,
       email: user.email,
+      avatar: user.avatar,
+      university: user.university,
+      fieldOfStudy: user.fieldOfStudy,
+      degree: user.degree,
+      bio: user.bio,
       isVerified: user.isVerified,
+      createdAt: user.createdAt,
     });
   } else {
     res.status(404);
@@ -148,4 +157,154 @@ const getUserProfile = asyncHandler(async (req, res) => {
   }
 });
 
-export { registerUser, verifyEmail, loginUser, getUserProfile };
+// @desc    بروزرسانی پروفایل کاربر
+// @route   PUT /api/users/profile
+// @access  Private
+const updateUserProfile = asyncHandler(async (req, res) => {
+  const { name, university, fieldOfStudy, degree, bio } = req.body;
+
+  const user = await User.findById(req.user._id);
+  if (!user) {
+    res.status(404);
+    throw new Error('کاربر یافت نشد');
+  }
+
+  // Update fields
+  if (name) user.name = name;
+  if (university !== undefined) user.university = university;
+  if (fieldOfStudy !== undefined) user.fieldOfStudy = fieldOfStudy;
+  if (degree !== undefined) user.degree = degree;
+  if (bio !== undefined) user.bio = bio;
+
+  await user.save();
+
+  ApiResponse.success(
+    res,
+    {
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      avatar: user.avatar,
+      university: user.university,
+      fieldOfStudy: user.fieldOfStudy,
+      degree: user.degree,
+      bio: user.bio,
+      isVerified: user.isVerified,
+    },
+    'پروفایل با موفقیت بروزرسانی شد'
+  );
+});
+
+// @desc    تغییر رمز عبور
+// @route   PUT /api/users/password
+// @access  Private
+const changePassword = asyncHandler(async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+
+  if (!currentPassword || !newPassword) {
+    res.status(400);
+    throw new Error('رمز عبور فعلی و جدید الزامی است');
+  }
+
+  const user = await User.findById(req.user._id).select('+password');
+  if (!user) {
+    res.status(404);
+    throw new Error('کاربر یافت نشد');
+  }
+
+  // Check current password
+  const isMatch = await user.comparePassword(currentPassword);
+  if (!isMatch) {
+    res.status(400);
+    throw new Error('رمز عبور فعلی اشتباه است');
+  }
+
+  // Update password
+  user.password = newPassword;
+  await user.save();
+
+  ApiResponse.success(res, null, 'رمز عبور با موفقیت تغییر کرد');
+});
+
+// @desc    آپلود عکس پروفایل
+// @route   POST /api/users/avatar
+// @access  Private
+const uploadAvatar = asyncHandler(async (req, res) => {
+  if (!req.file) {
+    res.status(400);
+    throw new Error('فایل عکس الزامی است');
+  }
+
+  const user = await User.findById(req.user._id);
+  if (!user) {
+    res.status(404);
+    throw new Error('کاربر یافت نشد');
+  }
+
+  // Delete old avatar if exists
+  if (user.avatar) {
+    const oldAvatarPath = path.join(
+      process.cwd(),
+      'uploads',
+      'avatars',
+      user.avatar
+    );
+    if (fs.existsSync(oldAvatarPath)) {
+      fs.unlinkSync(oldAvatarPath);
+    }
+  }
+
+  // Update avatar path
+  user.avatar = req.file.filename;
+  await user.save();
+
+  ApiResponse.success(
+    res,
+    {
+      avatar: user.avatar,
+      avatarUrl: `/uploads/avatars/${user.avatar}`,
+    },
+    'عکس پروفایل با موفقیت آپلود شد'
+  );
+});
+
+// @desc    حذف عکس پروفایل
+// @route   DELETE /api/users/avatar
+// @access  Private
+const deleteAvatar = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id);
+  if (!user) {
+    res.status(404);
+    throw new Error('کاربر یافت نشد');
+  }
+
+  // Delete avatar file if exists
+  if (user.avatar) {
+    const avatarPath = path.join(
+      process.cwd(),
+      'uploads',
+      'avatars',
+      user.avatar
+    );
+    if (fs.existsSync(avatarPath)) {
+      fs.unlinkSync(avatarPath);
+    }
+  }
+
+  // Remove avatar from user
+  user.avatar = null;
+  await user.save();
+
+  ApiResponse.success(res, null, 'عکس پروفایل با موفقیت حذف شد');
+});
+
+export {
+  registerUser,
+  verifyEmail,
+  loginUser,
+  getUserProfile,
+  updateUserProfile,
+  changePassword,
+  uploadAvatar,
+  deleteAvatar,
+};

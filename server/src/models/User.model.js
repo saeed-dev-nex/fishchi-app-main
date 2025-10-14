@@ -33,6 +33,31 @@ const userSchema = new Schema(
       default: null,
       select: false,
     },
+    avatar: {
+      type: String,
+      default: null,
+    },
+    university: {
+      type: String,
+      default: null,
+      trim: true,
+    },
+    fieldOfStudy: {
+      type: String,
+      default: null,
+      trim: true,
+    },
+    degree: {
+      type: String,
+      enum: ['دیپلم', 'کارشناسی', 'کارشناسی ارشد', 'دکتری', 'فوق دکتری', null],
+      default: null,
+    },
+    bio: {
+      type: String,
+      default: null,
+      trim: true,
+      maxlength: 500,
+    },
   },
   {
     timestamps: true, // Add createAt and updateAt Automatically

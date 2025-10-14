@@ -5,6 +5,7 @@ import {
   deleteSource,
   generateCitation,
   getSourceById,
+  getSourceProjects,
   getSources,
   getSourcesByProject,
   importSourceByDOI,
@@ -20,7 +21,9 @@ router.route('/').post(createSource).get(getSourcesByProject);
 router.route('/import-doi').post(importSourceByDOI);
 router.route('/import-url').post(importSourceByUrl);
 
-router.route('/:id').get(getSourceById).put(updateSource).delete(deleteSource);
+// Specific routes must come before parameterized routes
+router.get('/:id/projects', getSourceProjects);
 router.get('/:id/citation', generateCitation);
+router.route('/:id').get(getSourceById).put(updateSource).delete(deleteSource);
 
 export default router;

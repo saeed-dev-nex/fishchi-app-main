@@ -1,0 +1,50 @@
+{
+  "manifest_version": 3,
+  "name": "فیشچی - استخراج منابع تحقیقاتی",
+  "version": "1.0.0",
+  "description": "اکستنشن فیشچی برای استخراج خودکار منابع تحقیقاتی از سایت‌های ایرانی",
+  "permissions": ["activeTab", "storage", "scripting", "cookies", "tabs"],
+  "host_permissions": [
+    "https://*.sid.ir/*",
+    "https://*.civilica.com/*",
+    "https://*.noormags.ir/*",
+    "http://localhost:*/*",
+    "https://fishchi-app.vercel.app/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://*.sid.ir/*",
+        "https://*.civilica.com/*",
+        "https://*.noormags.ir/*"
+      ],
+      "js": ["content.js"],
+      "css": ["content.css"],
+      "run_at": "document_end",
+      "all_frames": false
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "فیشچی",
+    "default_icon": {
+      "16": "images/icon16.png",
+      "48": "images/icon48.png",
+      "128": "images/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "images/icon16.png",
+    "48": "images/icon48.png",
+    "128": "images/icon128.png"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["images/*"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}
