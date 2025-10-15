@@ -67,7 +67,12 @@ export interface IProject {
   description: string;
   createdAt: string;
   sources: ISource[];
-  status?: 'active' | 'completed' | 'archived';
+  status?: 'در حال انجام' | 'خاتمه یافته' | 'کنسل شده';
+  progress?: number;
+  startDate?: string;
+  endDate?: string;
+  estimatedDuration?: number;
+  priority?: 'کم' | 'متوسط' | 'زیاد' | 'فوری';
   tags?: string[];
 }
 
@@ -79,16 +84,42 @@ export interface IProjectState {
   error: string | null;
 }
 
+export interface IProjectStatistics {
+  totalSources: number;
+  completedSources: number;
+  pendingSources: number;
+  reviewedSources: number;
+  progress: number;
+  status: string;
+  startDate: string;
+  endDate?: string;
+  estimatedDuration?: number;
+  priority: string;
+  daysElapsed: number;
+  estimatedCompletion?: number;
+}
+
 export type CreateProjectData = {
   title: string;
   description?: string;
   tags?: string[];
+  status?: 'در حال انجام' | 'خاتمه یافته' | 'کنسل شده';
+  estimatedDuration?: number;
+  priority?: 'کم' | 'متوسط' | 'زیاد' | 'فوری';
   _id?: string;
 };
 
 export const projectSchema = z.object({
   title: z.string().min(2, 'وارد کردن عنوان پروژه الزامی است'),
   description: z.string().max(400, 'طول غیر مجاز').optional(),
+  status: z.enum(['در حال انجام', 'خاتمه یافته', 'کنسل شده']).optional(),
+  priority: z.enum(['کم', 'متوسط', 'زیاد', 'فوری']).optional(),
+  estimatedDuration: z
+    .number()
+    .min(1, 'مدت باید حداقل 1 روز باشد')
+    .max(365, 'مدت نمی‌تواند بیش از 365 روز باشد')
+    .optional(),
+  tags: z.string().optional(),
 });
 
 export type CreateProjectFormInputs = z.infer<typeof projectSchema>;
@@ -199,3 +230,64 @@ export type UpdateNoteData = {
   pageRef?: string;
   tags?: string[];
 };
+
+// Settings Types
+export interface ISettings {
+  _id?: string;
+  user?: string;
+  general: {
+    language: 'fa' | 'en';
+    theme: 'light' | 'dark' | 'auto';
+    timezone: string;
+    dateFormat: 'jalali' | 'gregorian';
+    notifications: {
+      email: boolean;
+      push: boolean;
+      projectUpdates: boolean;
+      sourceUpdates: boolean;
+      systemUpdates: boolean;
+    };
+  };
+  privacy: {
+    profileVisibility: 'public' | 'private' | 'friends';
+    showEmail: boolean;
+    showProjects: boolean;
+    allowSearch: boolean;
+    dataSharing: {
+      analytics: boolean;
+      marketing: boolean;
+    };
+  };
+  application: {
+    autoSave: boolean;
+    autoSaveInterval: number;
+    defaultProjectView: 'grid' | 'list';
+    defaultSourceView: 'grid' | 'list';
+    itemsPerPage: number;
+    showTutorials: boolean;
+  };
+  export: {
+    defaultFormat: 'bibtex' | 'ris' | 'apa' | 'mla' | 'chicago';
+    includeAbstract: boolean;
+    includeKeywords: boolean;
+    includeDOI: boolean;
+    includeURL: boolean;
+  };
+  backup: {
+    autoBackup: boolean;
+    backupFrequency: 'daily' | 'weekly' | 'monthly';
+    backupRetention: number;
+    includeProjects: boolean;
+    includeSources: boolean;
+    includeNotes: boolean;
+  };
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface SettingsState {
+  settings: ISettings | null;
+  isLoading: boolean;
+  error: string | null;
+  message: string | null;
+}

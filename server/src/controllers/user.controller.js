@@ -19,11 +19,15 @@ const registerUser = asyncHandler(async (req, res) => {
   console.log('------- register user begin ---------');
 
   const { name, email, password } = req.body;
+  console.log('name', name);
+  console.log('email', email);
+  console.log('password', password);
   if (!name || !email || !password) {
     res.status(400);
     throw new Error('لطفاً تمام اطلاعات خواسته شده را پر کنید');
   }
   const userExists = await User.findOne({ email });
+  console.log('userExists', userExists);
   if (userExists) {
     res.status(400);
     throw new Error('ایمیل قبلاً ثبت شده است');
@@ -80,6 +84,7 @@ const verifyEmail = asyncHandler(async (req, res) => {
     secure: process.env.NODE_ENV === 'production', // in Product mode only send HTTPS
     sameSite: 'strict', //Anti CSRF Attack
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 day
+    // maxAge: 10 * 60 * 1000, // 10 minutes
   });
   ApiResponse.success(
     res,
@@ -105,6 +110,10 @@ const loginUser = asyncHandler(async (req, res) => {
     throw new Error('ایمیل یا رمز عبور اشتباه است');
   }
   const isMatch = await user.comparePassword(password);
+  if (!isMatch) {
+    res.status(400);
+    throw new Error('ایمیل یا رمز عبور اشتباه است');
+  }
   if (user && isMatch) {
     if (!user.isVerified) {
       res.status(401);
@@ -298,10 +307,29 @@ const deleteAvatar = asyncHandler(async (req, res) => {
   ApiResponse.success(res, null, 'عکس پروفایل با موفقیت حذف شد');
 });
 
+// <-------------- Logout Handler --------------------->
+/**
+ * @desc Logout user
+ * @route POST /api/v1/users/logout
+ * @access Private
+ */
+const logoutUser = asyncHandler(async (req, res) => {
+  // Since we're using httpOnly cookies, we just need to clear the cookie
+  res.cookie('token', '', {
+    httpOnly: true,
+    expires: new Date(0),
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+  });
+
+  ApiResponse.success(res, null, 'کاربر با موفقیت خارج شد');
+});
+
 export {
   registerUser,
   verifyEmail,
   loginUser,
+  logoutUser,
   getUserProfile,
   updateUserProfile,
   changePassword,

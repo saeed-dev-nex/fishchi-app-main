@@ -28,7 +28,7 @@ import {
   AppRegistration,
 } from '@mui/icons-material';
 import RegisterImage from '../../assets/images/register.jpg';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import type { AppDispatch, RootState } from '../../store';
 import type { RegisterFormInputs } from '../../types';
 import { useForm, type SubmitHandler } from 'react-hook-form';
@@ -42,7 +42,8 @@ const RegisterPage: React.FC = () => {
   // ---------- HOOKS ----------
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
-  const { isLoading, isRegistered, error, message } = useSelector(
+  const location = useLocation();
+  const { isLoading, isRegistered, error, message, user } = useSelector(
     (state: RootState) => state.auth
   );
   const theme = useTheme();
@@ -72,14 +73,37 @@ const RegisterPage: React.FC = () => {
     }
   }, [isRegistered, navigate, submittedEmail]);
 
+  // redirect authenticated users to dashboard
+  useEffect(() => {
+    if (user) {
+      const from = location.state?.from?.pathname || '/app';
+      navigate(from, { replace: true });
+    }
+  }, [user, navigate, location.state]);
+
   // handle form submission
   const onSubmit: SubmitHandler<RegisterFormInputs> = (data) => {
     setSubmittedEmail(data.email); // Store the submitted email
-    dispatch(registerUser(data));
+    // Remove confirmPassword before sending to backend
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { confirmPassword, ...registerData } = data;
+    dispatch(registerUser(registerData));
   };
   // ---------- Handlers ----------
   const handleClickShowPassword = () => {
     setShowPassword(!showPassword);
+  };
+
+  const handleGoogleLogin = () => {
+    window.location.href = `${
+      import.meta.env.VITE_API_URL || 'http://localhost:3000'
+    }/api/v1/auth/google`;
+  };
+
+  const handleGitHubLogin = () => {
+    window.location.href = `${
+      import.meta.env.VITE_API_URL || 'http://localhost:3000'
+    }/api/v1/auth/github`;
   };
 
   // ------------------------------
@@ -334,6 +358,7 @@ const RegisterPage: React.FC = () => {
                   fullWidth
                   variant='outlined'
                   startIcon={<Google />}
+                  onClick={handleGoogleLogin}
                   sx={{
                     py: 1.5,
                     borderRadius: 30,
@@ -352,6 +377,7 @@ const RegisterPage: React.FC = () => {
                   fullWidth
                   variant='outlined'
                   startIcon={<GitHub />}
+                  onClick={handleGitHubLogin}
                   sx={{
                     py: 1.5,
                     borderRadius: 30,

@@ -89,7 +89,7 @@ const DashboardPage: React.FC = () => {
 
   const getProjectProgress = (project: IProject) => {
     if (!project.sources || project.sources.length === 0) return 0;
-    const completedSources = project.sources.filter(
+    const completedSources = (project.sources || []).filter(
       (source) => source.status === 'completed'
     ).length;
     return Math.round((completedSources / project.sources.length) * 100);
@@ -397,7 +397,9 @@ const DashboardPage: React.FC = () => {
         <Box sx={{ flex: '1 1 250px', minWidth: 250 }}>
           <StatCard
             title='پروژه‌های فعال'
-            value={projects?.filter((p) => p.status === 'active').length || 0}
+            value={
+              projects?.filter((p) => p.status === 'در حال انجام').length || 0
+            }
             icon={<TrendingUp />}
             color='success'
           />
@@ -406,7 +408,7 @@ const DashboardPage: React.FC = () => {
           <StatCard
             title='منابع این ماه'
             value={
-              sources?.filter((s) => {
+              (sources || [])?.filter((s) => {
                 const sourceDate = new Date(s.createdAt || new Date());
                 const now = new Date();
                 return (

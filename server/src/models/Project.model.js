@@ -16,11 +16,39 @@ const projectSchema = new Schema(
       type: String,
       trim: true,
     },
+    status: {
+      type: String,
+      enum: ['در حال انجام', 'خاتمه یافته', 'کنسل شده'],
+      default: 'در حال انجام',
+    },
+    progress: {
+      type: Number,
+      min: 0,
+      max: 100,
+      default: 0,
+    },
+    startDate: {
+      type: Date,
+      default: Date.now,
+    },
+    endDate: {
+      type: Date,
+    },
+    estimatedDuration: {
+      type: Number, // تعداد روزهای تخمینی
+    },
+    priority: {
+      type: String,
+      enum: ['کم', 'متوسط', 'زیاد', 'فوری'],
+      default: 'متوسط',
+    },
     tags: [String],
-    sources: [{
-      type: Schema.Types.ObjectId,
-      ref: 'Source', 
-    }],
+    sources: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: 'Source',
+      },
+    ],
   },
   {
     timestamps: true,

@@ -16,7 +16,9 @@ const userSchema = new Schema(
     },
     password: {
       type: String,
-      require: true,
+      require: function () {
+        return !this.googleId && !this.githubId; // Password required only for local auth
+      },
     },
     isVerified: {
       type: Boolean,
@@ -58,6 +60,22 @@ const userSchema = new Schema(
       trim: true,
       maxlength: 500,
     },
+    // OAuth fields
+    googleId: {
+      type: String,
+      default: null,
+      sparse: true, // Allow multiple null values
+    },
+    githubId: {
+      type: String,
+      default: null,
+      sparse: true, // Allow multiple null values
+    },
+    provider: {
+      type: String,
+      enum: ['local', 'google', 'github'],
+      default: 'local',
+    },
   },
   {
     timestamps: true, // Add createAt and updateAt Automatically
@@ -67,7 +85,8 @@ const userSchema = new Schema(
 // Middlewares
 // Hash Password before saving it to the database
 userSchema.pre('save', async function (next) {
-  if (!this.isModified('password')) {
+  // Skip password hashing for OAuth users
+  if (this.provider !== 'local' || !this.isModified('password')) {
     return next();
   }
 

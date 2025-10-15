@@ -16,17 +16,30 @@ import Source from '../models/Source.model.js';
  */
 
 const createProject = asyncHandler(async (req, res) => {
-  const { title, description, tags } = req.body;
+  const {
+    title,
+    description,
+    tags,
+    status = 'در حال انجام',
+    estimatedDuration,
+    priority = 'متوسط',
+  } = req.body;
+
   if (!title) {
     res.status(400);
     throw new Error('پروژه باید دارای عنوان باشد');
   }
+
   const project = new Project({
     user: req.user._id,
     title,
     description,
     tags,
+    status,
+    estimatedDuration,
+    priority,
   });
+
   const createdProject = await project.save();
   ApiResponse.success(res, createdProject, 'پروژه با موفقیت ایجاد شد', 201);
 });
@@ -180,6 +193,204 @@ const generateProjectCitations = asyncHandler(async (req, res) => {
   }
 });
 
+// <-------------- Update Project Status ----------------------->
+// @desc update project status
+// @route PUT /api/v1/projects/:id/status
+// @access Private
+
+const updateProjectStatus = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+
+  if (
+    !status ||
+    !['در حال انجام', 'خاتمه یافته', 'کنسل شده'].includes(status)
+  ) {
+    res.status(400);
+    throw new Error(
+      'وضعیت پروژه باید یکی از موارد زیر باشد: در حال انجام، خاتمه یافته، کنسل شده'
+    );
+  }
+
+  const project = await Project.findById(id);
+  if (!project) {
+    res.status(404);
+    throw new Error('پروژه یافت نشد');
+  }
+
+  // Check ownership
+  if (project.user.toString() !== req.user._id.toString()) {
+    res.status(401);
+    throw new Error('شما مجاز به تغییر وضعیت این پروژه نیستید');
+  }
+
+  // Update status and end date if completed or cancelled
+  const updateData = { status };
+  if (status === 'خاتمه یافته' || status === 'کنسل شده') {
+    updateData.endDate = new Date();
+    updateData.progress = 100;
+  }
+
+  const updatedProject = await Project.findByIdAndUpdate(id, updateData, {
+    new: true,
+  });
+
+  ApiResponse.success(
+    res,
+    updatedProject,
+    'وضعیت پروژه با موفقیت بروزرسانی شد'
+  );
+});
+
+// <-------------- Update Project Progress ----------------------->
+// @desc update project progress
+// @route PUT /api/v1/projects/:id/progress
+// @access Private
+
+const updateProjectProgress = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { progress } = req.body;
+
+  if (progress === undefined || progress < 0 || progress > 100) {
+    res.status(400);
+    throw new Error('پیشرفت پروژه باید بین 0 تا 100 باشد');
+  }
+
+  const project = await Project.findById(id);
+  if (!project) {
+    res.status(404);
+    throw new Error('پروژه یافت نشد');
+  }
+
+  // Check ownership
+  if (project.user.toString() !== req.user._id.toString()) {
+    res.status(401);
+    throw new Error('شما مجاز به تغییر پیشرفت این پروژه نیستید');
+  }
+
+  // Auto-update status based on progress
+  let status = project.status;
+  if (progress === 100 && status === 'در حال انجام') {
+    status = 'خاتمه یافته';
+  } else if (progress < 100 && status === 'خاتمه یافته') {
+    status = 'در حال انجام';
+  }
+
+  const updateData = { progress, status };
+  if (progress === 100 && status === 'خاتمه یافته') {
+    updateData.endDate = new Date();
+  }
+
+  const updatedProject = await Project.findByIdAndUpdate(id, updateData, {
+    new: true,
+  });
+
+  ApiResponse.success(
+    res,
+    updatedProject,
+    'پیشرفت پروژه با موفقیت بروزرسانی شد'
+  );
+});
+
+// <-------------- Calculate Project Progress ----------------------->
+// @desc calculate project progress based on sources
+// @route POST /api/v1/projects/:id/calculate-progress
+// @access Private
+
+const calculateProjectProgress = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  const project = await Project.findById(id).populate('sources');
+  if (!project) {
+    res.status(404);
+    throw new Error('پروژه یافت نشد');
+  }
+
+  // Check ownership
+  if (project.user.toString() !== req.user._id.toString()) {
+    res.status(401);
+    throw new Error('شما مجاز به محاسبه پیشرفت این پروژه نیستید');
+  }
+
+  // Calculate progress based on sources
+  let progress = 0;
+  if (project.sources && project.sources.length > 0) {
+    const completedSources = project.sources.filter(
+      (source) => source.status === 'completed'
+    ).length;
+    progress = Math.round((completedSources / project.sources.length) * 100);
+  }
+
+  // Update project progress
+  const updatedProject = await Project.findByIdAndUpdate(
+    id,
+    { progress },
+    { new: true }
+  );
+
+  ApiResponse.success(
+    res,
+    {
+      project: updatedProject,
+      calculatedProgress: progress,
+      totalSources: project.sources?.length || 0,
+      completedSources:
+        project.sources?.filter((source) => source.status === 'completed')
+          .length || 0,
+    },
+    'پیشرفت پروژه با موفقیت محاسبه شد'
+  );
+});
+
+// <-------------- Get Project Statistics ----------------------->
+// @desc get project statistics
+// @route GET /api/v1/projects/:id/statistics
+// @access Private
+
+const getProjectStatistics = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  const project = await Project.findById(id).populate('sources');
+  if (!project) {
+    res.status(404);
+    throw new Error('پروژه یافت نشد');
+  }
+
+  // Check ownership
+  if (project.user.toString() !== req.user._id.toString()) {
+    res.status(401);
+    throw new Error('شما مجاز به مشاهده آمار این پروژه نیستید');
+  }
+
+  const stats = {
+    totalSources: project.sources?.length || 0,
+    completedSources:
+      project.sources?.filter((source) => source.status === 'completed')
+        .length || 0,
+    pendingSources:
+      project.sources?.filter((source) => source.status === 'pending').length ||
+      0,
+    reviewedSources:
+      project.sources?.filter((source) => source.status === 'reviewed')
+        .length || 0,
+    progress: project.progress,
+    status: project.status,
+    startDate: project.startDate,
+    endDate: project.endDate,
+    estimatedDuration: project.estimatedDuration,
+    priority: project.priority,
+    daysElapsed: project.startDate
+      ? Math.floor((new Date() - project.startDate) / (1000 * 60 * 60 * 24))
+      : 0,
+    estimatedCompletion:
+      project.estimatedDuration && project.progress > 0
+        ? Math.round((project.estimatedDuration * project.progress) / 100)
+        : null,
+  };
+
+  ApiResponse.success(res, stats, 'آمار پروژه با موفقیت دریافت شد');
+});
+
 export {
   createProject,
   addExistingSourcesToProject,
@@ -189,4 +400,8 @@ export {
   deleteProject,
   removeSourceFromProject,
   generateProjectCitations,
+  updateProjectStatus,
+  updateProjectProgress,
+  calculateProjectProgress,
+  getProjectStatistics,
 };

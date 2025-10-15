@@ -42,13 +42,17 @@ const RecentActivity: React.FC<RecentActivityProps> = ({
       type: 'project' as const,
       title: project.title,
       description: `پروژه ${
-        project.status === 'active' ? 'فعال' : 'تکمیل شده'
+        project.status === 'در حال انجام'
+          ? 'فعال'
+          : project.status === 'خاتمه یافته'
+          ? 'تکمیل شده'
+          : 'کنسل شده'
       }`,
       timestamp: project.createdAt,
       icon: <FolderOpen />,
       color: 'primary' as const,
     })),
-    ...sources.slice(0, 3).map((source) => ({
+    ...(sources || []).slice(0, 3).map((source) => ({
       id: `source-${source._id}`,
       type: 'source' as const,
       title: source.title,

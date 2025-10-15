@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import type { AppDispatch, RootState } from '../../store';
+import { useView } from '../../contexts/ViewContext';
 import {
   deleteProject,
   fetchProjects,
@@ -14,7 +16,6 @@ import {
   Card,
   CardContent,
   CardActions,
-  CardActionArea,
   IconButton,
   Chip,
   Avatar,
@@ -53,19 +54,18 @@ import ConfirmationDialog from '../../components/common/ConfirmationDialog';
 
 const ProjectsPage: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
+  const navigate = useNavigate();
+  const { projectView, setProjectView } = useView();
   const { projects, isLoading, error } = useSelector(
     (state: RootState) => state.projects
   );
-  
+
   // State for new project modal
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isWarningDialogOpen, setIsWarningDialogOpen] = useState(false);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(
     null
   );
-
-  // State for view mode (list or card)
-  const [viewMode, setViewMode] = useState<'list' | 'card'>('card');
 
   // در زمان بارگذاری صفحه، پروژه‌ها را واکشی کن
   useEffect(() => {
@@ -80,10 +80,10 @@ const ProjectsPage: React.FC = () => {
   // Handle view mode change
   const handleViewModeChange = (
     _event: React.MouseEvent<HTMLElement>,
-    newViewMode: 'list' | 'card' | null
+    newViewMode: 'grid' | 'list' | null
   ) => {
     if (newViewMode !== null) {
-      setViewMode(newViewMode);
+      setProjectView(newViewMode);
     }
   };
 
@@ -192,7 +192,7 @@ const ProjectsPage: React.FC = () => {
             <Stack direction='row' spacing={2} alignItems='center'>
               {/* View Toggle */}
               <ToggleButtonGroup
-                value={viewMode}
+                value={projectView}
                 exclusive
                 onChange={handleViewModeChange}
                 size='small'
@@ -215,7 +215,7 @@ const ProjectsPage: React.FC = () => {
                   },
                 }}
               >
-                <ToggleButton value='card' aria-label='card view'>
+                <ToggleButton value='grid' aria-label='grid view'>
                   <ViewModule fontSize='small' sx={{ mr: 1 }} />
                   کارت
                 </ToggleButton>
@@ -347,7 +347,7 @@ const ProjectsPage: React.FC = () => {
           ) : (
             // Projects Display
             <Slide direction='up' in timeout={800}>
-              {viewMode === 'card' ? (
+              {projectView === 'grid' ? (
                 // Card View - Academic Design
                 <Grid container spacing={3}>
                   {projects.map((project, index) => (
@@ -375,14 +375,16 @@ const ProjectsPage: React.FC = () => {
                             },
                           }}
                         >
-                          <CardActionArea
-                            // component={Link}
-                            // to={`/app/projects/${project._id}`}
+                          <Box
                             sx={{
                               height: '100%',
                               display: 'flex',
                               flexDirection: 'column',
+                              cursor: 'pointer',
                             }}
+                            onClick={() =>
+                              navigate(`/app/projects/${project._id}`)
+                            }
                           >
                             <CardContent sx={{ flex: 1, p: 3 }}>
                               <Stack spacing={2.5}>
@@ -490,6 +492,7 @@ const ProjectsPage: React.FC = () => {
                                     size='small'
                                     component={RouterLink}
                                     to={`/app/projects/${project._id}`}
+                                    onClick={(e) => e.stopPropagation()}
                                     sx={{
                                       borderRadius: 1.5,
                                       bgcolor: 'primary.main',
@@ -509,7 +512,8 @@ const ProjectsPage: React.FC = () => {
 
                                 <Tooltip title='حذف پروژه'>
                                   <IconButton
-                                    onClick={() => {
+                                    onClick={(e) => {
+                                      e.stopPropagation();
                                       handleOpenWarningDialog();
                                       setSelectedProjectId(project._id);
                                     }}
@@ -540,7 +544,7 @@ const ProjectsPage: React.FC = () => {
                                 <Box sx={{ flex: 1 }} />
                               </Stack>
                             </CardActions>
-                          </CardActionArea>
+                          </Box>
                         </Card>
                       </Fade>
                     </Grid>

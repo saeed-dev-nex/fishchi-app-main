@@ -42,7 +42,7 @@ export const SourcesSection: React.FC<SourcesSectionProps> = ({
   activeSourceId,
 }) => {
   const numSelected = selected.length;
-  const sourceCount = sources.length;
+  const sourceCount = Array.isArray(sources) ? sources.length : 0;
 
   const renderContent = () => {
     if (isLoading)
@@ -82,16 +82,18 @@ export const SourcesSection: React.FC<SourcesSectionProps> = ({
 
     return (
       <List>
-        {sources.map((source) => (
-          <SourceListItem
-            key={source._id}
-            source={source}
-            isSelected={selected.includes(source._id)}
-            onSelect={onSelect}
-            onSelectSource={onSelectSource}
-            activeSourceId={activeSourceId}
-          />
-        ))}
+        {Array.isArray(sources)
+          ? sources.map((source) => (
+              <SourceListItem
+                key={source._id}
+                source={source}
+                isSelected={selected.includes(source._id)}
+                onSelect={onSelect}
+                onSelectSource={onSelectSource}
+                activeSourceId={activeSourceId}
+              />
+            ))
+          : null}
       </List>
     );
   };

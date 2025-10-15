@@ -26,13 +26,18 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({
 
   // Calculate statistics
   const totalProjects = projects.length;
-  const activeProjects = projects.filter((p) => p.status === 'active').length;
+  const activeProjects = projects.filter(
+    (p) => p.status === 'در حال انجام'
+  ).length;
   const completedProjects = projects.filter(
-    (p) => p.status === 'completed'
+    (p) => p.status === 'خاتمه یافته'
+  ).length;
+  const cancelledProjects = projects.filter(
+    (p) => p.status === 'کنسل شده'
   ).length;
 
-  const totalSources = sources.length;
-  const sourcesThisMonth = sources.filter((s) => {
+  const totalSources = (sources || []).length;
+  const sourcesThisMonth = (sources || []).filter((s) => {
     const sourceDate = new Date(s.createdAt);
     const now = new Date();
     return (
@@ -41,7 +46,7 @@ const DashboardStats: React.FC<DashboardStatsProps> = ({
     );
   }).length;
 
-  const sourcesLastMonth = sources.filter((s) => {
+  const sourcesLastMonth = (sources || []).filter((s) => {
     const sourceDate = new Date(s.createdAt);
     const now = new Date();
     const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1);

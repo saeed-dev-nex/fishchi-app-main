@@ -22,8 +22,13 @@ const ProgressChart: React.FC<ProgressChartProps> = ({ projects, sources }) => {
   const theme = useTheme();
 
   const getProjectProgress = (project: IProject) => {
+    // Use the progress field if available, otherwise calculate from sources
+    if (project.progress !== undefined) {
+      return project.progress;
+    }
+
     if (!project.sources || project.sources.length === 0) return 0;
-    const completedSources = project.sources.filter(
+    const completedSources = (project.sources || []).filter(
       (source) => source.status === 'completed'
     ).length;
     return Math.round((completedSources / project.sources.length) * 100);

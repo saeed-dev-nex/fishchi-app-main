@@ -63,9 +63,12 @@ export const fetchAllUserSources = createAsyncThunk(
         `/sources?${queryParams.toString()}`
       );
       return data.data as SourcesResponse;
-    } catch (error: unknown) {
+    } catch (error: any) {
       const message =
-        error instanceof Error ? error.message : 'An error occurred';
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        error.message ||
+        'خطایی در دریافت منابع رخ داد';
       return thunkAPI.rejectWithValue(message);
     }
   }
@@ -75,11 +78,16 @@ export const fetchSourcesByProject = createAsyncThunk(
   'source/fetchSources',
   async (projectId: string, { rejectWithValue }) => {
     try {
-      const { data } = await apiClient.get(`/sources?projectId=${projectId}`);
-      return data.data as ISource[];
-    } catch (error: unknown) {
+      const { data } = await apiClient.get(
+        `/sources?projectId=${projectId}&limit=1000`
+      );
+      return data.data.sources as ISource[];
+    } catch (error: any) {
       const message =
-        error instanceof Error ? error.message : 'An error occurred';
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        error.message ||
+        'خطایی در دریافت منابع پروژه رخ داد';
       return rejectWithValue(message);
     }
   }
@@ -91,9 +99,12 @@ export const deleteSource = createAsyncThunk(
     try {
       await apiClient.delete(`/sources/${sourceId}`);
       return sourceId;
-    } catch (error: unknown) {
+    } catch (error: any) {
       const message =
-        error instanceof Error ? error.message : 'An error occurred';
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        error.message ||
+        'خطایی در حذف منبع رخ داد';
       return thunkAPI.rejectWithValue(message);
     }
   }
@@ -107,9 +118,12 @@ export const createSource = createAsyncThunk(
       const { data } = await apiClient.post('/sources', sourceData);
 
       return data.data;
-    } catch (error: unknown) {
+    } catch (error: any) {
       const message =
-        error instanceof Error ? error.message : 'An error occurred';
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        error.message ||
+        'خطایی در ایجاد منبع رخ داد';
       return thunkAPI.rejectWithValue(message);
     }
   }
@@ -213,7 +227,7 @@ const sourceSlice = createSlice({
       })
       .addCase(fetchSourcesByProject.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.sourcesByProject = action.payload;
+        state.sourcesByProject = action.payload || [];
       })
       .addCase(fetchSourcesByProject.rejected, (state, action) => {
         state.isLoading = false;
@@ -323,7 +337,7 @@ const sourceSlice = createSlice({
       })
       .addCase(fetchAllUserSources.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.sources = action.payload.sources;
+        state.sources = action.payload.sources || [];
         state.pagination = action.payload.pagination;
         state.search = action.payload.search;
         state.sort = action.payload.sort;

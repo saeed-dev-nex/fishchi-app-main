@@ -11,7 +11,7 @@ import {
 } from '@mui/material';
 import { useDispatch, useSelector } from 'react-redux';
 import type { AppDispatch, RootState } from '../../store'; // تایپ‌های store را از فایل store وارد کنید
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { verifyEmail, clearState } from '../../store/features/authSlice'; // Thunk و Action را وارد کنید
 
 const pulseAnimation = keyframes`
@@ -32,6 +32,7 @@ const pulseAnimation = keyframes`
 const VerificationEmail: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   const email = searchParams.get('email');
 
@@ -54,9 +55,10 @@ const VerificationEmail: React.FC = () => {
   // ریدایرکت به داشبورد در صورت موفقیت
   useEffect(() => {
     if (user) {
-      navigate('/app');
+      const from = location.state?.from?.pathname || '/app';
+      navigate(from, { replace: true });
     }
-  }, [user, navigate]);
+  }, [user, navigate, location.state]);
 
   // تابعی که وقتی کد کامل شد، آن را به Redux ارسال می‌کند
   const onCodeComplete = (completedCode: string) => {

@@ -98,18 +98,20 @@ const AddSourceModal: React.FC<AddSourceModalProps> = ({
   } = useForm<UrlFormInputs>();
 
   useEffect(() => {
-    // با هر بار باز شدن مودال، خطاها را پاک کن
+    // با هر بار باز شدن مودال، خطاها را پاک کن و منابع را واکشی کن
     if (open) {
       dispatch(clearError());
+      // واکشی تمام منابع برای تب کتابخانه
+      dispatch(
+        fetchAllUserSources({
+          page: 1,
+          limit: 1000,
+          sortBy: 'createdAt',
+          sortOrder: 'desc',
+        })
+      );
     }
   }, [open, dispatch]);
-  useEffect(() => {
-    // اگر تب کتابخانه باز شد و منابع لود نشده بودند، آن‌ها را واکشی کن
-    if (open && activeTab === 3) {
-      // فرض کنیم تب چهارم است
-      dispatch(fetchAllUserSources());
-    }
-  }, [open, activeTab, dispatch]);
 
   const handleAddFromLibrary = async () => {
     if (selectedLibrary.length === 0) return;

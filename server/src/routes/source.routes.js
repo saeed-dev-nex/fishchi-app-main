@@ -9,7 +9,6 @@ import {
   getSources,
   getSourcesByProject,
   importSourceByDOI,
-  importSourceByUrl,
   updateSource,
 } from '../controllers/source.controller.js';
 
@@ -19,7 +18,6 @@ router.use(protect);
 router.get('/', getSources);
 router.route('/').post(createSource).get(getSourcesByProject);
 router.route('/import-doi').post(importSourceByDOI);
-router.route('/import-url').post(importSourceByUrl);
 
 // Specific routes must come before parameterized routes
 router.get('/:id/projects', getSourceProjects);

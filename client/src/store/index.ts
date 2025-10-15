@@ -4,6 +4,7 @@ import projectReducer from './features/projectSlice';
 import sourceReducer from './features/sourceSlice';
 import noteReducer from './features/noteSlice';
 import profileReducer from './features/profileSlice';
+import settingsReducer from './features/settingsSlice';
 
 export const store = configureStore({
   reducer: {
@@ -12,6 +13,7 @@ export const store = configureStore({
     sources: sourceReducer,
     notes: noteReducer,
     profile: profileReducer,
+    settings: settingsReducer,
   },
 });
 

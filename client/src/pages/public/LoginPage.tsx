@@ -26,7 +26,7 @@ import {
   GitHub,
 } from '@mui/icons-material';
 import loginImage from '../../assets/images/login.jpg';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import type { AppDispatch, RootState } from '../../store';
 import { useForm, type SubmitHandler } from 'react-hook-form';
@@ -39,6 +39,7 @@ import { clearState, loginUser } from '../../store/features/authSlice';
 const LoginPage: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
+  const location = useLocation();
   const { isLoading, user, error } = useSelector(
     (state: RootState) => state.auth
   );
@@ -60,14 +61,29 @@ const LoginPage: React.FC = () => {
   useEffect(() => {
     dispatch(clearState());
   }, [dispatch]);
+
   useEffect(() => {
     if (user) {
-      navigate('/app');
+      // Redirect to the intended destination or dashboard
+      const from = location.state?.from?.pathname || '/app';
+      navigate(from, { replace: true });
     }
-  }, [user, navigate]);
+  }, [user, navigate, location.state]);
 
   const onSubmit: SubmitHandler<LoginFormInputs> = (data) => {
     dispatch(loginUser(data));
+  };
+
+  const handleGoogleLogin = () => {
+    window.location.href = `${
+      import.meta.env.VITE_API_URL || 'http://localhost:3000'
+    }/api/v1/auth/google`;
+  };
+
+  const handleGitHubLogin = () => {
+    window.location.href = `${
+      import.meta.env.VITE_API_URL || 'http://localhost:3000'
+    }/api/v1/auth/github`;
   };
 
   return (
@@ -142,9 +158,11 @@ const LoginPage: React.FC = () => {
               sx={{ mt: 1, width: '100%' }}
               onSubmit={handleSubmit(onSubmit)}
             >
-              <Alert severity='error' sx={{ width: '100%' }}>
-                {error}
-              </Alert>
+              {error && (
+                <Alert severity='error' sx={{ width: '100%', mb: 2 }}>
+                  {error}
+                </Alert>
+              )}
               <TextField
                 variant='outlined'
                 margin='normal'
@@ -250,6 +268,7 @@ const LoginPage: React.FC = () => {
                   fullWidth
                   variant='outlined'
                   startIcon={<Google />}
+                  onClick={handleGoogleLogin}
                   sx={{
                     py: 1.5,
                     borderRadius: 30,
@@ -268,6 +287,7 @@ const LoginPage: React.FC = () => {
                   fullWidth
                   variant='outlined'
                   startIcon={<GitHub />}
+                  onClick={handleGitHubLogin}
                   sx={{
                     py: 1.5,
                     borderRadius: 30,

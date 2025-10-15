@@ -25,7 +25,7 @@ interface SourcesPaginationProps {
 const SourcesPagination: React.FC<SourcesPaginationProps> = ({
   pagination,
   onPageChange,
-  onPageSizeChange,
+  // onPageSizeChange,
 }) => {
   const {
     currentPage,

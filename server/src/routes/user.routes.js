@@ -4,6 +4,7 @@ import {
   loginUser,
   registerUser,
   verifyEmail,
+  logoutUser,
   updateUserProfile,
   changePassword,
   uploadAvatar,
@@ -17,6 +18,7 @@ const router = Router();
 router.post('/register', registerUser);
 router.post('/verify-email', verifyEmail);
 router.post('/login', loginUser);
+router.post('/logout', protect, logoutUser);
 router.get('/profile', protect, getUserProfile);
 router.put('/profile', protect, updateUserProfile);
 router.put('/password', protect, changePassword);

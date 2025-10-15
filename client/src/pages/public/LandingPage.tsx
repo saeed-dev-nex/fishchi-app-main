@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useTheme, styled, keyframes } from '@mui/material/styles';
 import {
   Box,
@@ -22,6 +22,9 @@ import {
   Psychology,
   ArrowForward,
 } from '@mui/icons-material';
+import { useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
+import type { RootState } from '../../store';
 
 // --- تعریف انیمیشن‌ها با Keyframes ---
 
@@ -113,6 +116,15 @@ const GradientButton = styled(Button)(({ theme }) => ({
 const LandingPage: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const navigate = useNavigate();
+  const { user, isLoading } = useSelector((state: RootState) => state.auth);
+
+  // Redirect authenticated users to dashboard
+  useEffect(() => {
+    if (!isLoading && user) {
+      navigate('/app', { replace: true });
+    }
+  }, [user, isLoading, navigate]);
 
   // لیست ویژگی‌ها برای خوانایی بهتر
   const features = [

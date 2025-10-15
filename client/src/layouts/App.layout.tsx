@@ -36,8 +36,9 @@ import {
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAppTheme } from '../contexts/ThemeContext';
 import logo_text from '../assets/images/logo.png';
-import { useSelector } from 'react-redux';
-import type { RootState } from '../store';
+import { useDispatch, useSelector } from 'react-redux';
+import type { AppDispatch, RootState } from '../store';
+import { logoutUser } from '../store/features/authSlice';
 
 const drawerWidth = 280;
 
@@ -73,6 +74,7 @@ const navigationItems: NavigationItem[] = [
 
 const AppLayout: React.FC = () => {
   const { user } = useSelector((state: RootState) => state.auth);
+  const dispatch = useDispatch<AppDispatch>();
   const theme = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
@@ -96,10 +98,16 @@ const AppLayout: React.FC = () => {
     setAnchorEl(null);
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     handleProfileMenuClose();
-    // Add logout logic here
-    navigate('/login');
+    try {
+      await dispatch(logoutUser()).unwrap();
+    } catch (error) {
+      console.error('Logout failed:', error);
+    } finally {
+      // Always redirect to login, regardless of logout success/failure
+      navigate('/login');
+    }
   };
 
   const handleNavigation = (path: string) => {

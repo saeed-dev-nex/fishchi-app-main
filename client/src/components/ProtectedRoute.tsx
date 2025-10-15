@@ -1,21 +1,14 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useSelector } from 'react-redux';
-import type {  RootState } from '../store';
+import type { RootState } from '../store';
 import { Box, CircularProgress } from '@mui/material';
-import { Navigate, Outlet } from 'react-router-dom';
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
 
 const ProtectedRoute: React.FC = () => {
+  const location = useLocation();
   const { user, isLoading } = useSelector((state: RootState) => state.auth);
 
-  useEffect(() => {
-    // Todo:
-    // If we don't have a user and we're not loading (e.g., first time), check the status
-    // isLoading is true by default, so this won't execute until the initial checkUserStatus is complete
-    // But if the user state is lost, this will check it again
-    // **Fix:** Checking should be done at the App level, not here.
-    // **Better fix:** We set isLoading to true in authSlice. We need to dispatch it in App.tsx.
-  }, []);
-
+  // Show loading while checking authentication
   if (isLoading) {
     return (
       <Box
@@ -30,7 +23,13 @@ const ProtectedRoute: React.FC = () => {
       </Box>
     );
   }
-  return user ? <Outlet /> : <Navigate to='/login' replace />;
+
+  // Redirect to login if not authenticated, preserving the intended destination
+  if (!user) {
+    return <Navigate to='/login' state={{ from: location }} replace />;
+  }
+
+  return <Outlet />;
 };
 
 export default ProtectedRoute;

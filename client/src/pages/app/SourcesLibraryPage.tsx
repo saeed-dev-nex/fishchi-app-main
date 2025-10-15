@@ -450,7 +450,7 @@ const SourcesLibraryPage: React.FC = () => {
               {viewMode === 'card' ? (
                 // Card View - Academic Design
                 <Grid container spacing={3}>
-                  {sources.map((source, index) => (
+                  {(sources || []).map((source, index) => (
                     <Grid
                       size={{ xs: 12, md: 6, lg: 4, xl: 3 }}
                       key={source._id}
@@ -705,7 +705,7 @@ const SourcesLibraryPage: React.FC = () => {
                   }}
                 >
                   <List sx={{ p: 0 }}>
-                    {sources.map((source, index) => (
+                    {(sources || []).map((source, index) => (
                       <React.Fragment key={source._id}>
                         <Fade in timeout={600 + index * 100}>
                           <ListItem

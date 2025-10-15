@@ -555,14 +555,15 @@ const ProjectDetailPage: React.FC = () => {
                       </Box>
                     ) : (
                       <SourcesSection
-                        sources={sourcesByProject || []}
-                        isLoading={false}
-                        error={null}
-                        viewMode={viewMode}
+                        sources={
+                          Array.isArray(sourcesByProject)
+                            ? sourcesByProject
+                            : []
+                        }
+                        isLoading={sourcesLoading}
+                        error={sourcesError}
                         selected={selectedSources}
-                        onViewChange={handleViewChange}
                         onSelect={handleSelectSource}
-                        onSelectAll={handleSelectAllSources}
                         onOpenAddSourceModal={() =>
                           setDialogs((prev) => ({ ...prev, addSource: true }))
                         }

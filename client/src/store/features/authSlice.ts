@@ -1,5 +1,5 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
-import axios from 'axios';
+
 import type {
   IAuthState,
   IUser,
@@ -8,10 +8,11 @@ import type {
   VerifyFormInputs,
 } from '../../types';
 import apiClient from '../../api/axios';
+import { extractErrorMessage, ERROR_MESSAGES } from '../../utils/errorHandler';
 
 const initialState: IAuthState = {
   user: null,
-  isLoading: false,
+  isLoading: true, // Start with loading true to check auth status
   isRegistered: false,
   error: null,
   message: null,
@@ -25,10 +26,9 @@ export const checkUserStatus = createAsyncThunk(
     try {
       const { data } = await apiClient.get('/users/profile');
       return data.data as IUser;
-    } catch (error: any) {
-      console.log(error.response?.message);
-
-      return thunkAPI.rejectWithValue(error.response?.message);
+    } catch {
+      // Don't log error for auth check failure - it's expected for non-authenticated users
+      return thunkAPI.rejectWithValue('Not authenticated');
     }
   }
 );
@@ -40,14 +40,8 @@ export const registerUser = createAsyncThunk(
     try {
       const { data } = await apiClient.post('/users/register', userData);
       return data.data as IUser;
-    } catch (error: any) {
-      const message =
-        (error.response &&
-          error.response.data &&
-          error.response.data.message) ||
-        error.message ||
-        error.toString();
-
+    } catch (error: unknown) {
+      const message = extractErrorMessage(error, ERROR_MESSAGES.REGISTER);
       return thunkAPI.rejectWithValue(message);
     }
   }
@@ -62,14 +56,8 @@ export const verifyEmail = createAsyncThunk(
       console.log(data);
 
       return data.data as IUser;
-    } catch (error: any) {
-      const message =
-        (error.response &&
-          error.response.data &&
-          error.response.data.message) ||
-        error.message ||
-        error.toString();
-
+    } catch (error: unknown) {
+      const message = extractErrorMessage(error, ERROR_MESSAGES.VERIFY_EMAIL);
       return thunkAPI.rejectWithValue(message);
     }
   }
@@ -81,20 +69,27 @@ export const loginUser = createAsyncThunk(
     try {
       const { data } = await apiClient.post('/users/login', loginData);
       return data.data as IUser;
-    } catch (error: any) {
-      console.log(error.response?.message);
-      const message =
-        (error.response &&
-          error.response.data &&
-          error.response.data.message) ||
-        error.message ||
-        error.toString();
-
+    } catch (error: unknown) {
+      console.log(error instanceof Error ? error.message : 'Unknown error');
+      const message = extractErrorMessage(error, ERROR_MESSAGES.LOGIN);
       return thunkAPI.rejectWithValue(message);
     }
   }
 );
-
+//
+// 5. Logout User
+export const logoutUser = createAsyncThunk(
+  'auth/logout',
+  async (_, thunkAPI) => {
+    try {
+      const { data } = await apiClient.post('/users/logout');
+      return data.data;
+    } catch (error: unknown) {
+      const message = extractErrorMessage(error, ERROR_MESSAGES.LOGOUT);
+      return thunkAPI.rejectWithValue(message);
+    }
+  }
+);
 // Create Slice
 export const authSlice = createSlice({
   name: 'auth',
@@ -102,6 +97,9 @@ export const authSlice = createSlice({
   reducers: {
     logout: (state) => {
       state.user = null;
+      state.isLoading = false;
+      state.error = null;
+      state.message = null;
     },
     clearState: (state) => {
       state.isRegistered = false;
@@ -126,10 +124,10 @@ export const authSlice = createSlice({
         state.user = action.payload;
         state.error = null;
       })
-      .addCase(checkUserStatus.rejected, (state, action) => {
+      .addCase(checkUserStatus.rejected, (state) => {
         state.isLoading = false;
         state.user = null;
-        state.error = action.payload as string;
+        state.error = null; // Don't set error for auth check failure
       })
       // ----- Register User -----
       .addCase(registerUser.pending, (state) => {
@@ -172,8 +170,22 @@ export const authSlice = createSlice({
       .addCase(loginUser.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;
+      })
+      // ----- Logout User -----
+      .addCase(logoutUser.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(logoutUser.fulfilled, (state) => {
+        state.isLoading = false;
+        state.user = null;
+        state.error = null;
+      })
+      .addCase(logoutUser.rejected, (state, action) => {
+        state.isLoading = false;
+        state.user = null; // Clear user even if logout fails
+        state.error = action.payload as string;
       });
   },
 });
-export const { logout, clearState, updateUserProfile } = authSlice.actions;
+export const { clearState, updateUserProfile, logout } = authSlice.actions;
 export default authSlice.reducer;
