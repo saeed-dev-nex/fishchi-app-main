@@ -19,11 +19,12 @@
     statusText: document.querySelector('.status-text'),
 
     // Login form
-    emailInput: document.getElementById('email'),
-    passwordInput: document.getElementById('password'),
     loginBtn: document.getElementById('loginBtn'),
-    loginBtnText: document.querySelector('#loginBtn .btn-text'),
-    loginBtnLoader: document.querySelector('#loginBtn .btn-loader'),
+
+    // User info
+    userName: document.getElementById('userName'),
+    userEmail: document.getElementById('userEmail'),
+    logoutBtn: document.getElementById('logoutBtn'),
 
     // Source preview
     previewTitle: document.getElementById('previewTitle'),
@@ -68,16 +69,43 @@
   let currentState = 'loading';
   let currentSourceInfo = null;
   let projects = [];
+  let userData = null;
+
+  // Check if background script is running
+  async function checkBackgroundScript() {
+    try {
+      // First check if chrome.runtime is available
+      if (!chrome || !chrome.runtime) {
+        throw new Error('Chrome runtime API is not available');
+      }
+
+      const response = await sendMessage({ action: 'ping' });
+      return true;
+    } catch (error) {
+      const errorMessage = handleError(error, 'during background script check');
+      console.error('Background script check failed:', errorMessage);
+      return false;
+    }
+  }
 
   // Initialize popup
   async function init() {
     try {
+      // Check if background script is running
+      const backgroundRunning = await checkBackgroundScript();
+      if (!backgroundRunning) {
+        showError(
+          'Background script در حال اجرا نیست. لطفاً افزونه را reload کنید.'
+        );
+        return;
+      }
+
       await checkAuthStatus();
       await loadProjects();
       setupEventListeners();
     } catch (error) {
-      console.error('Initialization error:', error);
-      showError('خطا در راه‌اندازی اکستنشن');
+      const errorMessage = handleError(error, 'during initialization');
+      showError('خطا در راه‌اندازی اکستنشن: ' + errorMessage);
     }
   }
 
@@ -87,6 +115,7 @@
       const response = await sendMessage({ action: 'checkAuth' });
 
       if (response.authenticated) {
+        userData = response.user;
         showExtractSection();
         updateStatus('connected', 'متصل به فیشچی');
       } else {
@@ -94,9 +123,9 @@
         updateStatus('disconnected', 'نیاز به ورود');
       }
     } catch (error) {
-      console.error('Auth check error:', error);
+      const errorMessage = handleError(error, 'during auth check');
       showLoginSection();
-      updateStatus('error', 'خطا در ارتباط');
+      updateStatus('error', 'خطا در ارتباط با سرور: ' + errorMessage);
     }
   }
 
@@ -110,6 +139,7 @@
       }
     } catch (error) {
       console.error('Load projects error:', error);
+      // Don't show error for projects loading failure
     }
   }
 
@@ -127,88 +157,103 @@
 
   // Setup event listeners
   function setupEventListeners() {
-    // Login form
+    // Login button
     elements.loginBtn.addEventListener('click', handleLogin);
-    elements.emailInput.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') handleLogin();
-    });
-    elements.passwordInput.addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') handleLogin();
-    });
+
+    // Logout button (if exists)
+    if (elements.logoutBtn) {
+      elements.logoutBtn.addEventListener('click', handleLogout);
+    }
 
     // Extract actions
-    elements.refreshBtn.addEventListener('click', refreshSourceInfo);
-    elements.extractBtn.addEventListener('click', handleExtract);
-    elements.newExtractBtn.addEventListener('click', () => {
-      showExtractSection();
-      refreshSourceInfo();
-    });
-    elements.retryBtn.addEventListener('click', () => {
-      showExtractSection();
-      refreshSourceInfo();
-    });
+    if (elements.refreshBtn)
+      elements.refreshBtn.addEventListener('click', refreshSourceInfo);
+    if (elements.extractBtn)
+      elements.extractBtn.addEventListener('click', handleExtract);
+    if (elements.newExtractBtn) {
+      elements.newExtractBtn.addEventListener('click', () => {
+        showExtractSection();
+        refreshSourceInfo();
+      });
+    }
+    if (elements.retryBtn) {
+      elements.retryBtn.addEventListener('click', () => {
+        showExtractSection();
+        refreshSourceInfo();
+      });
+    }
 
     // Links
-    elements.registerLink.addEventListener('click', (e) => {
-      e.preventDefault();
-      chrome.tabs.create({ url: 'http://localhost:3000/register' });
-    });
-    elements.forgotPasswordLink.addEventListener('click', (e) => {
-      e.preventDefault();
-      chrome.tabs.create({ url: 'http://localhost:3000/forgot-password' });
-    });
-    elements.settingsLink.addEventListener('click', (e) => {
-      e.preventDefault();
-      chrome.tabs.create({ url: 'http://localhost:3000/settings' });
-    });
-    elements.helpLink.addEventListener('click', (e) => {
-      e.preventDefault();
-      chrome.tabs.create({ url: 'http://localhost:3000/help' });
-    });
-    elements.testLink.addEventListener('click', (e) => {
-      e.preventDefault();
-      showDebugSection();
-    });
+    if (elements.registerLink) {
+      elements.registerLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        chrome.tabs.create({ url: 'http://localhost:3000/register' });
+      });
+    }
+    if (elements.forgotPasswordLink) {
+      elements.forgotPasswordLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        chrome.tabs.create({ url: 'http://localhost:3000/forgot-password' });
+      });
+    }
+    if (elements.settingsLink) {
+      elements.settingsLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        chrome.tabs.create({ url: 'http://localhost:3000/settings' });
+      });
+    }
+    if (elements.helpLink) {
+      elements.helpLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        chrome.tabs.create({ url: 'http://localhost:3000/help' });
+      });
+    }
+    if (elements.testLink) {
+      elements.testLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        showDebugSection();
+      });
+    }
 
     // Debug event listeners
-    elements.debugLoginBtn.addEventListener('click', debugLogin);
-    elements.debugProjectsBtn.addEventListener('click', debugProjects);
-    elements.debugSourceBtn.addEventListener('click', debugCreateSource);
-    elements.debugContentBtn.addEventListener('click', debugContentScript);
-    elements.debugExtractBtn.addEventListener('click', debugExtract);
+    if (elements.debugLoginBtn)
+      elements.debugLoginBtn.addEventListener('click', debugLogin);
+    if (elements.debugProjectsBtn)
+      elements.debugProjectsBtn.addEventListener('click', debugProjects);
+    if (elements.debugSourceBtn)
+      elements.debugSourceBtn.addEventListener('click', debugCreateSource);
+    if (elements.debugContentBtn)
+      elements.debugContentBtn.addEventListener('click', debugContentScript);
+    if (elements.debugExtractBtn)
+      elements.debugExtractBtn.addEventListener('click', debugExtract);
   }
 
   // Handle login
+  // Handle login - redirect to website
   async function handleLogin() {
-    const email = elements.emailInput.value.trim();
-    const password = elements.passwordInput.value.trim();
-
-    if (!email || !password) {
-      showError('لطفاً ایمیل و رمز عبور را وارد کنید');
-      return;
-    }
-
-    setLoading(true, 'در حال ورود...');
-
     try {
-      const response = await sendMessage({
-        action: 'login',
-        email: email,
-        password: password,
-      });
+      // Open the main website login page
+      chrome.tabs.create({ url: 'http://localhost:3000/login' });
+    } catch (error) {
+      console.error('Login redirect error:', error);
+      showError('خطا در هدایت به صفحه ورود');
+    }
+  }
+
+  // Handle logout
+  async function handleLogout() {
+    try {
+      const response = await sendMessage({ action: 'logout' });
 
       if (response.success) {
-        showExtractSection();
-        updateStatus('connected', 'ورود موفق');
-        await loadProjects();
+        showLoginSection();
+        updateStatus('disconnected', 'خروج موفق');
       } else {
-        showError(response.message || 'خطا در ورود');
+        showError('خطا در خروج: ' + response.error);
       }
     } catch (error) {
-      console.error('Login error:', error);
-      showError('خطا در ارتباط با سرور');
-    } finally {
-      setLoading(false);
+      console.error('Logout error:', error);
+      showError('خطا در خروج');
     }
   }
 
@@ -480,7 +525,9 @@
   function updateSourcePreview(sourceInfo) {
     elements.previewTitle.textContent = sourceInfo.title || 'عنوان یافت نشد';
     elements.previewAuthors.textContent =
-      sourceInfo.authors?.map((a) => a.name).join(', ') || 'نویسنده نامشخص';
+      sourceInfo.authors
+        ?.map((a) => `${a.firstname} ${a.lastname}`.trim())
+        .join(', ') || 'نویسنده نامشخص';
     elements.previewYear.textContent = sourceInfo.year || 'سال نامشخص';
     elements.previewType.textContent = getTypeLabel(sourceInfo.type);
   }
@@ -508,7 +555,31 @@
     hideAllSections();
     elements.extractSection.style.display = 'block';
     currentState = 'extract';
+
+    // Update user info if available
+    updateUserInfo();
+
     refreshSourceInfo();
+  }
+
+  // Update user info display
+  function updateUserInfo() {
+    if (userData) {
+      if (elements.userName) {
+        elements.userName.textContent =
+          userData.name || userData.firstName || 'کاربر';
+      }
+      if (elements.userEmail) {
+        elements.userEmail.textContent = userData.email || 'ایمیل نامشخص';
+      }
+    } else {
+      if (elements.userName) {
+        elements.userName.textContent = 'کاربر';
+      }
+      if (elements.userEmail) {
+        elements.userEmail.textContent = 'ایمیل نامشخص';
+      }
+    }
   }
 
   function showSuccess() {
@@ -555,12 +626,51 @@
     }
   }
 
+  // Error handling helper
+  function handleError(error, context = '') {
+    console.error(`Error ${context}:`, error);
+
+    let errorMessage = 'خطای نامشخص';
+
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    } else if (typeof error === 'string') {
+      errorMessage = error;
+    } else if (error && error.message) {
+      errorMessage = error.message;
+    } else {
+      errorMessage = JSON.stringify(error);
+    }
+
+    return errorMessage;
+  }
+
   // Send message to background script
   function sendMessage(message) {
     return new Promise((resolve, reject) => {
       chrome.runtime.sendMessage(message, (response) => {
         if (chrome.runtime.lastError) {
-          reject(chrome.runtime.lastError);
+          console.error('Chrome runtime error:', chrome.runtime.lastError);
+          if (
+            chrome.runtime.lastError.message.includes(
+              'Receiving end does not exist'
+            )
+          ) {
+            reject(
+              new Error(
+                'Background script در حال اجرا نیست. لطفاً افزونه را reload کنید.'
+              )
+            );
+          } else {
+            // Convert chrome.runtime.lastError to a proper Error object
+            reject(
+              new Error(
+                chrome.runtime.lastError.message ||
+                  'خطای Chrome Runtime: ' +
+                    JSON.stringify(chrome.runtime.lastError)
+              )
+            );
+          }
         } else {
           resolve(response);
         }
@@ -607,9 +717,10 @@
   async function debugCreateSource() {
     const testSource = {
       title: 'منبع تست اکستنشن',
-      authors: [{ name: 'نویسنده تست' }],
+      authors: [{ firstname: 'نویسنده', lastname: 'تست' }],
       year: 2024,
       type: 'article',
+      language: 'persian',
       abstract: 'این یک منبع تست است',
       tags: ['تست', 'اکستنشن'],
     };
@@ -770,6 +881,17 @@
     elements.debugOutput.style.color = isSuccess ? '#28a745' : '#dc3545';
   }
 
-  // Start the popup
-  init();
+  // Start the popup with error handling
+  try {
+    init();
+  } catch (error) {
+    console.error('Failed to initialize popup:', error);
+    // Show error in UI if possible
+    if (typeof showError === 'function') {
+      showError('خطا در راه‌اندازی اکستنشن: ' + handleError(error));
+    } else {
+      // Fallback: show alert
+      alert('خطا در راه‌اندازی اکستنشن: ' + handleError(error));
+    }
+  }
 })();

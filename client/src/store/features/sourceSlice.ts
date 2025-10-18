@@ -175,7 +175,7 @@ export const fetchSourceById = createAsyncThunk(
 // ---------- 7. Update Source By ID ----------
 export const updateSourceById = createAsyncThunk(
   'sources/updateSourceById',
-  async (sourceData: CreateSourceData, thunkAPI) => {
+  async (sourceData: any, thunkAPI) => {
     console.log('sourceData:', sourceData);
     try {
       const { data } = await apiClient.put(

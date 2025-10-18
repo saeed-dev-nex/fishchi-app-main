@@ -102,7 +102,7 @@ export const SourceHeader: React.FC<SourceHeaderProps> = ({
             {source.authors?.[0] && (
               <Chip
                 icon={<Person />}
-                label={`نویسنده: ${source.authors[0].name}`}
+                label={`نویسنده: ${source.authors[0].firstname} ${source.authors[0].lastname}`.trim()}
               />
             )}
           </Stack>

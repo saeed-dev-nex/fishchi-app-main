@@ -9,6 +9,8 @@ import {
   changePassword,
   uploadAvatar,
   deleteAvatar,
+  forgotPassword,
+  resetPassword,
 } from '../controllers/user.controller.js';
 import { protect } from '../middlewares/auth.middleware.js';
 import upload from '../middlewares/upload.middleware.js';
@@ -18,6 +20,8 @@ const router = Router();
 router.post('/register', registerUser);
 router.post('/verify-email', verifyEmail);
 router.post('/login', loginUser);
+router.post('/forgot-password', forgotPassword);
+router.post('/reset-password', resetPassword);
 router.post('/logout', protect, logoutUser);
 router.get('/profile', protect, getUserProfile);
 router.put('/profile', protect, updateUserProfile);

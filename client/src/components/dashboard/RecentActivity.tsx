@@ -121,17 +121,30 @@ const RecentActivity: React.FC<RecentActivityProps> = ({
                     </Typography>
                   }
                   secondary={
-                    <Stack direction='row' alignItems='center' spacing={1}>
-                      <Typography variant='caption' color='text.secondary'>
+                    <Box component='span'>
+                      <Typography
+                        variant='caption'
+                        color='text.secondary'
+                        component='span'
+                      >
                         {activity.description}
                       </Typography>
-                      <Typography variant='caption' color='text.secondary'>
+                      <Typography
+                        variant='caption'
+                        color='text.secondary'
+                        component='span'
+                        sx={{ mx: 1 }}
+                      >
                         •
                       </Typography>
-                      <Typography variant='caption' color='text.secondary'>
+                      <Typography
+                        variant='caption'
+                        color='text.secondary'
+                        component='span'
+                      >
                         {getTimeAgo(activity.timestamp)}
                       </Typography>
-                    </Stack>
+                    </Box>
                   }
                 />
               </ListItem>

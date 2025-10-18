@@ -1,292 +1,854 @@
 // Background Script for Fishchi Extension
-// Handles authentication and API communication
+// Handles authentication, API calls, and communication with popup/content scripts
 
 (function () {
   'use strict';
 
   // Configuration
-  const CONFIG = {
-    API_BASE_URL: 'http://localhost:5000/api/v1', // Change this to your production URL
-    STORAGE_KEYS: {
-      USER_TOKEN: 'fishchi_user_token',
-      USER_INFO: 'fishchi_user_info',
-      PROJECTS: 'fishchi_projects',
-    },
+  const API_BASE_URL = 'http://localhost:3000/api/v1';
+  const STORAGE_KEYS = {
+    AUTH_TOKEN: 'fishchi_auth_token',
+    USER_DATA: 'fishchi_user_data',
+    PROJECTS: 'fishchi_projects',
   };
 
-  // API Client
-  class FishchiAPI {
-    constructor() {
-      this.baseURL = CONFIG.API_BASE_URL;
+  // State management
+  let authToken = null;
+  let userData = null;
+  let projects = [];
+
+  // Initialize background script
+  async function init() {
+    try {
+      console.log('Fishchi background script initialized');
+
+      // Load stored data
+      await loadStoredData();
+
+      // Set up message listeners
+      setupMessageListeners();
+
+      console.log('Background script ready');
+    } catch (error) {
+      console.error('Background script initialization error:', error);
     }
+  }
 
-    async request(endpoint, options = {}) {
-      const url = `${this.baseURL}${endpoint}`;
-      console.log('Making request to:', url);
+  // Load data from storage
+  async function loadStoredData() {
+    try {
+      const result = await chrome.storage.local.get([
+        STORAGE_KEYS.AUTH_TOKEN,
+        STORAGE_KEYS.USER_DATA,
+        STORAGE_KEYS.PROJECTS,
+      ]);
 
-      const defaultOptions = {
+      authToken = result[STORAGE_KEYS.AUTH_TOKEN] || null;
+      userData = result[STORAGE_KEYS.USER_DATA] || null;
+      projects = result[STORAGE_KEYS.PROJECTS] || [];
+
+      console.log('Stored data loaded:', {
+        hasToken: !!authToken,
+        hasUserData: !!userData,
+        projectsCount: projects.length,
+      });
+    } catch (error) {
+      console.error('Error loading stored data:', error);
+    }
+  }
+
+  // Save data to storage
+  async function saveToStorage(key, data) {
+    try {
+      await chrome.storage.local.set({ [key]: data });
+      console.log(`Data saved to storage: ${key}`);
+    } catch (error) {
+      console.error(`Error saving to storage (${key}):`, error);
+    }
+  }
+
+  // Setup message listeners
+  function setupMessageListeners() {
+    chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+      console.log('Background received message:', message);
+
+      // Handle async operations
+      handleMessage(message, sender)
+        .then((response) => {
+          console.log('Background sending response:', response);
+          sendResponse(response);
+        })
+        .catch((error) => {
+          console.error('Background message handling error:', error);
+          sendResponse({
+            success: false,
+            error: error.message,
+          });
+        });
+
+      // Return true to indicate async response
+      return true;
+    });
+  }
+
+  // Handle incoming messages
+  async function handleMessage(message, sender) {
+    const { action } = message;
+
+    switch (action) {
+      case 'ping':
+        return { success: true, message: 'Background script is running' };
+
+      case 'checkAuth':
+        return await checkAuthStatus();
+
+      case 'login':
+        return await handleLogin(message.email, message.password);
+
+      case 'logout':
+        return await handleLogout();
+
+      case 'getProjects':
+        return await getProjects();
+
+      case 'createSource':
+        return await createSource(message.sourceInfo, message.projectId);
+
+      case 'refreshProjects':
+        return await refreshProjects();
+
+      case 'extractSource':
+        return await handleExtractSource(message.sourceInfo, message.url);
+
+      case 'checkOAuthStatus':
+        return await checkOAuthStatus();
+
+      case 'debugCookies':
+        return await debugCookies();
+
+      case 'testAuthWithCookies':
+        return await testAuthWithCookies();
+
+      default:
+        return {
+          success: false,
+          error: `Unknown action: ${action}`,
+        };
+    }
+  }
+
+  // Check authentication status
+  async function checkAuthStatus() {
+    try {
+      // First try with stored token
+      if (authToken) {
+        const response = await makeApiRequest('/users/profile', {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+          },
+        });
+
+        if (
+          (response.success && response.user) ||
+          (response.status === 'success' && response.data)
+        ) {
+          userData = response.user || response.data;
+          await saveToStorage(STORAGE_KEYS.USER_DATA, userData);
+
+          return {
+            authenticated: true,
+            user: userData,
+          };
+        }
+      }
+
+      // If no token or token is invalid, try with cookies
+      console.log('No valid token found, checking cookies...');
+
+      const cookies = await chrome.cookies.getAll({
+        domain: 'localhost',
+      });
+
+      const authCookies = cookies.filter(
+        (cookie) =>
+          cookie.name.includes('auth') ||
+          cookie.name.includes('token') ||
+          cookie.name.includes('session') ||
+          cookie.name.includes('jwt')
+      );
+
+      if (authCookies.length > 0) {
+        console.log('Found auth cookies, trying to authenticate...');
+
+        const response = await makeApiRequestWithCookies('/users/profile', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        // Check for different response formats
+        if (
+          (response.success && response.user) ||
+          (response.status === 'success' && response.data)
+        ) {
+          userData = response.user || response.data;
+          await saveToStorage(STORAGE_KEYS.USER_DATA, userData);
+
+          // Try to extract token from cookies
+          const tokenCookie = authCookies.find(
+            (cookie) =>
+              cookie.name.includes('token') || cookie.name.includes('jwt')
+          );
+
+          if (tokenCookie) {
+            authToken = tokenCookie.value;
+            await saveToStorage(STORAGE_KEYS.AUTH_TOKEN, authToken);
+          }
+
+          return {
+            authenticated: true,
+            user: userData,
+          };
+        }
+      }
+
+      // No valid authentication found
+      await clearAuthData();
+      return {
+        authenticated: false,
+        message: 'No valid authentication found',
+      };
+    } catch (error) {
+      console.error('Auth check error:', error);
+      return {
+        authenticated: false,
+        error: error.message,
+      };
+    }
+  }
+
+  // Handle login
+  async function handleLogin(email, password) {
+    try {
+      const response = await makeApiRequest('/auth/login', {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        credentials: 'include', // Include cookies for authentication
-      };
+        body: JSON.stringify({
+          email: email,
+          password: password,
+        }),
+      });
 
-      const response = await fetch(url, { ...defaultOptions, ...options });
-      console.log('Response status:', response.status);
+      if (response.success) {
+        authToken = response.token;
+        userData = response.user;
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Error response:', errorText);
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
+        // Save to storage
+        await saveToStorage(STORAGE_KEYS.AUTH_TOKEN, authToken);
+        await saveToStorage(STORAGE_KEYS.USER_DATA, userData);
 
-      return response.json();
-    }
+        // Load projects after successful login
+        await refreshProjects();
 
-    // Token management removed - server uses HTTP-only cookies
-
-    // Authentication methods
-    async login(email, password) {
-      try {
-        const response = await this.request('/users/login', {
-          method: 'POST',
-          body: JSON.stringify({ email, password }),
-        });
-
-        if (response.status === 'success' && response.data) {
-          // Store user info and token (server uses cookies, so we'll store user info)
-          await chrome.storage.local.set({
-            [CONFIG.STORAGE_KEYS.USER_INFO]: response.data,
-          });
-          return { success: true, user: response.data };
-        }
-
-        return { success: false, message: response.message || 'خطا در ورود' };
-      } catch (error) {
-        console.error('Login error:', error);
-        return { success: false, message: 'خطا در ارتباط با سرور' };
-      }
-    }
-
-    async logout() {
-      try {
-        // Clear cookies for logout
-        await chrome.cookies.remove({
-          url: CONFIG.API_BASE_URL,
-          name: 'token',
-        });
-
-        // Clear local storage
-        await chrome.storage.local.remove(CONFIG.STORAGE_KEYS.USER_INFO);
-        await chrome.storage.local.remove(CONFIG.STORAGE_KEYS.PROJECTS);
-      } catch (error) {
-        console.error('Logout error:', error);
-      }
-    }
-
-    async getCurrentUser() {
-      try {
-        const response = await this.request('/users/profile');
-        if (response.status === 'success' && response.data) {
-          return { success: true, user: response.data };
-        }
+        return {
+          success: true,
+          user: userData,
+          token: authToken,
+        };
+      } else {
         return {
           success: false,
-          message: response.message || 'خطا در دریافت اطلاعات کاربر',
+          message: response.message || 'Login failed',
         };
-      } catch (error) {
-        console.error('Get user error:', error);
-        return { success: false, message: 'خطا در دریافت اطلاعات کاربر' };
-      }
-    }
-
-    // Source methods
-    async createSource(sourceData, projectId = null) {
-      try {
-        const body = { ...sourceData };
-        if (projectId) {
-          body.projectId = projectId;
-        }
-
-        const response = await this.request('/sources', {
-          method: 'POST',
-          body: JSON.stringify(body),
-        });
-
-        if (response.status === 'success' && response.data) {
-          return { success: true, source: response.data };
-        }
-        return {
-          success: false,
-          message: response.message || 'خطا در ذخیره منبع',
-        };
-      } catch (error) {
-        console.error('Create source error:', error);
-        return { success: false, message: 'خطا در ذخیره منبع' };
-      }
-    }
-
-    async getProjects() {
-      try {
-        const response = await this.request('/projects');
-        if (response.status === 'success' && response.data) {
-          return { success: true, projects: response.data };
-        }
-        return {
-          success: false,
-          message: response.message || 'خطا در دریافت پروژه‌ها',
-        };
-      } catch (error) {
-        console.error('Get projects error:', error);
-        return { success: false, message: 'خطا در دریافت پروژه‌ها' };
-      }
-    }
-
-    async checkAuthStatus() {
-      try {
-        // Check if user info exists in storage
-        const result = await chrome.storage.local.get(
-          CONFIG.STORAGE_KEYS.USER_INFO
-        );
-        const userInfo = result[CONFIG.STORAGE_KEYS.USER_INFO];
-
-        if (!userInfo) {
-          return { authenticated: false };
-        }
-
-        // Verify with server
-        const userResponse = await this.getCurrentUser();
-        if (userResponse.success) {
-          return { authenticated: true, user: userResponse.user };
-        } else {
-          await this.logout();
-          return { authenticated: false };
-        }
-      } catch (error) {
-        console.error('Auth check error:', error);
-        await this.logout();
-        return { authenticated: false };
-      }
-    }
-  }
-
-  // Initialize API client
-  const api = new FishchiAPI();
-
-  // Message handling
-  chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    handleMessage(request, sender, sendResponse);
-    return true; // Keep message channel open for async response
-  });
-
-  async function handleMessage(request, sender, sendResponse) {
-    try {
-      switch (request.action) {
-        case 'login':
-          const loginResult = await api.login(request.email, request.password);
-          sendResponse(loginResult);
-          break;
-
-        case 'logout':
-          await api.logout();
-          sendResponse({ success: true });
-          break;
-
-        case 'checkAuth':
-          const authStatus = await api.checkAuthStatus();
-          sendResponse(authStatus);
-          break;
-
-        case 'getProjects':
-          const projectsResult = await api.getProjects();
-          sendResponse(projectsResult);
-          break;
-
-        case 'createSource':
-          const sourceResult = await api.createSource(
-            request.sourceInfo,
-            request.projectId
-          );
-          sendResponse(sourceResult);
-          break;
-
-        case 'extractSource':
-          // Handle source extraction from content script
-          await handleSourceExtraction(request, sendResponse);
-          break;
-
-        default:
-          sendResponse({ success: false, message: 'عملیات نامشخص' });
       }
     } catch (error) {
-      console.error('Message handling error:', error);
-      sendResponse({ success: false, message: 'خطا در پردازش درخواست' });
+      console.error('Login error:', error);
+      return {
+        success: false,
+        error: error.message,
+      };
     }
   }
 
-  async function handleSourceExtraction(request, sendResponse) {
+  // Handle logout
+  async function handleLogout() {
     try {
-      // Extract source info from the page
-      const sourceInfo = request.sourceInfo;
+      // Call logout endpoint if token exists
+      if (authToken) {
+        try {
+          await makeApiRequest('/auth/logout', {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${authToken}`,
+            },
+          });
+        } catch (error) {
+          console.log(
+            'Logout API call failed, but continuing with local logout'
+          );
+        }
+      }
+
+      // Clear local data
+      await clearAuthData();
+
+      return {
+        success: true,
+        message: 'Logged out successfully',
+      };
+    } catch (error) {
+      console.error('Logout error:', error);
+      return {
+        success: false,
+        error: error.message,
+      };
+    }
+  }
+
+  // Clear authentication data
+  async function clearAuthData() {
+    authToken = null;
+    userData = null;
+    projects = [];
+
+    await chrome.storage.local.remove([
+      STORAGE_KEYS.AUTH_TOKEN,
+      STORAGE_KEYS.USER_DATA,
+      STORAGE_KEYS.PROJECTS,
+    ]);
+
+    console.log('Authentication data cleared');
+  }
+
+  // Get user projects
+  async function getProjects() {
+    try {
+      if (!authToken) {
+        return {
+          success: false,
+          error: 'Not authenticated',
+        };
+      }
+
+      // Return cached projects if available
+      if (projects.length > 0) {
+        return {
+          success: true,
+          projects: projects,
+        };
+      }
+
+      // Fetch from server
+      const response = await makeApiRequest('/projects', {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+        },
+      });
+
+      if (response.success) {
+        projects = response.projects || [];
+        await saveToStorage(STORAGE_KEYS.PROJECTS, projects);
+
+        return {
+          success: true,
+          projects: projects,
+        };
+      } else {
+        return {
+          success: false,
+          message: response.message || 'Failed to fetch projects',
+        };
+      }
+    } catch (error) {
+      console.error('Get projects error:', error);
+      return {
+        success: false,
+        error: error.message,
+      };
+    }
+  }
+
+  // Refresh projects from server
+  async function refreshProjects() {
+    try {
+      if (!authToken) {
+        return {
+          success: false,
+          error: 'Not authenticated',
+        };
+      }
+
+      const response = await makeApiRequest('/projects', {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+        },
+      });
+
+      if (response.success) {
+        projects = response.projects || [];
+        await saveToStorage(STORAGE_KEYS.PROJECTS, projects);
+
+        return {
+          success: true,
+          projects: projects,
+        };
+      } else {
+        return {
+          success: false,
+          message: response.message || 'Failed to refresh projects',
+        };
+      }
+    } catch (error) {
+      console.error('Refresh projects error:', error);
+      return {
+        success: false,
+        error: error.message,
+      };
+    }
+  }
+
+  // Handle extract source from content script
+  async function handleExtractSource(sourceInfo, url) {
+    try {
+      console.log('Extract source request received:', { sourceInfo, url });
+
+      // Validate source info
       if (!sourceInfo || !sourceInfo.title) {
-        sendResponse({ success: false, message: 'اطلاعات منبع یافت نشد' });
-        return;
+        return {
+          success: false,
+          error: 'Invalid source information provided',
+        };
       }
 
       // Check if user is authenticated
-      const authStatus = await api.checkAuthStatus();
-      if (!authStatus.authenticated) {
-        // Open popup for login
-        chrome.action.openPopup();
-        sendResponse({ success: false, message: 'لطفاً ابتدا وارد شوید' });
-        return;
+      if (!authToken) {
+        return {
+          success: false,
+          error: 'Not authenticated. Please log in first.',
+        };
       }
 
-      // Create source
-      const result = await api.createSource(sourceInfo);
-      sendResponse(result);
+      // Get user's projects to determine which project to add the source to
+      const projectsResponse = await getProjects();
+      if (
+        !projectsResponse.success ||
+        !projectsResponse.projects ||
+        projectsResponse.projects.length === 0
+      ) {
+        return {
+          success: false,
+          error: 'No projects found. Please create a project first.',
+        };
+      }
+
+      // Use the first project as default (or you could let user choose)
+      const projectId = projectsResponse.projects[0]._id;
+
+      // Create the source
+      const createResponse = await createSource(sourceInfo, projectId);
+
+      if (createResponse.success) {
+        return {
+          success: true,
+          source: createResponse.source,
+          message: 'Source extracted and saved successfully',
+          tabUrl: url,
+          extractedData: {
+            success: true,
+            sourceInfo: sourceInfo,
+          },
+        };
+      } else {
+        return {
+          success: false,
+          error:
+            createResponse.message ||
+            createResponse.error ||
+            'Failed to save source',
+          tabUrl: url,
+          extractedData: {
+            success: true,
+            sourceInfo: sourceInfo,
+          },
+        };
+      }
     } catch (error) {
-      console.error('Source extraction error:', error);
-      sendResponse({ success: false, message: 'خطا در استخراج منبع' });
+      console.error('Extract source error:', error);
+      return {
+        success: false,
+        error: error.message,
+        tabUrl: url,
+        extractedData: {
+          success: true,
+          sourceInfo: sourceInfo,
+        },
+      };
     }
   }
 
-  // Handle extension installation
-  chrome.runtime.onInstalled.addListener((details) => {
-    if (details.reason === 'install') {
-      console.log('Fishchi extension installed');
-      // Set default settings or show welcome page
-    }
-  });
-
-  // Handle tab updates to check for supported sites
-  chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-    if (changeInfo.status === 'complete' && tab.url) {
-      const supportedSites = ['sid.ir', 'civilica.com', 'noormags.ir'];
-      const isSupported = supportedSites.some((site) => tab.url.includes(site));
-
-      if (isSupported) {
-        // Enable extension action for supported sites
-        chrome.action.enable(tabId);
-      } else {
-        // Disable extension action for unsupported sites
-        chrome.action.disable(tabId);
-      }
-    }
-  });
-
-  // Handle extension icon click
-  chrome.action.onClicked.addListener((tab) => {
-    // This will open the popup automatically due to manifest configuration
-    console.log('Extension icon clicked on tab:', tab.url);
-  });
-
-  // Periodic auth check
-  setInterval(async () => {
+  // Create source
+  async function createSource(sourceInfo, projectId) {
     try {
-      await api.checkAuthStatus();
+      if (!authToken) {
+        return {
+          success: false,
+          error: 'Not authenticated',
+        };
+      }
+
+      const response = await makeApiRequest('/sources', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...sourceInfo,
+          projectId: projectId,
+        }),
+      });
+
+      if (response.success) {
+        return {
+          success: true,
+          source: response.source,
+          message: 'Source created successfully',
+        };
+      } else {
+        return {
+          success: false,
+          message: response.message || 'Failed to create source',
+        };
+      }
     } catch (error) {
-      console.error('Periodic auth check error:', error);
+      console.error('Create source error:', error);
+      return {
+        success: false,
+        error: error.message,
+      };
     }
-  }, 5 * 60 * 1000); // Check every 5 minutes
+  }
+
+  // Check OAuth status by making a request to server
+  async function checkOAuthStatus() {
+    try {
+      // First try to get cookies from the server domain
+      const cookies = await chrome.cookies.getAll({
+        domain: 'localhost',
+      });
+
+      console.log('Found cookies:', cookies);
+
+      // Look for authentication cookies
+      const authCookies = cookies.filter(
+        (cookie) =>
+          cookie.name.includes('auth') ||
+          cookie.name.includes('token') ||
+          cookie.name.includes('session') ||
+          cookie.name.includes('jwt')
+      );
+
+      console.log('Auth cookies found:', authCookies);
+
+      // Check specifically for token cookie
+      const tokenCookie = cookies.find((cookie) => cookie.name === 'token');
+      console.log('Token cookie:', tokenCookie);
+
+      if (authCookies.length > 0) {
+        // Try to get user profile with cookies
+        const response = await makeApiRequestWithCookies('/users/profile', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        // Check for different response formats
+        if (
+          (response.success && response.user) ||
+          (response.status === 'success' && response.data)
+        ) {
+          // User is authenticated, save the data
+          userData = response.user || response.data;
+          await saveToStorage(STORAGE_KEYS.USER_DATA, userData);
+
+          // Try to get auth token from cookies or response
+          if (response.token) {
+            authToken = response.token;
+            await saveToStorage(STORAGE_KEYS.AUTH_TOKEN, authToken);
+          }
+
+          // Load projects
+          await refreshProjects();
+
+          return {
+            success: true,
+            authenticated: true,
+            user: userData,
+            message: 'OAuth authentication successful',
+          };
+        }
+      }
+
+      // Fallback: Try without cookies
+      const response = await makeApiRequest('/users/profile', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      // Check for different response formats
+      if (
+        (response.success && response.user) ||
+        (response.status === 'success' && response.data)
+      ) {
+        // User is authenticated, save the data
+        userData = response.user || response.data;
+        await saveToStorage(STORAGE_KEYS.USER_DATA, userData);
+
+        // Try to get auth token from cookies or response
+        if (response.token) {
+          authToken = response.token;
+          await saveToStorage(STORAGE_KEYS.AUTH_TOKEN, authToken);
+        }
+
+        // Load projects
+        await refreshProjects();
+
+        return {
+          success: true,
+          authenticated: true,
+          user: userData,
+          message: 'OAuth authentication successful',
+        };
+      } else {
+        return {
+          success: false,
+          authenticated: false,
+          message: 'OAuth authentication failed',
+        };
+      }
+    } catch (error) {
+      console.error('OAuth status check error:', error);
+      return {
+        success: false,
+        authenticated: false,
+        error: error.message,
+      };
+    }
+  }
+
+  // Debug cookies function
+  async function debugCookies() {
+    try {
+      const cookies = await chrome.cookies.getAll({
+        domain: 'localhost',
+      });
+
+      const allCookies = await chrome.cookies.getAll({});
+
+      return {
+        success: true,
+        localhostCookies: cookies,
+        allCookies: allCookies.slice(0, 10), // Limit to first 10 cookies
+        authCookies: cookies.filter(
+          (cookie) =>
+            cookie.name.includes('auth') ||
+            cookie.name.includes('token') ||
+            cookie.name.includes('session') ||
+            cookie.name.includes('jwt')
+        ),
+        message: 'Cookie debug information retrieved',
+      };
+    } catch (error) {
+      console.error('Debug cookies error:', error);
+      return {
+        success: false,
+        error: error.message,
+      };
+    }
+  }
+
+  // Test authentication with cookies
+  async function testAuthWithCookies() {
+    try {
+      const cookies = await chrome.cookies.getAll({
+        domain: 'localhost',
+      });
+
+      const tokenCookie = cookies.find((cookie) => cookie.name === 'token');
+
+      if (!tokenCookie) {
+        return {
+          success: false,
+          error: 'No token cookie found',
+          cookies: cookies,
+        };
+      }
+
+      // Test with credentials: include
+      const response = await fetch(`${API_BASE_URL}/users/profile`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+      });
+
+      const data = await response.json();
+
+      return {
+        success: response.ok,
+        status: response.status,
+        response: data,
+        tokenCookie: tokenCookie,
+        allCookies: cookies,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.message,
+      };
+    }
+  }
+
+  // Make API request with cookies
+  async function makeApiRequestWithCookies(endpoint, options = {}) {
+    const url = `${API_BASE_URL}${endpoint}`;
+
+    // Get cookies for the domain
+    const cookies = await chrome.cookies.getAll({
+      domain: 'localhost',
+    });
+
+    // Build cookie header
+    const cookieHeader = cookies
+      .map((cookie) => `${cookie.name}=${cookie.value}`)
+      .join('; ');
+
+    console.log('Cookie header:', cookieHeader);
+
+    const defaultOptions = {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        Cookie: cookieHeader,
+      },
+      credentials: 'include', // Important: include cookies in request
+    };
+
+    const requestOptions = {
+      ...defaultOptions,
+      ...options,
+      headers: {
+        ...defaultOptions.headers,
+        ...options.headers,
+      },
+    };
+
+    try {
+      console.log(`Making API request with cookies to: ${url}`);
+      console.log('Request options:', requestOptions);
+
+      const response = await fetch(url, requestOptions);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
+      }
+
+      const data = await response.json();
+      console.log('API response:', data);
+
+      return data;
+    } catch (error) {
+      console.error('API request with cookies error:', error);
+
+      // Handle network errors
+      if (error.name === 'TypeError' && error.message.includes('fetch')) {
+        throw new Error(
+          'خطا در ارتباط با سرور. لطفاً اتصال اینترنت خود را بررسی کنید.'
+        );
+      }
+
+      throw error;
+    }
+  }
+
+  // Make API request
+  async function makeApiRequest(endpoint, options = {}) {
+    const url = `${API_BASE_URL}${endpoint}`;
+
+    const defaultOptions = {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include', // Include cookies in all requests
+    };
+
+    const requestOptions = {
+      ...defaultOptions,
+      ...options,
+      headers: {
+        ...defaultOptions.headers,
+        ...options.headers,
+      },
+    };
+
+    try {
+      console.log(`Making API request to: ${url}`);
+      console.log('Request options:', requestOptions);
+
+      const response = await fetch(url, requestOptions);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
+      }
+
+      const data = await response.json();
+      console.log('API response:', data);
+
+      return data;
+    } catch (error) {
+      console.error('API request error:', error);
+
+      // Handle network errors
+      if (error.name === 'TypeError' && error.message.includes('fetch')) {
+        throw new Error(
+          'خطا در ارتباط با سرور. لطفاً اتصال اینترنت خود را بررسی کنید.'
+        );
+      }
+
+      throw error;
+    }
+  }
+
+  // Handle extension installation/update
+  chrome.runtime.onInstalled.addListener((details) => {
+    console.log('Extension installed/updated:', details);
+
+    if (details.reason === 'install') {
+      console.log('Extension installed for the first time');
+    } else if (details.reason === 'update') {
+      console.log('Extension updated from version:', details.previousVersion);
+    }
+  });
+
+  // Handle extension startup
+  chrome.runtime.onStartup.addListener(() => {
+    console.log('Extension startup');
+    init();
+  });
+
+  // Initialize when background script loads
+  init();
 })();

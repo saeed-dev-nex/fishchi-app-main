@@ -2,40 +2,33 @@ import React from 'react';
 import {
   Box,
   Pagination,
-  Stack,
+  FormControl,
+  Select,
+  MenuItem,
   Typography,
-  IconButton,
-  Tooltip,
+  Stack,
   alpha,
 } from '@mui/material';
-import {
-  FirstPage,
-  LastPage,
-  ChevronLeft,
-  ChevronRight,
-} from '@mui/icons-material';
-import type { PaginationInfo } from '../../types';
 
 interface SourcesPaginationProps {
-  pagination: PaginationInfo;
+  currentPage: number;
+  totalPages: number;
+  itemsPerPage: number;
+  totalItems: number;
   onPageChange: (page: number) => void;
-  onPageSizeChange?: (pageSize: number) => void;
+  onItemsPerPageChange: (itemsPerPage: number) => void;
 }
 
-const SourcesPagination: React.FC<SourcesPaginationProps> = ({
-  pagination,
-  onPageChange,
-  // onPageSizeChange,
-}) => {
-  const {
-    currentPage,
-    totalPages,
-    totalCount,
-    hasNextPage,
-    hasPrevPage,
-    limit,
-  } = pagination;
+type SelectChangeEvent = React.ChangeEvent<{ value: unknown }>;
 
+const SourcesPagination: React.FC<SourcesPaginationProps> = ({
+  currentPage,
+  totalPages,
+  itemsPerPage,
+  totalItems,
+  onPageChange,
+  onItemsPerPageChange,
+}) => {
   const handlePageChange = (
     _event: React.ChangeEvent<unknown>,
     page: number
@@ -43,182 +36,80 @@ const SourcesPagination: React.FC<SourcesPaginationProps> = ({
     onPageChange(page);
   };
 
-  const goToFirstPage = () => {
-    if (hasPrevPage) {
-      onPageChange(1);
-    }
+  const handleItemsPerPageChange = (event: SelectChangeEvent<number>) => {
+    onItemsPerPageChange(Number(event.target.value));
   };
 
-  const goToLastPage = () => {
-    if (hasNextPage) {
-      onPageChange(totalPages);
-    }
-  };
-
-  const goToPrevPage = () => {
-    if (hasPrevPage) {
-      onPageChange(currentPage - 1);
-    }
-  };
-
-  const goToNextPage = () => {
-    if (hasNextPage) {
-      onPageChange(currentPage + 1);
-    }
-  };
-
-  // Calculate range of items being displayed
-  const startItem = (currentPage - 1) * limit + 1;
-  const endItem = Math.min(currentPage * limit, totalCount);
-
-  if (totalPages <= 1) {
-    return null;
-  }
+  const startItem = (currentPage - 1) * itemsPerPage + 1;
+  const endItem = Math.min(currentPage * itemsPerPage, totalItems);
 
   return (
     <Box
       sx={{
-        display: 'flex',
-        flexDirection: { xs: 'column', sm: 'row' },
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        gap: 2,
-        p: 3,
-        mt: 3,
-        borderRadius: 2,
-        border: (theme) => `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+        p: 2,
+        borderTop: (theme) => `1px solid ${alpha(theme.palette.divider, 0.1)}`,
         background: (theme) =>
-          `linear-gradient(135deg, ${alpha(
-            theme.palette.primary.main,
-            0.02
-          )} 0%, ${alpha(theme.palette.secondary.main, 0.02)} 100%)`,
+          `linear-gradient(90deg, ${alpha(
+            theme.palette.background.paper,
+            0.8
+          )} 0%, ${alpha(theme.palette.background.default, 0.4)} 100%)`,
+        backdropFilter: 'blur(10px)',
       }}
     >
-      {/* Results Info */}
-      <Typography
-        variant='body2'
-        color='text.secondary'
-        sx={{ fontWeight: 500 }}
+      <Stack
+        direction='row'
+        justifyContent='space-between'
+        alignItems='center'
+        spacing={2}
+        sx={{ flexWrap: 'wrap', gap: 2 }}
       >
-        نمایش {startItem} تا {endItem} از {totalCount} منبع
-      </Typography>
-
-      {/* Pagination Controls */}
-      <Stack direction='row' spacing={1} alignItems='center'>
-        {/* First Page Button */}
-        <Tooltip title='صفحه اول'>
-          <IconButton
-            onClick={goToFirstPage}
-            disabled={!hasPrevPage}
-            size='small'
-            sx={{
-              borderRadius: 1.5,
-              border: (theme) =>
-                `1px solid ${alpha(theme.palette.divider, 0.2)}`,
-              '&:hover': {
-                bgcolor: alpha('#000', 0.05),
-              },
-              '&:disabled': {
-                opacity: 0.3,
-              },
-            }}
-          >
-            <FirstPage fontSize='small' />
-          </IconButton>
-        </Tooltip>
-
-        {/* Previous Page Button */}
-        <Tooltip title='صفحه قبلی'>
-          <IconButton
-            onClick={goToPrevPage}
-            disabled={!hasPrevPage}
-            size='small'
-            sx={{
-              borderRadius: 1.5,
-              border: (theme) =>
-                `1px solid ${alpha(theme.palette.divider, 0.2)}`,
-              '&:hover': {
-                bgcolor: alpha('#000', 0.05),
-              },
-              '&:disabled': {
-                opacity: 0.3,
-              },
-            }}
-          >
-            <ChevronLeft fontSize='small' />
-          </IconButton>
-        </Tooltip>
-
-        {/* Pagination Component */}
-        <Pagination
-          count={totalPages}
-          page={currentPage}
-          onChange={handlePageChange}
-          color='primary'
-          size='small'
-          siblingCount={1}
-          boundaryCount={1}
-          sx={{
-            '& .MuiPaginationItem-root': {
-              borderRadius: 1.5,
-              fontWeight: 500,
-              '&.Mui-selected': {
-                bgcolor: 'primary.main',
-                color: 'white',
-                '&:hover': {
-                  bgcolor: 'primary.dark',
+        {/* Items per page selector */}
+        <Stack direction='row' alignItems='center' spacing={1}>
+          <Typography variant='body2' color='text.secondary'>
+            نمایش:
+          </Typography>
+          <FormControl size='small' sx={{ minWidth: 80 }}>
+            <Select
+              value={itemsPerPage}
+              onChange={handleItemsPerPageChange}
+              sx={{
+                borderRadius: 2,
+                '& .MuiOutlinedInput-notchedOutline': {
+                  borderColor: 'divider',
                 },
-              },
-              '&:hover': {
-                bgcolor: alpha('#000', 0.05),
-              },
-            },
-          }}
-        />
+              }}
+            >
+              <MenuItem value={3}>3</MenuItem>
+              <MenuItem value={5}>5</MenuItem>
+              <MenuItem value={10}>10</MenuItem>
+            </Select>
+          </FormControl>
+          <Typography variant='body2' color='text.secondary'>
+            در هر صفحه
+          </Typography>
+        </Stack>
 
-        {/* Next Page Button */}
-        <Tooltip title='صفحه بعدی'>
-          <IconButton
-            onClick={goToNextPage}
-            disabled={!hasNextPage}
+        {/* Items info */}
+        <Typography variant='body2' color='text.secondary'>
+          {startItem}-{endItem} از {totalItems} منبع
+        </Typography>
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <Pagination
+            count={totalPages}
+            page={currentPage}
+            onChange={handlePageChange}
+            color='primary'
             size='small'
             sx={{
-              borderRadius: 1.5,
-              border: (theme) =>
-                `1px solid ${alpha(theme.palette.divider, 0.2)}`,
-              '&:hover': {
-                bgcolor: alpha('#000', 0.05),
-              },
-              '&:disabled': {
-                opacity: 0.3,
+              '& .MuiPaginationItem-root': {
+                borderRadius: 2,
+                fontWeight: 500,
               },
             }}
-          >
-            <ChevronRight fontSize='small' />
-          </IconButton>
-        </Tooltip>
-
-        {/* Last Page Button */}
-        <Tooltip title='صفحه آخر'>
-          <IconButton
-            onClick={goToLastPage}
-            disabled={!hasNextPage}
-            size='small'
-            sx={{
-              borderRadius: 1.5,
-              border: (theme) =>
-                `1px solid ${alpha(theme.palette.divider, 0.2)}`,
-              '&:hover': {
-                bgcolor: alpha('#000', 0.05),
-              },
-              '&:disabled': {
-                opacity: 0.3,
-              },
-            }}
-          >
-            <LastPage fontSize='small' />
-          </IconButton>
-        </Tooltip>
+          />
+        )}
       </Stack>
     </Box>
   );

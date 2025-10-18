@@ -145,7 +145,7 @@ const DeleteSourceDialog: React.FC<DeleteSourceDialogProps> = ({
               )}
               {source.authors && source.authors.length > 0 && (
                 <Chip
-                  label={source.authors[0].name}
+                  label={`${source.authors[0].firstname} ${source.authors[0].lastname}`.trim()}
                   size='small'
                   color='success'
                   variant='outlined'

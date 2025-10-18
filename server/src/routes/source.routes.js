@@ -10,6 +10,7 @@ import {
   getSourcesByProject,
   importSourceByDOI,
   updateSource,
+  parseCitationText,
 } from '../controllers/source.controller.js';
 
 const router = Router();
@@ -18,6 +19,7 @@ router.use(protect);
 router.get('/', getSources);
 router.route('/').post(createSource).get(getSourcesByProject);
 router.route('/import-doi').post(importSourceByDOI);
+router.route('/parse-citation').post(parseCitationText);
 
 // Specific routes must come before parameterized routes
 router.get('/:id/projects', getSourceProjects);

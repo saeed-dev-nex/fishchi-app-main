@@ -8,7 +8,7 @@ console.log('Fishchi content script file loaded');
 
   console.log('Fishchi content script IIFE started');
 
-  // Function to convert author names from "Last, First" format to "First Last" format
+  // Function to convert author names using advanced Persian name processing
   function convertAuthorName(name) {
     if (!name || typeof name !== 'string') return name;
 
@@ -36,23 +36,14 @@ console.log('Fishchi content script file loaded');
         firstName = firstName + ' ' + additionalParts.join(' ');
       }
 
-      // Return in "First Last" format
-      return firstName + ' ' + lastName;
+      // Use advanced Persian name processor for complex names
+      const fullName = `${lastName} ${firstName}`;
+      return PersianNameProcessor.reversePersianName(fullName);
     }
 
-    // If no comma, assume it's in "Last First" format (like SID format)
-    // For SID and Noormags, we'll assume the format is "Last First" and convert to "First Last"
-    const words = trimmedName.split(' ').filter((word) => word.trim());
-
-    if (words.length >= 2) {
-      // Simple approach: assume first word is last name, rest is first name
-      const lastName = words[0];
-      const firstName = words.slice(1).join(' ');
-      return firstName + ' ' + lastName;
-    }
-
-    // If only one word, return as is
-    return trimmedName;
+    // If no comma, use the advanced Persian name processor
+    // This handles complex Persian names with prefixes and suffixes
+    return PersianNameProcessor.reversePersianName(trimmedName);
   }
 
   // Configuration for different websites
@@ -99,10 +90,15 @@ console.log('Fishchi content script file loaded');
           // Check if elements is a NodeList or array
           if (elements && elements.length > 0) {
             return Array.from(elements)
-              .map((el) => ({
-                name: convertAuthorName(el.textContent?.trim()),
-              }))
-              .filter((a) => a.name);
+              .map((el) => {
+                const fullName = convertAuthorName(el.textContent?.trim());
+                const nameParts = fullName.split(' ');
+                return {
+                  firstname: nameParts[0] || '',
+                  lastname: nameParts.slice(1).join(' ') || '',
+                };
+              })
+              .filter((a) => a.firstname);
           }
 
           // Check if single element has content attribute
@@ -111,8 +107,15 @@ console.log('Fishchi content script file loaded');
             if (content) {
               return content
                 .split(',')
-                .map((name) => ({ name: convertAuthorName(name.trim()) }))
-                .filter((a) => a.name);
+                .map((name) => {
+                  const fullName = convertAuthorName(name.trim());
+                  const nameParts = fullName.split(' ');
+                  return {
+                    firstname: nameParts[0] || '',
+                    lastname: nameParts.slice(1).join(' ') || '',
+                  };
+                })
+                .filter((a) => a.firstname);
             }
           }
 
@@ -149,7 +152,7 @@ console.log('Fishchi content script file loaded');
                 .split(/[،,;؛]/)
                 .map((name) => ({ name: convertAuthorName(name.trim()) }))
                 .filter((a) => a.name);
-              if (authors.length > 0 && authors[0].name) {
+              if (authors.length > 0 && authors[0].firstname) {
                 return authors;
               }
             }
@@ -365,16 +368,16 @@ console.log('Fishchi content script file loaded');
     'civilica.com': {
       name: 'Civilica',
       selectors: {
-        title: 'h1, .article-title, .title',
+        title: 'h1, .article-title, .title, .doc-title, .paper-title',
         authors:
-          'meta[name="citation_author"], .author-name, .authors .author, .author, .author-list .author-name, .author-list .author, .article-author, .author-info .name, .doc-author, .author-item, .author-link, .doc-info .doc-author a, .author-section .author-name, .content .author, span[class*="author"], div[class*="author"], a[href*="/author/"], a[href*="/profile/"], .author-link, .author-item, .author-name, .author, .authors, .author-info, .author-list',
-        year: '.year, .publication-year, .date, .publication-date, .doc-year, .article-year',
+          'meta[name="citation_author"], .author-name, .authors .author, .author, .author-list .author-name, .author-list .author, .article-author, .author-info .name, .doc-author, .author-item, .author-link, .doc-info .doc-author a, .author-section .author-name, .content .author, span[class*="author"], div[class*="author"], a[href*="/author/"], a[href*="/profile/"], .author-link, .author-item, .author-name, .author, .authors, .author-info, .author-list, .doc-info .author, .paper-author, .conference-author',
+        year: '.year, .publication-year, .date, .publication-date, .doc-year, .article-year, .conference-year',
         journal:
-          '.journal-name, .conference-name, .conference, .conference-title, .doc-journal, .article-journal, .publication-name',
+          '.journal-name, .conference-name, .conference, .conference-title, .doc-journal, .article-journal, .publication-name, .event-name, .conference-title',
         abstract:
-          '.abstract, .summary, .description, .article-abstract, .doc-abstract, .article-summary, .content-abstract',
+          '.abstract, .summary, .description, .article-abstract, .doc-abstract, .article-summary, .content-abstract, .paper-abstract, .conference-abstract',
         keywords:
-          '.keywords, .tags, .key-words, .article-keywords, .doc-keywords, .keyword-list, .tag-list',
+          '.keywords, .tags, .key-words, .article-keywords, .doc-keywords, .keyword-list, .tag-list, .paper-keywords, .conference-keywords',
       },
       extractors: {
         title: (element) => {
@@ -387,8 +390,14 @@ console.log('Fishchi content script file loaded');
           // Check if elements is a NodeList or array
           if (elements && elements.length > 0) {
             return Array.from(elements)
-              .map((el) => ({ name: el.textContent?.trim() }))
-              .filter((a) => a.name);
+              .map((el) => {
+                const nameParts = el.textContent?.trim().split(' ');
+                return {
+                  firstname: nameParts[0] || '',
+                  lastname: nameParts.slice(1).join(' ') || '',
+                };
+              })
+              .filter((a) => a.firstname && a.firstname.length > 2);
           }
 
           // Check if single element has content attribute
@@ -397,8 +406,14 @@ console.log('Fishchi content script file loaded');
             if (content) {
               return content
                 .split(',')
-                .map((name) => ({ name: name.trim() }))
-                .filter((a) => a.name);
+                .map((name) => {
+                  const nameParts = name.trim().split(' ');
+                  return {
+                    firstname: nameParts[0] || '',
+                    lastname: nameParts.slice(1).join(' ') || '',
+                  };
+                })
+                .filter((a) => a.firstname && a.firstname.length > 2);
             }
           }
 
@@ -411,8 +426,14 @@ console.log('Fishchi content script file loaded');
             if (content) {
               const authors = content
                 .split(',')
-                .map((name) => ({ name: name.trim() }))
-                .filter((a) => a.name);
+                .map((name) => {
+                  const nameParts = name.trim().split(' ');
+                  return {
+                    firstname: nameParts[0] || '',
+                    lastname: nameParts.slice(1).join(' ') || '',
+                  };
+                })
+                .filter((a) => a.firstname && a.firstname.length > 2);
               if (authors.length > 0) {
                 return authors;
               }
@@ -431,8 +452,14 @@ console.log('Fishchi content script file loaded');
                   ? data.author
                   : [data.author];
                 const result = authors
-                  .map((author) => ({ name: author.trim() }))
-                  .filter((a) => a.name);
+                  .map((author) => {
+                    const nameParts = author.trim().split(' ');
+                    return {
+                      firstname: nameParts[0] || '',
+                      lastname: nameParts.slice(1).join(' ') || '',
+                    };
+                  })
+                  .filter((a) => a.firstname && a.firstname.length > 2);
                 if (result.length > 0) {
                   return result;
                 }
@@ -442,54 +469,29 @@ console.log('Fishchi content script file loaded');
             }
           }
 
-          // Fallback to DOM selectors specific to Civilica
-          const domSelectors = [
-            '.author-name',
-            '.authors .author',
-            '.author',
-            '.author-list .author-name',
-            '.author-list .author',
-            '.article-author',
-            '.author-info .name',
-            '.doc-author',
-            '.author-item',
-            '.author-link',
-            // Try to find author links in the page
-            'a[href*="/author/"]',
-            'a[href*="/profile/"]',
-            // Look for author patterns in text
-            '.author',
-            '.authors',
-            '.author-info',
-            '.author-list',
-            // Additional Civilica-specific selectors
-            '.doc-info .doc-author a',
-            '.author-section .author-name',
-            '.content .author',
-            'span[class*="author"]',
-            'div[class*="author"]',
-          ];
+          // Try to extract authors from Civilica-specific patterns
+          // First, try to get text from main content area only (avoid header/footer)
+          const mainContent =
+            document.querySelector(
+              'main, .main-content, .content, .article-content, .paper-content, .document-content'
+            ) || document.body;
+          const pageText = mainContent.textContent;
 
-          for (const selector of domSelectors) {
-            const elements = document.querySelectorAll(selector);
-            if (elements.length > 0) {
-              const authors = Array.from(elements)
-                .map((el) => ({ name: el.textContent?.trim() }))
-                .filter((a) => a.name && a.name.length > 2);
-              if (authors.length > 0) {
-                return authors;
-              }
-            }
-          }
-
-          // Try to extract authors from page text patterns
-          const pageText = document.body.textContent;
+          // Look for author patterns in the page content
           const authorPatterns = [
+            // Look for author names in specific sections
             /نویسنده[گان]?\s*:?\s*([^\n\r]+)/i,
             /Author[s]?\s*:?\s*([^\n\r]+)/i,
             /تألیف\s*:?\s*([^\n\r]+)/i,
             /پدیدآورنده[گان]?\s*:?\s*([^\n\r]+)/i,
             /مؤلف[ان]?\s*:?\s*([^\n\r]+)/i,
+            // Look for author names in Civilica-specific format
+            /تألیف\s*:?\s*([^\n\r]+)/i,
+            /نویسنده\s*:?\s*([^\n\r]+)/i,
+            // Look for author names in specific HTML sections
+            /<div[^>]*class="[^"]*author[^"]*"[^>]*>([^<]+)<\/div>/gi,
+            /<span[^>]*class="[^"]*author[^"]*"[^>]*>([^<]+)<\/span>/gi,
+            /<a[^>]*href="[^"]*\/author\/[^"]*"[^>]*>([^<]+)<\/a>/gi,
           ];
 
           for (const pattern of authorPatterns) {
@@ -497,9 +499,301 @@ console.log('Fishchi content script file loaded');
             if (match && match[1] && typeof match[1] === 'string') {
               const authors = match[1]
                 .split(/[،,;؛]/)
-                .map((name) => ({ name: name.trim() }))
-                .filter((a) => a.name && a.name.length > 2);
-              if (authors.length > 0 && authors[0].name) {
+                .map((name) => {
+                  const cleanName = name.trim();
+                  if (cleanName.length < 3) return null;
+
+                  const nameParts = cleanName.split(' ');
+                  return {
+                    firstname: nameParts[0] || '',
+                    lastname: nameParts.slice(1).join(' ') || '',
+                  };
+                })
+                .filter((a) => a && a.firstname && a.firstname.length > 2);
+              if (authors.length > 0) {
+                return authors;
+              }
+            }
+          }
+
+          // Try to find author names in specific Civilica elements
+          const civilicaSelectors = [
+            // Look for author information in Civilica-specific elements
+            '.doc-info .author',
+            '.paper-author',
+            '.conference-author',
+            '.author-section .author-name',
+            '.content .author',
+            // Look for author links
+            'a[href*="/author/"]',
+            'a[href*="/profile/"]',
+            // Look for author names in text content
+            '.author',
+            '.authors',
+            '.author-info',
+            '.author-list',
+          ];
+
+          for (const selector of civilicaSelectors) {
+            const elements = document.querySelectorAll(selector);
+            if (elements.length > 0) {
+              const authors = Array.from(elements)
+                .map((el) => {
+                  const text = el.textContent?.trim();
+                  if (!text || text.length < 3) return null;
+
+                  const nameParts = text.split(' ');
+                  return {
+                    firstname: nameParts[0] || '',
+                    lastname: nameParts.slice(1).join(' ') || '',
+                  };
+                })
+                .filter((a) => a && a.firstname && a.firstname.length > 2);
+              if (authors.length > 0) {
+                return authors;
+              }
+            }
+          }
+
+          // Try to extract from page text by looking for common Persian name patterns
+          // But be more specific and avoid UI elements
+          // First, try to get text from article content only (avoid header/footer/navigation)
+          const articleContent =
+            document.querySelector(
+              '.article-content, .paper-content, .document-content, .content, main'
+            ) || document.body;
+          const articleText = articleContent.textContent;
+
+          const persianNamePattern =
+            /([\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]+(?:\s+[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]+)*)/g;
+          const matches = articleText.match(persianNamePattern);
+
+          if (matches) {
+            // Comprehensive list of words to exclude (UI elements, common words, etc.)
+            const excludeWords = [
+              // Common academic terms
+              'مقاله',
+              'کنفرانس',
+              'مجله',
+              'نشریه',
+              'ژورنال',
+              'همایش',
+              'سمینار',
+              'تألیف',
+              'نویسنده',
+              'مؤلف',
+              'پدیدآورنده',
+              // Civilica-specific terms
+              'سیویلیکا',
+              'کد پستی',
+              'تلفن',
+              'آدرس',
+              'بزرگراه',
+              'خیابان',
+              'کوچه',
+              'پلاک',
+              'ساختمان',
+              'طبقه',
+              'واحد',
+              'کلیه',
+              'امور',
+              'پشتیبانی',
+              'کاربران',
+              'بخش',
+              'ستادی',
+              'دانشگاهی',
+              // UI elements and common phrases
+              'لطفا',
+              'کمی',
+              'صبر',
+              'نمایید',
+              'ورود',
+              'ثبت',
+              'نام',
+              'رمز',
+              'عبور',
+              'فراموشی',
+              'راهنما',
+              'درباره',
+              'تماس',
+              'عضویت',
+              'رایگان',
+              'سازمانی',
+              // Navigation and UI
+              'جستجو',
+              'فیلتر',
+              'مرتب',
+              'سازی',
+              'نمایش',
+              'لیست',
+              'کارت',
+              'صفحه',
+              'قبلی',
+              'بعدی',
+              'اول',
+              'آخر',
+              // Common verbs and actions
+              'مشاهده',
+              'دانلود',
+              'چاپ',
+              'اشتراک',
+              'ذخیره',
+              'ویرایش',
+              'حذف',
+              'افزودن',
+              'ایجاد',
+              'تغییر',
+              // Academic terms
+              'چکیده',
+              'خلاصه',
+              'مقدمه',
+              'نتیجه',
+              'بحث',
+              'منابع',
+              'مراجع',
+              'کلمات',
+              'کلیدی',
+              'برچسب',
+              'تگ',
+              // Numbers and dates
+              'سال',
+              'ماه',
+              'روز',
+              'تاریخ',
+              'زمان',
+              'ساعت',
+              'دقیقه',
+              'ثانیه',
+              // Common adjectives
+              'جدید',
+              'قدیمی',
+              'بزرگ',
+              'کوچک',
+              'زیبا',
+              'خوب',
+              'بد',
+              'مهم',
+              'ضروری',
+              'مفید',
+            ];
+
+            const potentialNames = matches
+              .filter((match) => {
+                const cleanMatch = match.trim();
+
+                // Basic length and content checks
+                if (cleanMatch.length < 4 || cleanMatch.length > 50)
+                  return false;
+
+                // Must contain at least one space (indicating first and last name)
+                if (!cleanMatch.includes(' ')) return false;
+
+                // Must not contain numbers or special characters
+                if (/[\d\-_.,;:!?@#$%^&*()+=<>[\]{}|\\\/]/.test(cleanMatch))
+                  return false;
+
+                // Must not contain any excluded words
+                if (excludeWords.some((word) => cleanMatch.includes(word)))
+                  return false;
+
+                // Must not be all the same character
+                if (/^(.)\1+$/.test(cleanMatch)) return false;
+
+                // Must contain Persian characters
+                if (
+                  !/[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/.test(
+                    cleanMatch
+                  )
+                )
+                  return false;
+
+                // Split into parts and validate each part
+                const parts = cleanMatch.split(' ');
+                if (parts.length < 2) return false;
+
+                // Each part should be at least 2 characters and not contain excluded words
+                for (const part of parts) {
+                  if (part.length < 2) return false;
+                  if (excludeWords.some((word) => part.includes(word)))
+                    return false;
+                }
+
+                return true;
+              })
+              .slice(0, 3); // Take first 3 potential names
+
+            if (potentialNames.length > 0) {
+              return potentialNames.map((name) => {
+                const nameParts = name.trim().split(' ');
+                return {
+                  firstname: nameParts[0] || '',
+                  lastname: nameParts.slice(1).join(' ') || '',
+                };
+              });
+            }
+          }
+
+          // Try to extract authors from Civilica-specific HTML structure
+          // Look for author information in specific sections of the page
+          const civilicaAuthorSelectors = [
+            // Look for author information in the main content area
+            '.content .author',
+            '.main-content .author',
+            '.article-content .author',
+            '.paper-content .author',
+            // Look for author information in document info sections
+            '.doc-info .author',
+            '.document-info .author',
+            '.paper-info .author',
+            // Look for author information in header sections
+            '.article-header .author',
+            '.paper-header .author',
+            '.document-header .author',
+            // Look for author information in metadata sections
+            '.metadata .author',
+            '.meta-info .author',
+            '.paper-meta .author',
+            // Look for author information in sidebar sections
+            '.sidebar .author',
+            '.side-content .author',
+            '.additional-info .author',
+            // Look for author links specifically
+            'a[href*="/author/"]',
+            'a[href*="/profile/"]',
+            // Look for author names in specific Civilica elements
+            '.doc-info .doc-author a',
+            '.author-section .author-name',
+            '.content .author',
+            'span[class*="author"]',
+            'div[class*="author"]',
+            '.author-link',
+            '.author-item',
+            '.author-name',
+            '.author',
+            '.authors',
+            '.author-info',
+            '.author-list',
+            '.doc-info .author',
+            '.paper-author',
+            '.conference-author',
+          ];
+
+          for (const selector of civilicaAuthorSelectors) {
+            const elements = document.querySelectorAll(selector);
+            if (elements.length > 0) {
+              const authors = Array.from(elements)
+                .map((el) => {
+                  const text = el.textContent?.trim();
+                  if (!text || text.length < 3) return null;
+
+                  const nameParts = text.split(' ');
+                  return {
+                    firstname: nameParts[0] || '',
+                    lastname: nameParts.slice(1).join(' ') || '',
+                  };
+                })
+                .filter((a) => a && a.firstname && a.firstname.length > 2);
+              if (authors.length > 0) {
                 return authors;
               }
             }
@@ -681,6 +975,38 @@ console.log('Fishchi content script file loaded');
             }
           }
 
+          // For Civilica, try to extract meaningful keywords from the page content
+          // Look for common academic keywords in Persian
+          const academicKeywords = [
+            'افسردگی',
+            'اضطراب',
+            'کیفیت زندگی',
+            'حمایت اجتماعی',
+            'ملال هویت جنسیتی',
+            'روانشناسی',
+            'جامعه‌شناسی',
+            'آموزش',
+            'پزشکی',
+            'علوم',
+            'تحقیق',
+            'پژوهش',
+            'دانشگاه',
+            'دانشجو',
+            'استاد',
+            'مقاله',
+            'کنفرانس',
+            'مجله',
+            'نشریه',
+          ];
+
+          const foundKeywords = academicKeywords.filter((keyword) =>
+            pageText.includes(keyword)
+          );
+
+          if (foundKeywords.length > 0) {
+            return foundKeywords;
+          }
+
           return [];
         },
       },
@@ -731,10 +1057,15 @@ console.log('Fishchi content script file loaded');
           // Check if elements is a NodeList or array
           if (elements && elements.length > 0) {
             return Array.from(elements)
-              .map((el) => ({
-                name: convertAuthorName(el.textContent?.trim()),
-              }))
-              .filter((a) => a.name);
+              .map((el) => {
+                const fullName = convertAuthorName(el.textContent?.trim());
+                const nameParts = fullName.split(' ');
+                return {
+                  firstname: nameParts[0] || '',
+                  lastname: nameParts.slice(1).join(' ') || '',
+                };
+              })
+              .filter((a) => a.firstname);
           }
 
           // Check if single element has content attribute
@@ -1434,10 +1765,278 @@ console.log('Fishchi content script file loaded');
 
       // Clean up data
       sourceInfo.title = sourceInfo.title || 'عنوان یافت نشد';
-      sourceInfo.authors =
-        sourceInfo.authors.length > 0
-          ? sourceInfo.authors
-          : [{ name: 'نویسنده نامشخص' }];
+
+      // Only add default author if no authors were found and we're on a supported site
+      if (sourceInfo.authors.length === 0) {
+        // Try one more time to extract authors from the page text
+        // First, try to get text from article content only (avoid header/footer/navigation)
+        const articleContent =
+          document.querySelector(
+            '.article-content, .paper-content, .document-content, .content, main'
+          ) || document.body;
+        const articleText = articleContent.textContent;
+
+        const persianNamePattern =
+          /([\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]+(?:\s+[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]+)*)/g;
+        const matches = articleText.match(persianNamePattern);
+
+        if (matches) {
+          // Comprehensive list of words to exclude (UI elements, common words, etc.)
+          const excludeWords = [
+            // Common academic terms
+            'مقاله',
+            'کنفرانس',
+            'مجله',
+            'نشریه',
+            'ژورنال',
+            'همایش',
+            'سمینار',
+            'تألیف',
+            'نویسنده',
+            'مؤلف',
+            'پدیدآورنده',
+            // Civilica-specific terms
+            'سیویلیکا',
+            'کد پستی',
+            'تلفن',
+            'آدرس',
+            'بزرگراه',
+            'خیابان',
+            'کوچه',
+            'پلاک',
+            'ساختمان',
+            'طبقه',
+            'واحد',
+            'کلیه',
+            'امور',
+            'پشتیبانی',
+            'کاربران',
+            'بخش',
+            'ستادی',
+            'دانشگاهی',
+            // UI elements and common phrases
+            'لطفا',
+            'کمی',
+            'صبر',
+            'نمایید',
+            'ورود',
+            'ثبت',
+            'نام',
+            'رمز',
+            'عبور',
+            'فراموشی',
+            'راهنما',
+            'درباره',
+            'تماس',
+            'عضویت',
+            'رایگان',
+            'سازمانی',
+            // Navigation and UI
+            'جستجو',
+            'فیلتر',
+            'مرتب',
+            'سازی',
+            'نمایش',
+            'لیست',
+            'کارت',
+            'صفحه',
+            'قبلی',
+            'بعدی',
+            'اول',
+            'آخر',
+            // Common verbs and actions
+            'مشاهده',
+            'دانلود',
+            'چاپ',
+            'اشتراک',
+            'ذخیره',
+            'ویرایش',
+            'حذف',
+            'افزودن',
+            'ایجاد',
+            'تغییر',
+            // Academic terms
+            'چکیده',
+            'خلاصه',
+            'مقدمه',
+            'نتیجه',
+            'بحث',
+            'منابع',
+            'مراجع',
+            'کلمات',
+            'کلیدی',
+            'برچسب',
+            'تگ',
+            // Numbers and dates
+            'سال',
+            'ماه',
+            'روز',
+            'تاریخ',
+            'زمان',
+            'ساعت',
+            'دقیقه',
+            'ثانیه',
+            // Common adjectives
+            'جدید',
+            'قدیمی',
+            'بزرگ',
+            'کوچک',
+            'زیبا',
+            'خوب',
+            'بد',
+            'مهم',
+            'ضروری',
+            'مفید',
+          ];
+
+          const potentialNames = matches
+            .filter((match) => {
+              const cleanMatch = match.trim();
+
+              // Basic length and content checks
+              if (cleanMatch.length < 4 || cleanMatch.length > 50) return false;
+
+              // Must contain at least one space (indicating first and last name)
+              if (!cleanMatch.includes(' ')) return false;
+
+              // Must not contain numbers or special characters
+              if (/[\d\-_.,;:!?@#$%^&*()+=<>[\]{}|\\\/]/.test(cleanMatch))
+                return false;
+
+              // Must not contain any excluded words
+              if (excludeWords.some((word) => cleanMatch.includes(word)))
+                return false;
+
+              // Must not be all the same character
+              if (/^(.)\1+$/.test(cleanMatch)) return false;
+
+              // Must contain Persian characters
+              if (
+                !/[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/.test(
+                  cleanMatch
+                )
+              )
+                return false;
+
+              // Split into parts and validate each part
+              const parts = cleanMatch.split(' ');
+              if (parts.length < 2) return false;
+
+              // Each part should be at least 2 characters and not contain excluded words
+              for (const part of parts) {
+                if (part.length < 2) return false;
+                if (excludeWords.some((word) => part.includes(word)))
+                  return false;
+              }
+
+              return true;
+            })
+            .slice(0, 3); // Take first 3 potential names
+
+          if (potentialNames.length > 0) {
+            sourceInfo.authors = potentialNames.map((name) => {
+              const nameParts = name.trim().split(' ');
+              return {
+                firstname: nameParts[0] || '',
+                lastname: nameParts.slice(1).join(' ') || '',
+              };
+            });
+          }
+        }
+
+        // If still no authors found, add default
+        if (sourceInfo.authors.length === 0) {
+          sourceInfo.authors = [{ firstname: 'نویسنده', lastname: 'نامشخص' }];
+        }
+      }
+
+      // Clean up tags to remove irrelevant information
+      if (sourceInfo.tags && sourceInfo.tags.length > 0) {
+        const irrelevantTags = [
+          'سیویلیکا',
+          'کد پستی',
+          'تلفن',
+          'آدرس',
+          'بزرگراه',
+          'خیابان',
+          'کوچه',
+          'پلاک',
+          'ساختمان',
+          'طبقه',
+          'واحد',
+          'کلیه',
+          'امور',
+          'پشتیبانی',
+          'کاربران',
+          'بخش',
+          'ستادی',
+          'دانشگاهی',
+          'دفتر مرکزی',
+          'انتشارات',
+          'بوم سازه',
+          'جلال آل احمد',
+          'کارگر',
+          'چمران',
+          'پروانه',
+          'چمران',
+          'کد پستی',
+          '۱۴۳۹۹۱۴۱۵۳',
+          '۸۸۰۰۸۰۴۴',
+          '۸۸۳۳۵۴۵۱',
+          'امور ستادی',
+          'دانشگاهی',
+          'پشتیبانی کاربران',
+          'فراموشی رمز عبور',
+          'راهنمای کاربران',
+          'دبیرخانه',
+          'دانشگاه',
+          'ورود سازمانی',
+          'عضویت سازمانی',
+          'لیست مراکز عضو',
+          'ثبت کنفرانس',
+          'جدید',
+          'درخواست نمایه',
+          'ژورنال',
+          'ثبت سخنرانی',
+          'جلسه دفاع',
+          'رتبه بندی',
+          'دانشگاههای ایران',
+          'درباره سیویلیکا',
+          'تبلیغات',
+          'آمار علمی ایران',
+          'تقویم علمی ایران',
+          'رزومه علمی',
+          'کاربران',
+          'داده کاوی',
+          'مقالات',
+          'طرح های پژوهشی',
+          'سایر پایگاه',
+          'اخبار علمی',
+          'دانشگاههای ایران',
+          'انجمنهای علمی',
+          'افراد مهم علمی',
+          'کشور',
+          'اطلاع رسانی',
+          'کنفرانسها',
+          'مجلات علمی پژوهشی',
+          'جستجوی وکیل',
+          'دفتر مرکزی',
+          'انتشارات',
+          'بوم سازه',
+        ];
+
+        sourceInfo.tags = sourceInfo.tags.filter((tag) => {
+          const cleanTag = tag.trim();
+          return (
+            cleanTag.length > 1 &&
+            cleanTag.length < 100 &&
+            !irrelevantTags.some((irrelevant) => cleanTag.includes(irrelevant))
+          );
+        });
+      }
+
+      // Add language field for Persian sources
+      sourceInfo.language = 'persian';
 
       return sourceInfo;
     } catch (error) {

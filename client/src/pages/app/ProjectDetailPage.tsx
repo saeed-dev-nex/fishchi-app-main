@@ -65,7 +65,7 @@ import { SourcesSection } from '../../components/sources/SourcesSection';
 // --- Import Modal and Dialog components ---
 import ConfirmationDialog from '../../components/common/ConfirmationDialog';
 import AddSourceModal from '../../components/sources/AddSourceModal';
-import NoteWorkspace from '../../components/notes/NoteWorkspace';
+import NotesTabWorkspace from '../../components/notes/NotesTabWorkspace';
 import ProjectCitationModal from '../../components/projects/ProjectCitationModal';
 
 //======================================================================
@@ -605,10 +605,63 @@ const ProjectDetailPage: React.FC = () => {
               }}
             >
               {activeSourceId && projectId ? (
-                <NoteWorkspace
-                  projectId={projectId}
-                  sourceId={activeSourceId}
-                />
+                <>
+                  {/* Active Source Info */}
+                  {(() => {
+                    const activeSource = sourcesByProject?.find(
+                      (s) => s._id === activeSourceId
+                    );
+                    return activeSource ? (
+                      <Box
+                        sx={{
+                          p: 2,
+                          borderBottom: (theme) =>
+                            `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+                          background: (theme) =>
+                            `linear-gradient(90deg, ${alpha(
+                              theme.palette.secondary.main,
+                              0.08
+                            )} 0%, transparent 100%)`,
+                        }}
+                      >
+                        <Stack direction='row' alignItems='center' spacing={2}>
+                          <Avatar
+                            sx={{
+                              bgcolor: 'secondary.main',
+                              width: 40,
+                              height: 40,
+                            }}
+                          >
+                            <DescriptionIcon sx={{ fontSize: 20 }} />
+                          </Avatar>
+                          <Box sx={{ flex: 1 }}>
+                            <Typography
+                              variant='subtitle1'
+                              fontWeight='600'
+                              color='secondary'
+                            >
+                              {activeSource.title}
+                            </Typography>
+                            <Typography variant='body2' color='text.secondary'>
+                              {activeSource.authors?.[0]?.name} •{' '}
+                              {activeSource.year}
+                            </Typography>
+                          </Box>
+                          <Chip
+                            label='منبع فعال'
+                            size='small'
+                            color='secondary'
+                            variant='outlined'
+                          />
+                        </Stack>
+                      </Box>
+                    ) : null;
+                  })()}
+                  <NotesTabWorkspace
+                    projectId={projectId}
+                    sourceId={activeSourceId}
+                  />
+                </>
               ) : (
                 <Box
                   sx={{

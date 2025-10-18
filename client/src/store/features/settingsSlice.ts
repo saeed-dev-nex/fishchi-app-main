@@ -129,6 +129,22 @@ const settingsSlice = createSlice({
       state.error = null;
       state.message = null;
     },
+    updateThemeLocally: (state, action) => {
+      // Update theme in localStorage and state without server call
+      const { theme } = action.payload;
+      localStorage.setItem(
+        'user-theme',
+        theme === 'auto'
+          ? window.matchMedia('(prefers-color-scheme: dark)').matches
+            ? 'dark'
+            : 'light'
+          : theme
+      );
+
+      if (state.settings) {
+        state.settings.general.theme = theme;
+      }
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -228,6 +244,10 @@ const settingsSlice = createSlice({
   },
 });
 
-export const { clearSettingsError, clearSettingsMessage, clearSettingsState } =
-  settingsSlice.actions;
+export const {
+  clearSettingsError,
+  clearSettingsMessage,
+  clearSettingsState,
+  updateThemeLocally,
+} = settingsSlice.actions;
 export default settingsSlice.reducer;

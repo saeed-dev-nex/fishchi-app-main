@@ -75,7 +75,7 @@ const translations = {
     // Actions
     'settings.save': 'ذخیره تغییرات',
     'settings.reset': 'بازگردانی پیش‌فرض',
-    'settings.export': 'صادر کردن تنظیمات',
+    'settings.exportSettings': 'صادر کردن تنظیمات',
     'settings.import': 'وارد کردن تنظیمات',
   },
   en: {
@@ -140,7 +140,7 @@ const translations = {
     // Actions
     'settings.save': 'Save Changes',
     'settings.reset': 'Reset to Default',
-    'settings.export': 'Export Settings',
+    'settings.exportSettings': 'Export Settings',
     'settings.import': 'Import Settings',
   },
 };

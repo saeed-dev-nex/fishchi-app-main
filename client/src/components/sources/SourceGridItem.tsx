@@ -85,7 +85,7 @@ export const SourceGridItem: React.FC<SourceGridItemProps> = ({
                 <Stack direction='row' alignItems='center' spacing={1}>
                   <Person sx={{ fontSize: 16, color: 'text.secondary' }} />
                   <Typography variant='body2' color='text.secondary' noWrap>
-                    {source.authors[0].name}
+                    {`${source.authors[0].firstname} ${source.authors[0].lastname}`.trim()}
                   </Typography>
                 </Stack>
               )}

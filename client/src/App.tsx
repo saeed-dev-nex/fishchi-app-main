@@ -7,6 +7,8 @@ import ProtectedRoute from './components/ProtectedRoute';
 import LoginPage from './pages/public/LoginPage';
 import RegisterPage from './pages/public/RegisterPage';
 import VerificationEmail from './pages/public/VerifyEmailPage';
+import ForgotPasswordPage from './pages/public/ForgotPasswordPage';
+import ResetPasswordPage from './pages/public/ResetPasswordPage';
 import ProjectsPage from './pages/app/ProjectsPage';
 import { useDispatch } from 'react-redux';
 import type { AppDispatch } from './store';
@@ -49,6 +51,14 @@ function App() {
                       <Route
                         path='verify-email'
                         element={<VerificationEmail />}
+                      />
+                      <Route
+                        path='forgot-password'
+                        element={<ForgotPasswordPage />}
+                      />
+                      <Route
+                        path='reset-password'
+                        element={<ResetPasswordPage />}
                       />
                     </Route>
                     <Route element={<ProtectedRoute />}>

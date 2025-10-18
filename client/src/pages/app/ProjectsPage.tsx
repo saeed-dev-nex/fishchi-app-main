@@ -606,18 +606,20 @@ const ProjectsPage: React.FC = () => {
                                 </Typography>
                               }
                               secondary={
-                                <Stack spacing={1.5}>
+                                <Box>
                                   <Typography
                                     variant='body2'
                                     color='text.secondary'
-                                    sx={{ lineHeight: 1.6 }}
+                                    sx={{ lineHeight: 1.6, mb: 1 }}
                                   >
                                     {project.description || 'بدون توضیحات'}
                                   </Typography>
-                                  <Stack
-                                    direction='row'
-                                    spacing={1}
-                                    alignItems='center'
+                                  <Box
+                                    sx={{
+                                      display: 'flex',
+                                      gap: 1,
+                                      flexWrap: 'wrap',
+                                    }}
                                   >
                                     <Chip
                                       icon={
@@ -645,8 +647,8 @@ const ProjectsPage: React.FC = () => {
                                         borderRadius: 1,
                                       }}
                                     />
-                                  </Stack>
-                                </Stack>
+                                  </Box>
+                                </Box>
                               }
                             />
                             <Stack

@@ -28,29 +28,16 @@
             <h2>ورود به فیشچی</h2>
             <p>برای استفاده از اکستنشن ابتدا وارد حساب کاربری خود شوید</p>
           </div>
-          <div class="form-group">
-            <label for="email">ایمیل:</label>
-            <input
-              type="email"
-              id="email"
-              placeholder="ایمیل خود را وارد کنید"
-            />
-          </div>
-          <div class="form-group">
-            <label for="password">رمز عبور:</label>
-            <input
-              type="password"
-              id="password"
-              placeholder="رمز عبور خود را وارد کنید"
-            />
-          </div>
-          <button class="btn btn-primary" id="loginBtn">
-            <span class="btn-text">ورود</span>
-            <div class="btn-loader" style="display: none"></div>
-          </button>
-          <div class="auth-links">
-            <a href="#" id="registerLink">ثبت نام</a>
-            <a href="#" id="forgotPasswordLink">فراموشی رمز عبور</a>
+
+          <div class="login-actions">
+            <button class="btn btn-primary" id="loginBtn">
+              <span class="btn-icon">🔑</span>
+              <span class="btn-text">ورود به فیشچی</span>
+            </button>
+
+            <div class="auth-info">
+              <p>برای ورود به سایت فیشچی بروید و وارد حساب کاربری خود شوید</p>
+            </div>
           </div>
         </div>
 
@@ -59,6 +46,18 @@
           <div class="section-header">
             <h2>استخراج منبع</h2>
             <p>اطلاعات منبع از صفحه فعلی استخراج می‌شود</p>
+          </div>
+
+          <!-- User Info -->
+          <div class="user-info" id="userInfo">
+            <div class="user-avatar">👤</div>
+            <div class="user-details">
+              <div class="user-name" id="userName">کاربر</div>
+              <div class="user-email" id="userEmail">user@example.com</div>
+            </div>
+            <button class="btn btn-secondary btn-sm" id="logoutBtn">
+              خروج
+            </button>
           </div>
 
           <!-- Source Info Preview -->
@@ -183,7 +182,7 @@
           <a href="#" id="helpLink">راهنما</a>
           <a href="#" id="testLink">تست</a>
         </div>
-        <div class="version">نسخه 1.0.0</div>
+        <div class="version">نسخه 1.1.0</div>
       </div>
     </div>
 

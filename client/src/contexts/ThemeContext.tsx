@@ -3,7 +3,10 @@ import { ThemeProvider as MuiThemeProvider, CssBaseline } from '@mui/material';
 import { getTheme } from '../theme';
 import { useSelector, useDispatch } from 'react-redux';
 import type { RootState, AppDispatch } from '../store';
-import { updateSettingsSection } from '../store/features/settingsSlice';
+import {
+  updateSettingsSection,
+  updateThemeLocally,
+} from '../store/features/settingsSlice';
 
 interface IThemeContext {
   toggleTheme: () => void;
@@ -36,13 +39,33 @@ export const AppThemeProvider = ({
     return themeSetting as 'light' | 'dark';
   };
 
-  const [mode, setMode] = useState<'light' | 'dark'>(getActualMode);
+  const [mode, setMode] = useState<'light' | 'dark'>(() => {
+    // Try to get theme from localStorage first
+    const savedTheme = localStorage.getItem('user-theme');
+    if (savedTheme && (savedTheme === 'light' || savedTheme === 'dark')) {
+      return savedTheme;
+    }
+
+    // Initialize with system preference if no settings loaded yet
+    if (!settings) {
+      const systemTheme = window.matchMedia('(prefers-color-scheme: dark)')
+        .matches
+        ? 'dark'
+        : 'light';
+      // Save system preference to localStorage
+      localStorage.setItem('user-theme', systemTheme);
+      return systemTheme;
+    }
+    return getActualMode();
+  });
 
   // Update mode when theme setting changes
   useEffect(() => {
     const newMode = getActualMode();
     setMode(newMode);
-  }, [themeSetting]);
+    // Save to localStorage for faster loading next time
+    localStorage.setItem('user-theme', newMode);
+  }, [themeSetting, settings]);
 
   // Listen for system theme changes when auto mode is selected
   useEffect(() => {
@@ -61,25 +84,40 @@ export const AppThemeProvider = ({
     () => ({
       toggleTheme: () => {
         const newMode = mode === 'light' ? 'dark' : 'light';
+
+        // Update theme locally first for instant feedback
+        dispatch(updateThemeLocally({ theme: newMode }));
+
+        // Try to update server settings
         dispatch(
           updateSettingsSection({
             section: 'general',
             data: { theme: newMode },
           })
-        );
+        ).catch((error) => {
+          console.warn('Failed to update theme on server:', error);
+          // Theme is already saved locally, so user experience is not affected
+        });
       },
       setTheme: (theme: 'light' | 'dark' | 'auto') => {
+        // Update theme locally first for instant feedback
+        dispatch(updateThemeLocally({ theme }));
+
+        // Try to update server settings
         dispatch(
           updateSettingsSection({
             section: 'general',
             data: { theme },
           })
-        );
+        ).catch((error) => {
+          console.warn('Failed to update theme on server:', error);
+          // Theme is already saved locally, so user experience is not affected
+        });
       },
       mode,
       themeSetting,
     }),
-    [mode, themeSetting, dispatch]
+    [mode, themeSetting, dispatch, settings]
   );
 
   const theme = useMemo(() => getTheme(mode), [mode]);

@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>تست الگوریتم تبدیل نام‌های فارسی</title>
+    <style>
+      body {
+        font-family: 'Tahoma', 'Arial', sans-serif;
+        margin: 20px;
+        background-color: #f5f5f5;
+        direction: rtl;
+      }
+      .container {
+        max-width: 800px;
+        margin: 0 auto;
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+      h1 {
+        color: #2c3e50;
+        text-align: center;
+        margin-bottom: 30px;
+      }
+      .test-section {
+        margin: 20px 0;
+        padding: 15px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+      }
+      .test-case {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px;
+        margin: 5px 0;
+        background: #f9f9f9;
+        border-radius: 3px;
+      }
+      .input-name {
+        font-weight: bold;
+        color: #e74c3c;
+      }
+      .output-name {
+        font-weight: bold;
+        color: #27ae60;
+      }
+      .arrow {
+        color: #3498db;
+        font-size: 18px;
+      }
+      .test-input {
+        width: 100%;
+        padding: 10px;
+        margin: 10px 0;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        font-size: 16px;
+      }
+      .test-button {
+        background: #3498db;
+        color: white;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 16px;
+      }
+      .test-button:hover {
+        background: #2980b9;
+      }
+      .result {
+        margin-top: 10px;
+        padding: 10px;
+        background: #ecf0f1;
+        border-radius: 5px;
+        font-weight: bold;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>تست الگوریتم تبدیل نام‌های فارسی</h1>
+
+      <div class="test-section">
+        <h3>تست دستی</h3>
+        <input
+          type="text"
+          id="manualTest"
+          class="test-input"
+          placeholder="نام را وارد کنید (مثال: محمدی علیرضا)"
+        />
+        <button onclick="testManual()" class="test-button">تست کن</button>
+        <div id="manualResult" class="result"></div>
+      </div>
+
+      <div class="test-section">
+        <h3>تست‌های خودکار</h3>
+        <div id="autoTests"></div>
+      </div>
+    </div>
+
+    <script src="nameProcessor.js"></script>
+    <script>
+      // Test cases for automatic testing
+      const testCases = [
+        // Simple cases
+        { input: 'محمدی علیرضا', expected: 'علیرضا محمدی' },
+        { input: 'احمدی محمد', expected: 'محمد احمدی' },
+        { input: 'رضایی علی', expected: 'علی رضایی' },
+
+        // Complex cases with prefixes
+        { input: 'محمدی سید علیرضا', expected: 'سید علیرضا محمدی' },
+        { input: 'احمدی میر محمد', expected: 'میر محمد احمدی' },
+        { input: 'رضایی حاج علی', expected: 'حاج علی رضایی' },
+
+        // Complex cases with suffixes
+        { input: 'محمدی‌زاده علیرضا', expected: 'علیرضا محمدی‌زاده' },
+        { input: 'احمدی‌پور محمد', expected: 'محمد احمدی‌پور' },
+        { input: 'رضایی‌نژاد علی', expected: 'علی رضایی‌نژاد' },
+
+        // Very complex cases
+        { input: 'محمدی‌زاده سید علیرضا', expected: 'سید علیرضا محمدی‌زاده' },
+        { input: 'احمدی‌پور میر محمد', expected: 'میر محمد احمدی‌پور' },
+        { input: 'رضایی‌نژاد حاج علی', expected: 'حاج علی رضایی‌نژاد' },
+
+        // Geographic cases
+        { input: 'تهرانی محمد', expected: 'محمد تهرانی' },
+        { input: 'اصفهانی علی', expected: 'علی اصفهانی' },
+        { input: 'شیرازی احمد', expected: 'احمد شیرازی' },
+
+        // Mixed complex cases
+        { input: 'تهرانی‌زاده سید محمد', expected: 'سید محمد تهرانی‌زاده' },
+        { input: 'اصفهانی‌پور میر علی', expected: 'میر علی اصفهانی‌پور' },
+
+        // Edge cases
+        { input: 'علی محمد', expected: 'محمد علی' },
+        { input: 'محمد علی', expected: 'علی محمد' },
+      ];
+
+      function testManual() {
+        const input = document.getElementById('manualTest').value.trim();
+        if (!input) {
+          document.getElementById('manualResult').innerHTML =
+            'لطفاً نامی وارد کنید';
+          return;
+        }
+
+        const result = PersianNameProcessor.reversePersianName(input);
+        document.getElementById(
+          'manualResult'
+        ).innerHTML = `<span class="input-name">${input}</span> <span class="arrow">→</span> <span class="output-name">${result}</span>`;
+      }
+
+      function runAutoTests() {
+        const container = document.getElementById('autoTests');
+        let html = '';
+
+        testCases.forEach((testCase, index) => {
+          const result = PersianNameProcessor.reversePersianName(
+            testCase.input
+          );
+          const isCorrect = result === testCase.expected;
+          const statusClass = isCorrect ? 'correct' : 'incorrect';
+          const statusIcon = isCorrect ? '✓' : '✗';
+
+          html += `
+                    <div class="test-case ${statusClass}">
+                        <span class="input-name">${testCase.input}</span>
+                        <span class="arrow">→</span>
+                        <span class="output-name">${result}</span>
+                        <span style="color: ${
+                          isCorrect ? 'green' : 'red'
+                        }">${statusIcon}</span>
+                        ${
+                          !isCorrect
+                            ? `<div style="font-size: 12px; color: #666;">انتظار: ${testCase.expected}</div>`
+                            : ''
+                        }
+                    </div>
+                `;
+        });
+
+        container.innerHTML = html;
+      }
+
+      // Run tests when page loads
+      window.onload = function () {
+        runAutoTests();
+      };
+    </script>
+  </body>
+</html>
+
+

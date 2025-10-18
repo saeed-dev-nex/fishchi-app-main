@@ -19,6 +19,7 @@ import {
   Divider,
   alpha,
   useTheme,
+  Alert,
 } from '@mui/material';
 import {
   FolderOpen,
@@ -30,12 +31,13 @@ import {
   Edit,
 } from '@mui/icons-material';
 import { useDispatch, useSelector } from 'react-redux';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import type { RootState, AppDispatch } from '../../store';
 import type { IProject } from '../../types';
 import { fetchProjects } from '../../store/features/projectSlice';
 import { fetchAllUserSources } from '../../store/features/sourceSlice';
 import { fetchUserProfile } from '../../store/features/profileSlice';
+import { checkUserStatus } from '../../store/features/authSlice';
 import DashboardStats from '../../components/dashboard/DashboardStats';
 import RecentActivity from '../../components/dashboard/RecentActivity';
 import ProgressChart from '../../components/dashboard/ProgressChart';
@@ -44,6 +46,7 @@ const DashboardPage: React.FC = () => {
   const theme = useTheme();
   const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
+  const [searchParams] = useSearchParams();
 
   // Redux state
   const { user } = useSelector((state: RootState) => state.auth);
@@ -57,8 +60,26 @@ const DashboardPage: React.FC = () => {
 
   // Local state
   const [recentProjects, setRecentProjects] = useState<IProject[]>([]);
+  const [oauthSuccess, setOauthSuccess] = useState(false);
+  const [oauthError, setOauthError] = useState<string | null>(null);
 
   useEffect(() => {
+    // Handle OAuth callback
+    const oauthParam = searchParams.get('oauth');
+    const errorParam = searchParams.get('error');
+
+    if (oauthParam === 'success') {
+      setOauthSuccess(true);
+      // Refresh user status after OAuth success
+      dispatch(checkUserStatus());
+      // Clear URL parameters
+      navigate('/app', { replace: true });
+    } else if (errorParam) {
+      setOauthError('خطا در ورود با حساب خارجی');
+      // Clear URL parameters
+      navigate('/app', { replace: true });
+    }
+
     // Fetch user profile
     dispatch(fetchUserProfile());
 
@@ -72,7 +93,7 @@ const DashboardPage: React.FC = () => {
         sortOrder: 'desc',
       })
     );
-  }, [dispatch]);
+  }, [dispatch, searchParams, navigate]);
 
   useEffect(() => {
     if (projects) {
@@ -284,6 +305,26 @@ const DashboardPage: React.FC = () => {
 
   return (
     <Container maxWidth='xl' sx={{ py: 4 }}>
+      {/* OAuth Success/Error Messages */}
+      {oauthSuccess && (
+        <Alert
+          severity='success'
+          sx={{ mb: 3 }}
+          onClose={() => setOauthSuccess(false)}
+        >
+          ورود با موفقیت انجام شد! خوش آمدید.
+        </Alert>
+      )}
+      {oauthError && (
+        <Alert
+          severity='error'
+          sx={{ mb: 3 }}
+          onClose={() => setOauthError(null)}
+        >
+          {oauthError}
+        </Alert>
+      )}
+
       {/* Welcome Section */}
       <Box sx={{ mb: 4 }}>
         <Typography variant='h4' fontWeight='600' gutterBottom>

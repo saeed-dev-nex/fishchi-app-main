@@ -249,7 +249,7 @@ const SettingsPage: React.FC = () => {
             />
             <Tab
               icon={<FileDownload />}
-              label={t('settings.export')}
+              label={t('settings.exportSettings')}
               iconPosition='start'
             />
             <Tab
@@ -589,7 +589,7 @@ const SettingsPage: React.FC = () => {
         {/* Export Settings */}
         <TabPanel value={activeTab} index={3}>
           <Stack spacing={3}>
-            <Typography variant='h6'>{t('settings.export')}</Typography>
+            <Typography variant='h6'>{t('settings.exportSettings')}</Typography>
 
             <FormControl fullWidth>
               <InputLabel>{t('settings.export.defaultFormat')}</InputLabel>

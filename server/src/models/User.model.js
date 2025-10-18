@@ -35,6 +35,16 @@ const userSchema = new Schema(
       default: null,
       select: false,
     },
+    resetPasswordCode: {
+      type: String,
+      default: null,
+      select: false,
+    },
+    resetPasswordCodeExpires: {
+      type: Date,
+      default: null,
+      select: false,
+    },
     avatar: {
       type: String,
       default: null,

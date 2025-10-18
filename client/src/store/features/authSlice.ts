@@ -6,6 +6,8 @@ import type {
   LoginData,
   RegisterData,
   VerifyFormInputs,
+  ForgotPasswordData,
+  ResetPasswordData,
 } from '../../types';
 import apiClient from '../../api/axios';
 import { extractErrorMessage, ERROR_MESSAGES } from '../../utils/errorHandler';
@@ -26,8 +28,16 @@ export const checkUserStatus = createAsyncThunk(
     try {
       const { data } = await apiClient.get('/users/profile');
       return data.data as IUser;
-    } catch {
+    } catch (error: any) {
       // Don't log error for auth check failure - it's expected for non-authenticated users
+      // Only log if it's not a 401 error (which is expected)
+      if (error.response?.status !== 401) {
+        console.log(
+          'Auth check failed with unexpected error:',
+          error.response?.status,
+          error.response?.data?.message
+        );
+      }
       return thunkAPI.rejectWithValue('Not authenticated');
     }
   }
@@ -90,6 +100,41 @@ export const logoutUser = createAsyncThunk(
     }
   }
 );
+
+// 6. Forgot Password
+export const forgotPassword = createAsyncThunk(
+  'auth/forgotPassword',
+  async (forgotPasswordData: ForgotPasswordData, thunkAPI) => {
+    try {
+      const { data } = await apiClient.post(
+        '/users/forgot-password',
+        forgotPasswordData
+      );
+      return data.message;
+    } catch (error: unknown) {
+      const message = extractErrorMessage(error, 'خطا در ارسال کد بازیابی');
+      return thunkAPI.rejectWithValue(message);
+    }
+  }
+);
+
+// 7. Reset Password
+export const resetPassword = createAsyncThunk(
+  'auth/resetPassword',
+  async (resetPasswordData: ResetPasswordData, thunkAPI) => {
+    try {
+      const { data } = await apiClient.post(
+        '/users/reset-password',
+        resetPasswordData
+      );
+      return data.message;
+    } catch (error: unknown) {
+      const message = extractErrorMessage(error, 'خطا در تغییر رمز عبور');
+      return thunkAPI.rejectWithValue(message);
+    }
+  }
+);
+
 // Create Slice
 export const authSlice = createSlice({
   name: 'auth',
@@ -124,10 +169,14 @@ export const authSlice = createSlice({
         state.user = action.payload;
         state.error = null;
       })
-      .addCase(checkUserStatus.rejected, (state) => {
+      .addCase(checkUserStatus.rejected, (state, action) => {
         state.isLoading = false;
         state.user = null;
         state.error = null; // Don't set error for auth check failure
+        // Only log if it's not the expected "Not authenticated" error
+        if (action.payload !== 'Not authenticated') {
+          console.log('Unexpected auth check error:', action.payload);
+        }
       })
       // ----- Register User -----
       .addCase(registerUser.pending, (state) => {
@@ -183,6 +232,32 @@ export const authSlice = createSlice({
       .addCase(logoutUser.rejected, (state, action) => {
         state.isLoading = false;
         state.user = null; // Clear user even if logout fails
+        state.error = action.payload as string;
+      })
+      // ----- Forgot Password -----
+      .addCase(forgotPassword.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(forgotPassword.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.message = action.payload;
+        state.error = null;
+      })
+      .addCase(forgotPassword.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+      })
+      // ----- Reset Password -----
+      .addCase(resetPassword.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(resetPassword.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.message = action.payload;
+        state.error = null;
+      })
+      .addCase(resetPassword.rejected, (state, action) => {
+        state.isLoading = false;
         state.error = action.payload as string;
       });
   },

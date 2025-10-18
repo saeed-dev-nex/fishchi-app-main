@@ -15,6 +15,13 @@ let isLoggingOut = false;
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
+    // Log error for debugging
+    console.log(
+      'API Error:',
+      error.response?.status,
+      error.response?.data?.message
+    );
+
     if (error.response?.status === 401 && !isLoggingOut) {
       isLoggingOut = true;
 

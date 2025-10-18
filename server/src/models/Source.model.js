@@ -1,7 +1,8 @@
 import { Schema, model } from 'mongoose';
 
 const authorSchema = new Schema({
-  name: { type: String, require: true },
+  firstname: { type: String, required: true },
+  lastname: { type: String, required: true },
 });
 
 const sourceSchema = new Schema(
@@ -25,6 +26,12 @@ const sourceSchema = new Schema(
       type: String,
       enum: ['book', 'article', 'thesis', 'website', 'other'],
       default: 'book',
+    },
+    //   ---- Language
+    language: {
+      type: String,
+      enum: ['persian', 'english'],
+      default: 'english',
     },
     //   Publisher Detail
     publicationDetails: {
@@ -52,17 +59,13 @@ const sourceSchema = new Schema(
 );
 
 // Add indexes for fast searching and sorting
-sourceSchema.index({
-  title: 'text',
-  abstract: 'text',
-  'authors.name': 'text',
-  tags: 'text',
-});
 sourceSchema.index({ user: 1, createdAt: -1 });
 sourceSchema.index({ user: 1, title: 1 });
 sourceSchema.index({ user: 1, year: -1 });
-sourceSchema.index({ user: 1, 'authors.name': 1 });
+sourceSchema.index({ user: 1, 'authors.firstname': 1 });
+sourceSchema.index({ user: 1, 'authors.lastname': 1 });
 sourceSchema.index({ user: 1, tags: 1 });
+sourceSchema.index({ user: 1, language: 1 });
 
 const Source = model('Source', sourceSchema);
 export default Source;

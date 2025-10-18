@@ -56,7 +56,7 @@ export const SourceDetails: React.FC<SourceDetailsProps> = ({ source }) => {
                 <Chip
                   key={index}
                   icon={<Person />}
-                  label={author.name}
+                  label={`${author.firstname} ${author.lastname}`.trim()}
                   variant='outlined'
                 />
               ))}

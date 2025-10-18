@@ -1,0 +1,238 @@
+import React from 'react';
+import {
+  Grid,
+  Paper,
+  TextField,
+  Button,
+  Typography,
+  InputAdornment,
+  useTheme,
+  useMediaQuery,
+  Box,
+  Avatar,
+  Container,
+  Alert,
+  CircularProgress,
+} from '@mui/material';
+import { Email, Person, ArrowBack } from '@mui/icons-material';
+import loginImage from '../../assets/images/login.jpg';
+import { Link, useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
+import type { AppDispatch, RootState } from '../../store';
+import { useForm, type SubmitHandler } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { forgotPassword } from '../../store/features/authSlice';
+
+// Validation schema for forgot password form
+const forgotPasswordSchema = z.object({
+  email: z.string().min(1, 'ایمیل الزامی است').email('فرمت ایمیل صحیح نیست'),
+});
+
+type ForgotPasswordFormInputs = z.infer<typeof forgotPasswordSchema>;
+
+const ForgotPasswordPage: React.FC = () => {
+  const navigate = useNavigate();
+  const dispatch = useDispatch<AppDispatch>();
+  const { isLoading, error, message } = useSelector(
+    (state: RootState) => state.auth
+  );
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<ForgotPasswordFormInputs>({
+    resolver: zodResolver(forgotPasswordSchema),
+  });
+
+  const onSubmit: SubmitHandler<ForgotPasswordFormInputs> = async (data) => {
+    const result = await dispatch(forgotPassword({ email: data.email }));
+
+    if (forgotPassword.fulfilled.match(result)) {
+      // Redirect to reset password page after 2 seconds
+      setTimeout(() => {
+        navigate('/reset-password', {
+          state: { email: data.email },
+          replace: true,
+        });
+      }, 2000);
+    }
+  };
+
+  return (
+    <Container sx={{ mb: 2 }}>
+      <Grid
+        container
+        component='main'
+        sx={{ width: '100%', direction: 'rtl', mx: 'auto' }}
+      >
+        {/* Image Grid Item - hidden on extra-small screens */}
+        <Grid
+          size={{ xs: 0, sm: 4, md: 6 }}
+          sx={{
+            backgroundImage: `url(${loginImage})`,
+            backgroundRepeat: 'no-repeat',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          }}
+        />
+        {/* Form Grid Item */}
+        <Grid
+          size={{ xs: 12, sm: 8, md: 6 }}
+          component={Paper}
+          elevation={6}
+          square
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: 'background.default',
+          }}
+        >
+          <Box
+            sx={{
+              my: 8,
+              mx: 4,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              padding: 4,
+              borderRadius: 2,
+              boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
+              transition: 'transform 0.3s ease',
+              '&:hover': {
+                transform: 'translateY(-5px)',
+              },
+              maxWidth: 450,
+            }}
+          >
+            <Avatar
+              sx={{ m: 1, bgcolor: 'secondary.main', width: 60, height: 60 }}
+            >
+              <Person sx={{ fontSize: 36, color: 'white' }} />
+            </Avatar>
+            <Typography
+              component='h1'
+              variant={isMobile ? 'h5' : 'h4'}
+              sx={{
+                marginBottom: 3,
+                fontWeight: 'bold',
+                background: 'linear-gradient(45deg, #2196F3 20%, #21CBF3 90%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                textAlign: 'center',
+              }}
+            >
+              فراموشی رمز عبور
+            </Typography>
+            <Typography
+              variant='body1'
+              sx={{
+                textAlign: 'center',
+                color: 'text.secondary',
+                mb: 3,
+                lineHeight: 1.6,
+              }}
+            >
+              ایمیل خود را وارد کنید تا کد بازیابی رمز عبور برای شما ارسال شود
+            </Typography>
+            <Box
+              component='form'
+              noValidate
+              sx={{ mt: 1, width: '100%' }}
+              onSubmit={handleSubmit(onSubmit)}
+            >
+              {error && (
+                <Alert severity='error' sx={{ width: '100%', mb: 2 }}>
+                  {error}
+                </Alert>
+              )}
+              {message && (
+                <Alert severity='success' sx={{ width: '100%', mb: 2 }}>
+                  {message}
+                </Alert>
+              )}
+              <TextField
+                variant='outlined'
+                margin='normal'
+                required
+                fullWidth
+                id='email'
+                label='پست الکترونیک'
+                autoComplete='email'
+                autoFocus
+                slotProps={{
+                  input: {
+                    startAdornment: (
+                      <InputAdornment position='start'>
+                        <Email />
+                      </InputAdornment>
+                    ),
+                  },
+                }}
+                sx={{
+                  borderRadius: 30,
+                  '& .MuiInputBase-input': {
+                    direction: 'rtl',
+                    textAlign: 'right',
+                  },
+                }}
+                {...register('email')}
+                error={!!errors.email}
+                helperText={errors.email?.message}
+              />
+              <Button
+                type='submit'
+                fullWidth
+                variant='contained'
+                disabled={isLoading}
+                startIcon={isLoading ? <CircularProgress size={20} /> : null}
+                sx={{
+                  mt: 3,
+                  mb: 2,
+                  py: 1.5,
+                  borderRadius: 30,
+                  background:
+                    'linear-gradient(45deg, #2196F3 30%, #21CBF3 90%)',
+                  color: 'white',
+                  fontWeight: 'bold',
+                  transition: 'all 0.3s ease',
+                  '&:hover': {
+                    transform: 'scale(1.02)',
+                    boxShadow: '0 5px 15px rgba(33, 203, 243, 0.4)',
+                  },
+                }}
+              >
+                {isLoading ? 'در حال ارسال...' : 'ارسال کد بازیابی'}
+              </Button>
+              <Box sx={{ mt: 3, textAlign: 'center' }}>
+                <Typography variant='body2' sx={{ cursor: 'pointer' }}>
+                  <Link
+                    to='/login'
+                    style={{
+                      textDecoration: 'none',
+                      color: 'inherit',
+                      fontWeight: 'bold',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                    }}
+                  >
+                    <ArrowBack fontSize='small' />
+                    بازگشت به صفحه ورود
+                  </Link>
+                </Typography>
+              </Box>
+            </Box>
+          </Box>
+        </Grid>
+      </Grid>
+    </Container>
+  );
+};
+
+export default ForgotPasswordPage;

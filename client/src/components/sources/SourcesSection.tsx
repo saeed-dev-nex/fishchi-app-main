@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Box,
   List,
@@ -13,6 +13,7 @@ import {
 } from '@mui/material';
 import { LibraryBooks, Add } from '@mui/icons-material';
 import SourceListItem from './SourceListItem'; // کامپوننت آیتم لیست
+import SourcesPagination from './SourcesPagination';
 import type { ISource } from '../../types';
 
 // تعریف Props
@@ -43,6 +44,24 @@ export const SourcesSection: React.FC<SourcesSectionProps> = ({
 }) => {
   const numSelected = selected.length;
   const sourceCount = Array.isArray(sources) ? sources.length : 0;
+
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(5);
+
+  // Calculate pagination
+  const totalPages = Math.ceil(sourceCount / itemsPerPage);
+  const paginatedSources = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return sources.slice(startIndex, endIndex);
+  }, [sources, currentPage, itemsPerPage]);
+
+  // Reset to first page when items per page changes
+  const handleItemsPerPageChange = (newItemsPerPage: number) => {
+    setItemsPerPage(newItemsPerPage);
+    setCurrentPage(1);
+  };
 
   const renderContent = () => {
     if (isLoading)
@@ -82,8 +101,8 @@ export const SourcesSection: React.FC<SourcesSectionProps> = ({
 
     return (
       <List>
-        {Array.isArray(sources)
-          ? sources.map((source) => (
+        {Array.isArray(paginatedSources)
+          ? paginatedSources.map((source) => (
               <SourceListItem
                 key={source._id}
                 source={source}
@@ -147,6 +166,18 @@ export const SourcesSection: React.FC<SourcesSectionProps> = ({
 
       {/* Content */}
       <Box sx={{ flex: 1, overflow: 'auto' }}>{renderContent()}</Box>
+
+      {/* Pagination */}
+      {sourceCount > 0 && (
+        <SourcesPagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          itemsPerPage={itemsPerPage}
+          totalItems={sourceCount}
+          onPageChange={setCurrentPage}
+          onItemsPerPageChange={handleItemsPerPageChange}
+        />
+      )}
     </Box>
   );
 };

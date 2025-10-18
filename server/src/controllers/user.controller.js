@@ -147,23 +147,23 @@ const getUserProfile = asyncHandler(async (req, res) => {
   // middleware ما قبلاً کاربر را پیدا کرده و در req.user قرار داده است
   const user = req.user;
 
-  if (user) {
-    ApiResponse.success(res, {
-      _id: user._id,
-      name: user.name,
-      email: user.email,
-      avatar: user.avatar,
-      university: user.university,
-      fieldOfStudy: user.fieldOfStudy,
-      degree: user.degree,
-      bio: user.bio,
-      isVerified: user.isVerified,
-      createdAt: user.createdAt,
-    });
-  } else {
+  if (!user) {
     res.status(404);
     throw new Error('کاربر یافت نشد');
   }
+
+  ApiResponse.success(res, {
+    _id: user._id,
+    name: user.name,
+    email: user.email,
+    avatar: user.avatar,
+    university: user.university,
+    fieldOfStudy: user.fieldOfStudy,
+    degree: user.degree,
+    bio: user.bio,
+    isVerified: user.isVerified,
+    createdAt: user.createdAt,
+  });
 });
 
 // @desc    بروزرسانی پروفایل کاربر
@@ -307,6 +307,97 @@ const deleteAvatar = asyncHandler(async (req, res) => {
   ApiResponse.success(res, null, 'عکس پروفایل با موفقیت حذف شد');
 });
 
+// <-------------- Forgot Password Handler --------------------->
+/**
+ * @desc Send reset password code to user email
+ * @route POST /api/v1/users/forgot-password
+ * @access Public
+ */
+const forgotPassword = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+
+  if (!email) {
+    res.status(400);
+    throw new Error('ایمیل الزامی است');
+  }
+
+  const user = await User.findOne({ email });
+  if (!user) {
+    res.status(404);
+    throw new Error('کاربری با این ایمیل یافت نشد');
+  }
+
+  // Generate reset code
+  const resetCode = otpGenerator.generate(8, {
+    upperCaseAlphabets: false,
+    lowerCaseAlphabets: false,
+    specialChars: false,
+  });
+
+  // Set reset code and expiration (10 minutes)
+  user.resetPasswordCode = resetCode;
+  user.resetPasswordCodeExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
+  await user.save();
+
+  // Send email with reset code
+  sendEmail({
+    to: user.email,
+    subject: 'کد بازیابی رمز عبور',
+    text: `کد بازیابی رمز عبور شما: ${resetCode}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #333;">بازیابی رمز عبور</h2>
+        <p>سلام ${user.name}،</p>
+        <p>درخواست بازیابی رمز عبور برای حساب کاربری شما دریافت شده است.</p>
+        <p>کد بازیابی شما:</p>
+        <div style="background-color: #f4f4f4; padding: 20px; text-align: center; font-size: 24px; font-weight: bold; letter-spacing: 2px; margin: 20px 0;">
+          ${resetCode}
+        </div>
+        <p>این کد تا ۱۰ دقیقه معتبر است.</p>
+        <p>اگر شما این درخواست را نکرده‌اید، لطفاً این ایمیل را نادیده بگیرید.</p>
+        <hr style="margin: 30px 0;">
+        <p style="color: #666; font-size: 12px;">این ایمیل به صورت خودکار ارسال شده است.</p>
+      </div>
+    `,
+  });
+
+  ApiResponse.success(res, null, 'کد بازیابی رمز عبور به ایمیل شما ارسال شد');
+});
+
+// <-------------- Reset Password Handler --------------------->
+/**
+ * @desc Reset user password with verification code
+ * @route POST /api/v1/users/reset-password
+ * @access Public
+ */
+const resetPassword = asyncHandler(async (req, res) => {
+  const { email, code, newPassword } = req.body;
+
+  if (!email || !code || !newPassword) {
+    res.status(400);
+    throw new Error('ایمیل، کد و رمز عبور جدید الزامی است');
+  }
+
+  const user = await User.findOne({
+    email,
+    resetPasswordCode: code,
+    resetPasswordCodeExpires: { $gt: Date.now() },
+  }).select('+resetPasswordCode, +resetPasswordCodeExpires');
+
+  if (!user) {
+    res.status(400);
+    throw new Error('کد بازیابی نامعتبر یا منقضی شده است');
+  }
+
+  // Update password
+  user.password = newPassword;
+  user.resetPasswordCode = null;
+  user.resetPasswordCodeExpires = null;
+  await user.save();
+
+  ApiResponse.success(res, null, 'رمز عبور با موفقیت تغییر کرد');
+});
+
 // <-------------- Logout Handler --------------------->
 /**
  * @desc Logout user
@@ -335,4 +426,6 @@ export {
   changePassword,
   uploadAvatar,
   deleteAvatar,
+  forgotPassword,
+  resetPassword,
 };

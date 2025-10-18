@@ -8,6 +8,8 @@ import { Cite, plugins } from '@citation-js/core';
 import '@citation-js/plugin-csl';
 import { mapSourceToCSL } from '../utils/cslMapper.js';
 import checkProjectOwnership from '../utils/checkOwnershipProject.js';
+import moment from 'moment-jalaali';
+import { parseCitation } from '../utils/citationParser.js';
 
 // --------- Get All Sources ----------
 // @desc get sources with pagination, sorting and search
@@ -53,7 +55,8 @@ const getSources = asyncHandler(async (req, res) => {
       searchConditions.push({ title: searchRegex });
     }
     if (searchFieldsArray.includes('authors')) {
-      searchConditions.push({ 'authors.name': searchRegex });
+      searchConditions.push({ 'authors.firstname': searchRegex });
+      searchConditions.push({ 'authors.lastname': searchRegex });
     }
     if (searchFieldsArray.includes('tags')) {
       searchConditions.push({ tags: searchRegex });
@@ -129,20 +132,74 @@ const getSources = asyncHandler(async (req, res) => {
   ApiResponse.success(res, responseData, 'لیست منابع با موفقیت دریافت شد');
 });
 
+// Helper function to convert year based on language
+const convertYearBasedOnLanguage = (year, language) => {
+  // Check for null, undefined, empty string, or zero
+  if (
+    !year ||
+    year === null ||
+    year === undefined ||
+    year === '' ||
+    year === 0
+  ) {
+    return null;
+  }
+
+  // Convert to number if it's a string
+  const numericYear = typeof year === 'string' ? parseInt(year, 10) : year;
+
+  // Check if the conversion resulted in a valid number
+  if (isNaN(numericYear) || numericYear <= 0) {
+    return null;
+  }
+
+  if (language === 'persian') {
+    // For Persian sources, if the year is already in Persian format (1300-1500 range), keep it as is
+    // If it's in Gregorian format (1900-2100 range), convert it to Persian
+    if (numericYear >= 1300 && numericYear <= 1500) {
+      // Already in Persian format, keep as is
+      return numericYear;
+    } else if (numericYear >= 1900 && numericYear <= 2100) {
+      // Gregorian format, convert to Persian
+      const gregorianDate = moment(`${numericYear}-01-01`, 'YYYY-MM-DD');
+      const persianYear = gregorianDate.jYear();
+      return persianYear;
+    } else {
+      // Unknown format, keep as is
+      return numericYear;
+    }
+  } else {
+    // For English sources, keep the year as is (Gregorian)
+    return numericYear;
+  }
+};
+
 // Create new source
 // @route POST /api/v1/sources
 // @access Private
 const createSource = asyncHandler(async (req, res) => {
-  const { projectId, title, authors, ...rest } = req.body;
+  const {
+    projectId,
+    title,
+    authors,
+    year,
+    language = 'english',
+    ...rest
+  } = req.body;
   if (!title) {
     res.status(400);
     throw new Error('فیلد   title الزامی است');
   }
 
+  // Convert year based on language
+  const convertedYear = convertYearBasedOnLanguage(year, language);
+
   const source = await Source.create({
     user: req.user._id,
     title,
     authors,
+    year: convertedYear,
+    language,
     ...rest,
   });
 
@@ -202,7 +259,10 @@ const mapCrossrefToSource = (crossrefResult) => {
   //   Extract Title
   const sourceTitle = title && title.length > 0 ? title[0] : 'عنوان یافت نشد';
   const authors = author
-    ? author.map((a) => ({ name: `${a.given || ''} ${a.family || ''}` }))
+    ? author.map((a) => ({
+        firstname: a.given || '',
+        lastname: a.family || '',
+      }))
     : [];
   const year =
     issued && issued['date-parts'] ? issued['date-parts'][0][0] : null;
@@ -214,6 +274,7 @@ const mapCrossrefToSource = (crossrefResult) => {
     authors,
     year,
     type: sourceType,
+    language: 'english', // DOI sources are always English
     publicationDetails: {
       journal: journal && journal.length > 0 ? journal[0] : null,
       publisher,
@@ -298,16 +359,33 @@ const updateSource = asyncHandler(async (req, res) => {
     res.status(401);
     throw new Error('شما مجاز به ویرایش این منبع نیستید');
   }
-  const { title, authors, year, type, identifiers, abstract, tags, rawCSL } =
-    req.body;
+  const {
+    title,
+    authors,
+    year,
+    type,
+    identifiers,
+    abstract,
+    tags,
+    rawCSL,
+    language,
+    publicationDetails,
+  } = req.body;
   source.title = title || source.title;
   source.authors = authors || source.authors;
-  source.year = year || source.year;
   source.type = type || source.type;
   source.identifiers = identifiers || source.identifiers;
   source.abstract = abstract || source.abstract;
   source.tags = tags || source.tags;
   source.rawCSL = rawCSL || source.rawCSL;
+  source.language = language || source.language;
+  source.publicationDetails = publicationDetails || source.publicationDetails;
+
+  // Convert year based on language if year is being updated
+  if (year !== undefined) {
+    source.year = convertYearBasedOnLanguage(year, source.language);
+  }
+
   const updateSource = await source.save();
   ApiResponse.success(res, updateSource, 'منبع با موفقیت ویرایش شد');
 });
@@ -422,6 +500,29 @@ const generateCitation = asyncHandler(async (req, res) => {
   }
 });
 
+/**
+ * @desc Parse citation text and extract source information
+ * @route POST /api/v1/sources/parse-citation
+ * @access Private
+ */
+const parseCitationText = asyncHandler(async (req, res) => {
+  const { citation } = req.body;
+
+  if (!citation || typeof citation !== 'string') {
+    res.status(400);
+    throw new Error('Citation text is required');
+  }
+
+  const result = parseCitation(citation);
+
+  if (result.success) {
+    ApiResponse.success(res, result.data, result.message);
+  } else {
+    res.status(400);
+    throw new Error(result.message);
+  }
+});
+
 export {
   createSource,
   importSourceByDOI,
@@ -432,4 +533,5 @@ export {
   deleteSource,
   getSourceProjects,
   generateCitation,
+  parseCitationText,
 };

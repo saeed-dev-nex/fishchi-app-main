@@ -39,6 +39,8 @@ import logo_text from '../assets/images/logo.png';
 import { useDispatch, useSelector } from 'react-redux';
 import type { AppDispatch, RootState } from '../store';
 import { logoutUser } from '../store/features/authSlice';
+import { fetchUserSettings } from '../store/features/settingsSlice';
+import { useEffect } from 'react';
 
 const drawerWidth = 280;
 
@@ -74,17 +76,25 @@ const navigationItems: NavigationItem[] = [
 
 const AppLayout: React.FC = () => {
   const { user } = useSelector((state: RootState) => state.auth);
+  const { settings } = useSelector((state: RootState) => state.settings);
   const dispatch = useDispatch<AppDispatch>();
   const theme = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
-  const { mode, toggleTheme } = useAppTheme();
+  const { mode, toggleTheme, setTheme } = useAppTheme();
 
   // Responsive breakpoint - hide sidebar on MD and below
   const isMdDown = useMediaQuery(theme.breakpoints.down('md'));
 
   const [mobileOpen, setMobileOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+
+  // Fetch user settings on component mount
+  useEffect(() => {
+    if (user && !settings) {
+      dispatch(fetchUserSettings());
+    }
+  }, [user, settings, dispatch]);
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -269,7 +279,14 @@ const AppLayout: React.FC = () => {
           {/* Header Actions */}
           <Stack direction='row' spacing={1} alignItems='center'>
             {/* Theme Toggle */}
-            <IconButton onClick={toggleTheme} color='inherit'>
+            <IconButton
+              onClick={() => {
+                const newTheme = mode === 'dark' ? 'light' : 'dark';
+                setTheme(newTheme);
+              }}
+              color='inherit'
+              title={mode === 'dark' ? 'تغییر به تم روشن' : 'تغییر به تم تیره'}
+            >
               {mode === 'dark' ? <Brightness7 /> : <Brightness4 />}
             </IconButton>
 

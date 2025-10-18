@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 
 // --- Material-UI Imports ---
 import {
@@ -17,12 +17,7 @@ import {
   DialogActions,
   TextField,
   Button,
-  Stack,
   Typography,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
 } from '@mui/material';
 
 // --- Redux Imports ---
@@ -42,18 +37,27 @@ import { SourceHeader } from '../../components/sources/SourceHeader';
 import { SourceDetails } from '../../components/sources/SourceDetails';
 import { SourceSidebar } from '../../components/sources/SourceSidebar';
 import type { CreateSourceData, IAuthor } from '../../types';
+import { EditSourceDialog } from '../../components/common/EditSourceDialog';
 
 //======================================================================
 // تعریف اینترفیس برای فرم ویرایش
 //======================================================================
 interface EditSourceForm {
-  title: string;
-  authors: string;
-  year: string;
-  type: string;
-  tags: string;
-  abstract: string;
-  url: string;
+  title?: string;
+  authors?: string;
+  year?: string;
+  type?: string;
+  language?: 'persian' | 'english';
+  tags?: string;
+  abstract?: string;
+  journal?: string;
+  publisher?: string;
+  volume?: string;
+  issue?: string;
+  pages?: string;
+  doi?: string;
+  isbn?: string;
+  url?: string;
 }
 
 //======================================================================
@@ -91,12 +95,7 @@ const SourceDetailPage: React.FC = () => {
   //-----------------------------------------------------
   // بخش ۳: مدیریت فرم با React Hook Form
   //-----------------------------------------------------
-  const {
-    control,
-    handleSubmit,
-    reset,
-    formState: { errors, isSubmitting },
-  } = useForm<EditSourceForm>();
+  const { reset } = useForm<EditSourceForm>();
 
   //-----------------------------------------------------
   // بخش ۴: مدیریت چرخه حیات (Lifecycle) با useEffect
@@ -184,7 +183,7 @@ const SourceDetailPage: React.FC = () => {
     } catch (err) {
       setSnackbar({
         open: true,
-        message: err.message || 'خطا در حذف منبع',
+        message: (err as Error).message || 'خطا در حذف منبع',
         severity: 'error',
       });
     }
@@ -194,24 +193,51 @@ const SourceDetailPage: React.FC = () => {
     if (!sourceId) return;
     const updateData = {
       _id: sourceId,
-      title: data.title,
+      title: data.title || '',
       authors: data.authors
-        .split(',')
-        .map((name) => ({ name: name.trim() }))
-        .filter((author) => author.name),
+        ? data.authors
+            .split(/[,،|]/)
+            .map((name) => {
+              const nameParts = name.trim().split(' ');
+              if (nameParts.length >= 2) {
+                return {
+                  firstname: nameParts[0],
+                  lastname: nameParts.slice(1).join(' '),
+                };
+              } else {
+                return {
+                  firstname: nameParts[0] || '',
+                  lastname: '',
+                };
+              }
+            })
+            .filter((author) => author.firstname)
+        : [],
       year: data.year ? parseInt(data.year) : undefined,
-      type: data.type,
+      type: data.type || 'article',
+      language: data.language || 'english',
       tags: data.tags
-        .split(',')
-        .map((tag) => tag.trim())
-        .filter(Boolean),
-      abstract: data.abstract,
-      identifiers: { url: data.url },
+        ? data.tags
+            .split(',')
+            .map((tag) => tag.trim())
+            .filter(Boolean)
+        : [],
+      abstract: data.abstract || '',
+      publicationDetails: {
+        journal: data.journal || '',
+        publisher: data.publisher || '',
+        volume: data.volume || '',
+        issue: data.issue || '',
+        pages: data.pages || '',
+      },
+      identifiers: {
+        url: data.url || '',
+        doi: data.doi || '',
+        isbn: data.isbn || '',
+      },
     };
     try {
-      await dispatch(
-        updateSourceById(updateData as unknown as CreateSourceData)
-      ).unwrap();
+      await dispatch(updateSourceById(updateData as any)).unwrap();
       setSnackbar({
         open: true,
         message: 'منبع با موفقیت بروزرسانی شد',
@@ -335,8 +361,15 @@ const SourceDetailPage: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
-
-      <Dialog
+      {selectedSource && (
+        <EditSourceDialog
+          open={dialogs.editSource}
+          onClose={() => setDialogs((prev) => ({ ...prev, editSource: false }))}
+          onSubmit={(data) => onEditSubmit(data as EditSourceForm)}
+          source={selectedSource}
+        />
+      )}
+      {/* <Dialog
         open={dialogs.editSource}
         onClose={() => setDialogs((prev) => ({ ...prev, editSource: false }))}
         maxWidth='md'
@@ -444,7 +477,7 @@ const SourceDetailPage: React.FC = () => {
             </Button>
           </DialogActions>
         </form>
-      </Dialog>
+      </Dialog> */}
 
       <Dialog
         open={dialogs.shareSource}

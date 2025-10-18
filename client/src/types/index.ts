@@ -32,6 +32,16 @@ export type LoginData = {
   password: string;
 };
 
+export type ForgotPasswordData = {
+  email: string;
+};
+
+export type ResetPasswordData = {
+  email: string;
+  code: string;
+  newPassword: string;
+};
+
 export const verifySchema = z.object({
   email: z.string().email('ایمیل معتبر نیست'),
   code: z.string().min(8, 'کد تأیید باید حداقل 8 رقمی باشد'),
@@ -125,7 +135,8 @@ export const projectSchema = z.object({
 export type CreateProjectFormInputs = z.infer<typeof projectSchema>;
 
 export interface IAuthor {
-  name: string;
+  firstname: string;
+  lastname: string;
 }
 
 export interface ISource {
@@ -135,12 +146,22 @@ export interface ISource {
   authors: IAuthor[];
   year?: number;
   type: string;
+  language?: 'persian' | 'english';
   tags?: string[];
   abstract?: string;
   createdAt?: string;
   status?: 'pending' | 'completed' | 'reviewed';
+  publicationDetails?: {
+    journal?: string;
+    publisher?: string;
+    volume?: string;
+    issue?: string;
+    pages?: string;
+  };
   identifiers?: {
-    url: string;
+    url?: string;
+    doi?: string;
+    isbn?: string;
   };
 }
 
@@ -189,6 +210,21 @@ export type CreateSourceData = {
   authors: IAuthor[];
   year?: number;
   type: string;
+  language?: 'persian' | 'english';
+  abstract?: string;
+  publicationDetails?: {
+    journal?: string;
+    publisher?: string;
+    volume?: string;
+    issue?: string;
+    pages?: string;
+  };
+  identifiers?: {
+    doi?: string;
+    isbn?: string;
+    url?: string;
+  };
+  tags?: string[];
 };
 export type ImportSourceByDoiData = {
   projectId: string;

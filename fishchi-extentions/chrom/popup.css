@@ -9,7 +9,7 @@ body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: #333;
-  width: 380px;
+  width: 420px;
   min-height: 500px;
   direction: rtl;
 }
@@ -223,6 +223,83 @@ body {
   font-size: 16px;
 }
 
+/* OAuth Section */
+.oauth-section {
+  margin: 20px 0;
+}
+
+.divider {
+  text-align: center;
+  margin: 16px 0;
+  position: relative;
+}
+
+.divider::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: #e5e7eb;
+}
+
+.divider span {
+  background: white;
+  padding: 0 12px;
+  color: #6b7280;
+  font-size: 13px;
+  position: relative;
+  z-index: 1;
+}
+
+.oauth-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.btn-oauth {
+  background: white;
+  border: 2px solid #e5e7eb;
+  color: #374151;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.btn-oauth:hover {
+  border-color: #d1d5db;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.btn-github {
+  border-color: #24292e;
+  color: #24292e;
+}
+
+.btn-github:hover {
+  background: #f6f8fa;
+  border-color: #24292e;
+  box-shadow: 0 2px 8px rgba(36, 41, 46, 0.15);
+}
+
+.btn-google {
+  border-color: #4285f4;
+  color: #4285f4;
+}
+
+.btn-google:hover {
+  background: #f8f9fa;
+  border-color: #4285f4;
+  box-shadow: 0 2px 8px rgba(66, 133, 244, 0.15);
+}
+
+.oauth-icon {
+  font-size: 16px;
+  margin-left: 8px;
+}
+
 /* Auth Links */
 .auth-links {
   text-align: center;
@@ -355,7 +432,7 @@ body {
 }
 
 /* Responsive */
-@media (max-width: 400px) {
+@media (max-width: 440px) {
   body {
     width: 100vw;
   }
@@ -381,4 +458,64 @@ body {
 
 .main-content::-webkit-scrollbar-thumb:hover {
   background: #a8a8a8;
+}
+
+/* Login Actions */
+.login-actions {
+  text-align: center;
+  padding: 20px 0;
+}
+
+.auth-info {
+  margin-top: 15px;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border-right: 4px solid #667eea;
+}
+
+.auth-info p {
+  color: #666;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* User Info */
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  border-right: 4px solid #28a745;
+}
+
+.user-avatar {
+  font-size: 24px;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #667eea;
+  color: white;
+  border-radius: 50%;
+}
+
+.user-details {
+  flex: 1;
+}
+
+.user-name {
+  font-weight: 600;
+  color: #333;
+  font-size: 14px;
+}
+
+.user-email {
+  color: #666;
+  font-size: 12px;
+  margin-top: 2px;
 }

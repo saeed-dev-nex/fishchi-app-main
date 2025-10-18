@@ -7,6 +7,7 @@
 - ✅ استخراج خودکار اطلاعات از سایت‌های SID، Civilica و Noormags
 - ✅ رابط کاربری مدرن و زیبا
 - ✅ احراز هویت خودکار
+- ✅ ورود با GitHub و Google (OAuth)
 - ✅ انتخاب پروژه برای ذخیره منبع
 - ✅ پشتیبانی از RTL و زبان فارسی
 
@@ -34,9 +35,25 @@
 
 ### مرحله 1: ورود به فیشچی
 
+#### روش 1: ورود با ایمیل و رمز عبور
+
 1. روی آیکون اکستنشن کلیک کنید
 2. ایمیل و رمز عبور خود را وارد کنید
 3. روی "ورود" کلیک کنید
+
+#### روش 2: ورود با GitHub
+
+1. روی آیکون اکستنشن کلیک کنید
+2. روی "ورود با GitHub" کلیک کنید
+3. در صفحه GitHub وارد شوید
+4. اجازه دسترسی را تأیید کنید
+
+#### روش 3: ورود با Google
+
+1. روی آیکون اکستنشن کلیک کنید
+2. روی "ورود با Google" کلیک کنید
+3. در صفحه Google وارد شوید
+4. اجازه دسترسی را تأیید کنید
 
 ### مرحله 2: استخراج منبع
 
@@ -55,10 +72,28 @@
 
 ```javascript
 const CONFIG = {
-  API_BASE_URL: 'http://localhost:5000/api/v1', // آدرس سرور خود را وارد کنید
+  API_BASE_URL: 'http://localhost:3000/api/v1', // آدرس سرور خود را وارد کنید
   // ...
 };
 ```
+
+### تنظیمات OAuth
+
+برای استفاده از OAuth، سرور باید تنظیمات زیر را داشته باشد:
+
+1. **متغیرهای محیطی:**
+
+   ```bash
+   GOOGLE_CLIENT_ID=your_google_client_id
+   GOOGLE_CLIENT_SECRET=your_google_client_secret
+   GITHUB_CLIENT_ID=your_github_client_id
+   GITHUB_CLIENT_SECRET=your_github_client_secret
+   CLIENT_URL=http://localhost:3000
+   ```
+
+2. **URL های Callback:**
+   - Google: `http://localhost:3000/api/v1/auth/google/callback`
+   - GitHub: `http://localhost:3000/api/v1/auth/github/callback`
 
 ## ساختار فایل‌ها
 
@@ -112,9 +147,15 @@ chrom/
 
 **خطای HTTP 404 در احراز هویت:**
 
-- آدرس سرور را در `background.js` بررسی کنید: `API_BASE_URL: 'http://localhost:5000/api/v1'`
-- مطمئن شوید سرور روی پورت 5000 در حال اجرا است
+- آدرس سرور را در `background.js` بررسی کنید: `API_BASE_URL: 'http://localhost:3000/api/v1'`
+- مطمئن شوید سرور روی پورت 3000 در حال اجرا است
 - مسیرهای API درست است: `/users/login`, `/users/profile`, `/projects`, `/sources`
+
+**خطای OAuth:**
+
+- متغیرهای محیطی OAuth را بررسی کنید
+- URL های callback درست تنظیم شده باشند
+- Client ID و Client Secret معتبر باشند
 
 **خطای CORS:**
 
@@ -122,6 +163,14 @@ chrom/
 - در `app.js` باید `origin.startsWith("chrome-extension://")` باشد
 
 ## عیب‌یابی
+
+### مشکل "Receiving end does not exist"؟
+
+فایل [QUICK_FIX.md](./QUICK_FIX.md) را مطالعه کنید.
+
+### راهنمای کامل عیب‌یابی
+
+فایل [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) را مطالعه کنید.
 
 ### مشکلات رایج
 
@@ -156,3 +205,4 @@ chrom/
 ## نسخه‌ها
 
 - **v1.0.0** - نسخه اولیه با پشتیبانی از SID، Civilica و Noormags
+- **v1.1.0** - اضافه شدن OAuth برای ورود با GitHub و Google
