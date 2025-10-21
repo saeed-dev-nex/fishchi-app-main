@@ -67,6 +67,7 @@ import ConfirmationDialog from '../../components/common/ConfirmationDialog';
 import AddSourceModal from '../../components/sources/AddSourceModal';
 import NotesTabWorkspace from '../../components/notes/NotesTabWorkspace';
 import ProjectCitationModal from '../../components/projects/ProjectCitationModal';
+import { EditProjectDialog } from '../../components/common/EditProjectDialog';
 
 //======================================================================
 // Main Project Detail Page component
@@ -98,13 +99,6 @@ const ProjectDetailPage: React.FC = () => {
     open: false,
     message: '',
     severity: 'success' as 'success' | 'error' | 'info' | 'warning',
-  });
-
-  // State for the edit project form
-  const [editForm, setEditForm] = useState({
-    title: '',
-    description: '',
-    tags: [] as string[],
   });
 
   //-----------------------------------------------------
@@ -145,15 +139,9 @@ const ProjectDetailPage: React.FC = () => {
     }
   }, [selectedSources]);
 
-  // Fill the edit form and read the statuses from LocalStorage after loading the project
+  // Read the statuses from LocalStorage after loading the project
   useEffect(() => {
     if (selectedProject) {
-      setEditForm({
-        title: selectedProject.title || '',
-        description: selectedProject.description || '',
-        tags: selectedProject.tags || [],
-      });
-
       const bookmarkKey = `project_bookmark_${selectedProject._id}`;
       const visibilityKey = `project_visibility_${selectedProject._id}`;
       setIsBookmarked(localStorage.getItem(bookmarkKey) === 'true');
@@ -273,11 +261,11 @@ const ProjectDetailPage: React.FC = () => {
     });
   };
 
-  const handleSaveEdit = async () => {
+  const handleSaveEdit = async (formData: any) => {
     if (!selectedProject) return;
     try {
       await dispatch(
-        updateProject({ _id: selectedProject._id, ...editForm })
+        updateProject({ _id: selectedProject._id, ...formData })
       ).unwrap();
       setSnackbar({
         open: true,
@@ -735,63 +723,14 @@ const ProjectDetailPage: React.FC = () => {
       )}
 
       {/* Edit project dialog */}
-      <Dialog
-        open={dialogs.editProject}
-        onClose={() => setDialogs((prev) => ({ ...prev, editProject: false }))}
-        maxWidth='md'
-        fullWidth
-      >
-        <DialogTitle>ویرایش پروژه</DialogTitle>
-        <DialogContent>
-          <Stack spacing={3} sx={{ mt: 2 }}>
-            <TextField
-              label='عنوان پروژه'
-              value={editForm.title}
-              onChange={(e) =>
-                setEditForm({ ...editForm, title: e.target.value })
-              }
-              fullWidth
-              required
-            />
-            <TextField
-              label='توضیحات'
-              value={editForm.description}
-              onChange={(e) =>
-                setEditForm({ ...editForm, description: e.target.value })
-              }
-              multiline
-              rows={4}
-              fullWidth
-            />
-            <TextField
-              label='برچسب‌ها (جدا شده با کاما)'
-              value={editForm.tags.join(', ')}
-              onChange={(e) =>
-                setEditForm({
-                  ...editForm,
-                  tags: e.target.value
-                    .split(',')
-                    .map((tag) => tag.trim())
-                    .filter(Boolean),
-                })
-              }
-              fullWidth
-            />
-          </Stack>
-        </DialogContent>
-        <DialogActions>
-          <Button
-            onClick={() =>
-              setDialogs((prev) => ({ ...prev, editProject: false }))
-            }
-          >
-            انصراف
-          </Button>
-          <Button onClick={handleSaveEdit} variant='contained'>
-            ذخیره
-          </Button>
-        </DialogActions>
-      </Dialog>
+      {selectedProject && (
+        <EditProjectDialog
+          open={dialogs.editProject}
+          onClose={() => setDialogs((prev) => ({ ...prev, editProject: false }))}
+          onSave={handleSaveEdit}
+          project={selectedProject}
+        />
+      )}
 
       {/* Share project dialog */}
       <Dialog

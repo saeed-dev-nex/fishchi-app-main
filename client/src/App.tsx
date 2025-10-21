@@ -19,6 +19,7 @@ import SourcesLibraryPage from './pages/app/SourcesLibraryPage';
 import SourceDetailPage from './pages/app/SourceDetailPage.tsx';
 import ProfilePage from './pages/app/ProfilePage';
 import SettingsPage from './pages/app/SettingsPage';
+import SearchPage from './pages/app/SearchPage';
 import NotificationProvider from './components/common/NotificationProvider';
 import { LanguageProvider } from './contexts/LanguageContext';
 import { ViewProvider } from './contexts/ViewContext';
@@ -83,6 +84,7 @@ function App() {
                         />
                         <Route path='profile' element={<ProfilePage />} />
                         <Route path='settings' element={<SettingsPage />} />
+                        <Route path='search' element={<SearchPage />} />
                       </Route>
                     </Route>
                     {/* Catch all route - redirect to home */}

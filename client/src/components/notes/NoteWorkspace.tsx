@@ -11,15 +11,19 @@ import {
   Avatar,
   Chip,
   alpha,
+  Autocomplete,
+  IconButton,
+  Tooltip,
 } from '@mui/material';
-import { Description as DescriptionIcon } from '@mui/icons-material';
+import { Description as DescriptionIcon, AutoAwesome as AutoAwesomeIcon } from '@mui/icons-material';
 import type { AppDispatch, RootState } from '../../store';
 import {
   createNote,
   deleteNote,
   fetchNotes,
+  suggestTags,
 } from '../../store/features/noteSlice';
-import CustomTextEditor from '../common/RichTextEditor';
+import RichTextEditor from '../common/RichTextEditor';
 import NoteItem from './NoteItem';
 
 interface NoteWorkspaceProps {
@@ -36,10 +40,12 @@ const NoteWorkspace: React.FC<NoteWorkspaceProps> = ({
     notes = [],
     isLoading,
     error,
+    suggestTags: suggestTagsState,
   } = useSelector((state: RootState) => state.notes);
 
   const [newNoteContent, setNewNoteContent] = useState('');
   const [pageRef, setPageRef] = useState('');
+  const [tags, setTags] = useState<string[]>([]);
   const [editorKey, setEditorKey] = useState(0);
   useEffect(() => {
     dispatch(fetchNotes({ projectId, sourceId }));
@@ -54,15 +60,32 @@ const NoteWorkspace: React.FC<NoteWorkspaceProps> = ({
           sourceId,
           content: newNoteContent,
           pageRef,
+          tags,
         })
       ).unwrap();
 
       // Clear content after successful creation
       setNewNoteContent('');
       setPageRef('');
+      setTags([]);
       setEditorKey((prev) => prev + 1);
     } catch (error) {
       console.error('Error creating note:', error);
+    }
+  };
+
+  const handleSuggestTags = async () => {
+    if (!newNoteContent.trim()) return;
+
+    try {
+      const result = await dispatch(suggestTags(newNoteContent)).unwrap();
+      // Add suggested tags to existing tags
+      if (result && result.length > 0) {
+        const newTags = result.filter((tag: string) => !tags.includes(tag));
+        setTags([...tags, ...newTags]);
+      }
+    } catch (error) {
+      console.error('Error suggesting tags:', error);
     }
   };
 
@@ -124,12 +147,78 @@ const NoteWorkspace: React.FC<NoteWorkspaceProps> = ({
         </Typography>
 
         <Box sx={{ mb: 2 }}>
-          <CustomTextEditor
+          <RichTextEditor
             key={editorKey}
             content={newNoteContent}
             onChange={(content) => setNewNoteContent(content)}
           />
         </Box>
+
+        <Stack spacing={2} sx={{ mb: 2 }}>
+          <Stack direction='row' spacing={1} alignItems='center'>
+            <Autocomplete
+              multiple
+              freeSolo
+              options={[]}
+              value={tags}
+              onChange={(_event, newValue) => setTags(newValue as string[])}
+              renderTags={(value, getTagProps) =>
+                value.map((option, index) => {
+                  const { key, ...tagProps } = getTagProps({ index });
+                  return (
+                    <Chip
+                      key={key}
+                      label={option}
+                      size='small'
+                      {...tagProps}
+                    />
+                  );
+                })
+              }
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label='برچسب‌ها (اختیاری)'
+                  placeholder='برچسب اضافه کنید...'
+                  size='small'
+                />
+              )}
+              sx={{
+                flex: 1,
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 2,
+                },
+              }}
+            />
+            <Tooltip title='پیشنهاد خودکار برچسب‌ها با هوش مصنوعی'>
+              <span>
+                <IconButton
+                  color='primary'
+                  onClick={handleSuggestTags}
+                  disabled={suggestTagsState.isLoading || !newNoteContent.trim()}
+                  sx={{
+                    bgcolor: (theme) => alpha(theme.palette.primary.main, 0.1),
+                    '&:hover': {
+                      bgcolor: (theme) => alpha(theme.palette.primary.main, 0.2),
+                    },
+                  }}
+                >
+                  {suggestTagsState.isLoading ? (
+                    <CircularProgress size={24} />
+                  ) : (
+                    <AutoAwesomeIcon />
+                  )}
+                </IconButton>
+              </span>
+            </Tooltip>
+          </Stack>
+
+          {suggestTagsState.error && (
+            <Alert severity='error' sx={{ borderRadius: 2 }}>
+              {suggestTagsState.error}
+            </Alert>
+          )}
+        </Stack>
 
         <Stack
           direction='row'

@@ -13,7 +13,14 @@ import {
   MenuItem,
   Box,
   Stack,
+  IconButton,
+  Tooltip,
+  Alert,
+  alpha,
+  Autocomplete,
+  Chip,
 } from '@mui/material';
+import { AutoAwesome as AutoAwesomeIcon } from '@mui/icons-material';
 import type React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import type { AppDispatch, RootState } from '../../store';
@@ -21,6 +28,8 @@ import { useForm, type SubmitHandler } from 'react-hook-form';
 import { projectSchema, type CreateProjectFormInputs } from '../../types';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { createProject } from '../../store/features/projectSlice';
+import { suggestTags } from '../../store/features/noteSlice';
+import { useState } from 'react';
 
 type createProjectModalProps = {
   open: boolean;
@@ -35,6 +44,10 @@ const CreateProjectModal: React.FC<createProjectModalProps> = ({
   const { isLoading, error } = useSelector(
     (state: RootState) => state.projects
   );
+  const [isSuggestingTags, setIsSuggestingTags] = useState(false);
+  const [tagSuggestionError, setTagSuggestionError] = useState<string | null>(null);
+  const [tags, setTags] = useState<string[]>([]);
+  const [tagInputValue, setTagInputValue] = useState('');
   const {
     register,
     handleSubmit,
@@ -52,11 +65,45 @@ const CreateProjectModal: React.FC<createProjectModalProps> = ({
 
   const watchedStatus = watch('status');
   const watchedPriority = watch('priority');
+  const watchedTitle = watch('title');
+  const watchedDescription = watch('description');
+  const watchedTags = watch('tags');
+
+  const handleSuggestTags = async () => {
+    const textContent = `${watchedTitle || ''} ${watchedDescription || ''}`.trim();
+    
+    if (!textContent || textContent.length < 20) {
+      setTagSuggestionError('عنوان یا توضیحات کافی برای پیشنهاد تگ وجود ندارد');
+      return;
+    }
+
+    setIsSuggestingTags(true);
+    setTagSuggestionError(null);
+
+    try {
+      const result = await dispatch(suggestTags({ textContent }));
+      
+      if (suggestTags.fulfilled.match(result)) {
+        const suggestedTags = result.payload as string[];
+        const allTags = Array.from(new Set([...tags, ...suggestedTags]));
+        setTags(allTags);
+        setValue('tags', allTags.join(', '));
+      } else {
+        setTagSuggestionError('خطا در پیشنهاد تگ‌ها');
+      }
+    } catch (err) {
+      setTagSuggestionError('خطا در پیشنهاد تگ‌ها');
+    } finally {
+      setIsSuggestingTags(false);
+    }
+  };
   const onSubmit: SubmitHandler<CreateProjectFormInputs> = async (data) => {
     const result = await dispatch(createProject(data));
     console.log(createProject.fulfilled.match(result));
     if (createProject.fulfilled.match(result)) {
       reset();
+      setTags([]);
+      setTagInputValue('');
       onClose();
     }
   };
@@ -137,16 +184,90 @@ const CreateProjectModal: React.FC<createProjectModalProps> = ({
               helperText='تعداد روزهای تخمینی برای تکمیل پروژه'
             />
 
-            <TextField
-              margin='dense'
-              label='برچسب‌ها (اختیاری)'
-              type='text'
-              fullWidth
-              variant='outlined'
-              {...register('tags')}
-              placeholder='مثال: تحقیق، پایان‌نامه، مقاله'
-              helperText='برچسب‌ها را با کاما جدا کنید'
-            />
+            <Stack direction='row' spacing={1} alignItems='flex-start'>
+              <Autocomplete
+                multiple
+                freeSolo
+                options={[]}
+                value={tags}
+                inputValue={tagInputValue}
+                onInputChange={(_, newInputValue, reason) => {
+                  if (reason === 'reset') {
+                    setTagInputValue('');
+                    return;
+                  }
+                  // Handle comma-separated input
+                  if (newInputValue.includes(',') || newInputValue.includes('،')) {
+                    const newTags = newInputValue
+                      .split(/[,،]/)
+                      .map(tag => tag.trim())
+                      .filter(Boolean);
+                    if (newTags.length > 0) {
+                      const updatedTags = Array.from(new Set([...tags, ...newTags]));
+                      setTags(updatedTags);
+                      setValue('tags', updatedTags.join(', '));
+                      setTagInputValue('');
+                    }
+                  } else {
+                    setTagInputValue(newInputValue);
+                  }
+                }}
+                onChange={(_, newValue) => {
+                  setTags(newValue);
+                  setValue('tags', newValue.join(', '));
+                }}
+                renderTags={(value, getTagProps) =>
+                  value.map((option, index) => {
+                    const { key, ...tagProps } = getTagProps({ index });
+                    return (
+                      <Chip
+                        key={key}
+                        label={option}
+                        {...tagProps}
+                        sx={{ m: 0.5 }}
+                      />
+                    );
+                  })
+                }
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    margin='dense'
+                    label='برچسب‌ها (اختیاری)'
+                    placeholder='مثال: تحقیق، پایان‌نامه، مقاله'
+                    helperText='برچسب‌ها را با کاما جدا کرده و Enter بزنید'
+                  />
+                )}
+                fullWidth
+              />
+              <Tooltip title='پیشنهاد خودکار برچسب‌ها با هوش مصنوعی'>
+                <span>
+                  <IconButton
+                    color='primary'
+                    onClick={handleSuggestTags}
+                    disabled={isSuggestingTags || !watchedTitle}
+                    sx={{
+                      mt: 1,
+                      bgcolor: (theme) => alpha(theme.palette.primary.main, 0.1),
+                      '&:hover': {
+                        bgcolor: (theme) => alpha(theme.palette.primary.main, 0.2),
+                      },
+                    }}
+                  >
+                    {isSuggestingTags ? (
+                      <CircularProgress size={24} />
+                    ) : (
+                      <AutoAwesomeIcon />
+                    )}
+                  </IconButton>
+                </span>
+              </Tooltip>
+            </Stack>
+            {tagSuggestionError && (
+              <Alert severity='error' sx={{ mt: 1 }}>
+                {tagSuggestionError}
+              </Alert>
+            )}
           </Stack>
         </DialogContent>
         <DialogActions>

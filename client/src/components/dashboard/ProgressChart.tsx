@@ -223,7 +223,7 @@ const ProgressChart: React.FC<ProgressChartProps> = ({ projects, sources }) => {
             پروژه‌های برتر
           </Typography>
           <Stack spacing={1}>
-            {projects
+            {[...projects]
               .sort((a, b) => getProjectProgress(b) - getProjectProgress(a))
               .slice(0, 3)
               .map((project) => {

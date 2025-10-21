@@ -2,50 +2,71 @@ import asyncHandler from 'express-async-handler';
 import ApiResponse from '../utils/apiResponse.js';
 import Source from '../models/Source.model.js';
 import Note from '../models/Note.model.js';
+import { generateEmbedding } from '../utils/aiService.js';
+import { cosineSimilarity } from '../utils/searchUtils.js';
 
 /**
- *@desc Search sources and notes
- *@route GET /api/v1/search
- *@access Private
+ * @desc    انجام جستجوی معنایی (Vector Search)
+ * @route   GET /api/v1/search
+ * @access  Private
  */
-
-const searchAll = asyncHandler(async (req, res) => {
-  const { q, type } = req.query; // p: query , type: 'notes' | 'sources' | 'all'
+const semanticSearch = asyncHandler(async (req, res) => {
+  const { q } = req.query;
   const userId = req.user._id;
-  if (!q) {
+
+  if (!q || q.trim().length === 0) {
     res.status(400);
     throw new Error('عبارت جستجو (q) الزامی است');
   }
-  //   1. Base filter: user can search in his own sources and notes
-  const baseFilter = {
-    user: userId,
-    $text: {
-      $search: q,
-    },
-  };
-  //   2. Add Scoring (relevance scoring)
-  const projection = { score: { $meta: 'textScore' } };
-  const sort = { score: { $meta: 'textScore' } }; //Sorting based on relevant score
-  let results = {
-    sources: [],
-    notes: [],
+
+  if (q.trim().length < 2) {
+    res.status(400);
+    throw new Error('عبارت جستجو باید حداقل ۲ کاراکتر باشد');
+  }
+
+  // ۱. تبدیل عبارت جستجوی کاربر به وکتور
+  const queryVector = await generateEmbedding(q, 2); // حداقل ۲ کاراکتر برای جستجو
+  if (!queryVector) {
+    res.status(500);
+    throw new Error('خطا در تولید وکتور جستجو. لطفاً دوباره تلاش کنید');
+  }
+
+  // ۲. واکشی تمام اسناد دارای وکتور از دیتابیس
+  // هشدار: این عملیات در دیتابیس‌های بزرگ کند خواهد بود.
+  // این تنها راه حل رایگان بدون استفاده از MongoDB Atlas Vector Search است.
+  const notes = await Note.find({ user: userId, vectorGenerated: true });
+  const sources = await Source.find({ user: userId, vectorGenerated: true });
+
+  const allResults = [];
+
+  // ۳. محاسبه شباهت برای فیش‌ها
+  notes.forEach((note) => {
+    const similarity = cosineSimilarity(queryVector, note.contentVector);
+    if (similarity > 0.6) {
+      // آستانه شباهت (کاهش از 0.7 به 0.5 برای نتایج بیشتر)
+      allResults.push({ type: 'note', data: note, similarity });
+    }
+  });
+
+  // ۴. محاسبه شباهت برای منابع
+  sources.forEach((source) => {
+    const similarity = cosineSimilarity(queryVector, source.searchVector); // استفاده از نام صحیح فیلد searchVector
+    if (similarity > 0.5) {
+      // آستانه شباهت (کاهش از 0.7 به 0.5 برای نتایج بیشتر)
+      allResults.push({ type: 'source', data: source, similarity });
+    }
+  });
+
+  // ۵. مرتب‌سازی نتایج بر اساس بیشترین شباهت
+  allResults.sort((a, b) => b.similarity - a.similarity);
+
+  // ۶. جداسازی نتایج
+  const results = {
+    notes: allResults.filter((r) => r.type === 'note').map((r) => r.data),
+    sources: allResults.filter((r) => r.type === 'source').map((r) => r.data),
   };
 
-  try {
-    //   3. Execute search based on request type
-    if (type === 'sources') {
-      results.sources = await Source.find(baseFilter, projection).sort(sort);
-    } else if (type === 'notes') {
-      results.notes = await Note.find(baseFilter, projection).sort(sort);
-    } else {
-      results.sources = await Source.find(baseFilter, projection).sort(sort);
-      results.notes = await Note.find(baseFilter, projection).sort(sort);
-    }
-    ApiResponse.success(res, results, 'نتایج جستجو');
-  } catch (error) {
-    res.status(500);
-    throw new Error(error.message);
-  }
+  ApiResponse.success(res, results, 'جستجوی معنایی با موفقیت انجام شد');
 });
 
-export { searchAll };
+export { semanticSearch };

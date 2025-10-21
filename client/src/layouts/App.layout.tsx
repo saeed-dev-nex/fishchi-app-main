@@ -32,6 +32,7 @@ import {
   Brightness7,
   Source,
   Notifications,
+  Search,
 } from '@mui/icons-material';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAppTheme } from '../contexts/ThemeContext';
@@ -41,6 +42,7 @@ import type { AppDispatch, RootState } from '../store';
 import { logoutUser } from '../store/features/authSlice';
 import { fetchUserSettings } from '../store/features/settingsSlice';
 import { useEffect } from 'react';
+import SearchBox from '../components/common/SearchBox';
 
 const drawerWidth = 280;
 
@@ -66,6 +68,11 @@ const navigationItems: NavigationItem[] = [
     text: 'منابع',
     icon: <Source />,
     path: '/app/library',
+  },
+  {
+    text: 'جستجو',
+    icon: <Search />,
+    path: '/app/search',
   },
   {
     text: 'تنظیمات',
@@ -275,6 +282,15 @@ const AppLayout: React.FC = () => {
             {navigationItems.find((item) => item.path === location.pathname)
               ?.text || 'فیشچی'}
           </Typography>
+
+          {/* Search Box */}
+          <Box sx={{ width: 300, mr: 2 }}>
+            <SearchBox
+              placeholder='جستجوی سریع...'
+              fullWidth={false}
+              showResults={true}
+            />
+          </Box>
 
           {/* Header Actions */}
           <Stack direction='row' spacing={1} alignItems='center'>

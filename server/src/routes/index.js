@@ -7,6 +7,7 @@ import exportRouter from './export.routes.js';
 import noteRouter from './note.routes.js';
 import searchRouter from './search.routes.js';
 import settingsRouter from './settings.routes.js';
+import aiRouter from './ai.routes.js';
 
 const router = Router();
 
@@ -16,7 +17,8 @@ router.use('/projects', projectRouter);
 router.use('/sources', sourceRouter);
 router.use('/export', exportRouter);
 router.use('/notes', noteRouter);
-router.use('/search', searchRouter);
+router.use('/', searchRouter);
 router.use('/settings', settingsRouter);
+router.use('/ai', aiRouter);
 
 export default router;

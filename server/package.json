@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "start": "node index.js",
-    "dev": "nodemon index.js"
+    "dev": "nodemon index.js",
+    "generate-vectors": "node src/utils/generateVectors.js"
   },
   "keywords": [],
   "author": "",
@@ -15,6 +16,7 @@
   "dependencies": {
     "@citation-js/core": "^0.7.18",
     "@citation-js/plugin-csl": "^0.7.18",
+    "@google/generative-ai": "^0.24.1",
     "axios": "^1.12.2",
     "bcryptjs": "^3.0.2",
     "cheerio": "^1.1.2",
@@ -24,6 +26,7 @@
     "dotenv": "^17.2.2",
     "express": "^5.1.0",
     "express-session": "^1.18.2",
+    "html-to-text": "^9.0.5",
     "jsonwebtoken": "^9.0.2",
     "moment-jalaali": "^0.10.4",
     "mongoose": "^8.18.1",

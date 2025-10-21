@@ -63,13 +63,26 @@ const extractAuthors = (text, format = 'apa') => {
   const hasPersian = /[آ-ی]/.test(authorSection);
 
   if (hasPersian) {
-    // Handle Persian authors - manual parsing for the specific format
-    // Pattern: Lastname، Firstname, Lastname، Firstname, و Lastname، Firstname
-    const persianAuthorPattern = /([آ-ی]+)\s*،\s*([آ-ی]+)/g;
+    // Handle Persian authors - improved parsing for citation formats
+    // Persian citations typically use: "نام خانوادگی، نام" (Lastname، Firstname)
+    // This matches APA, Chicago, Vancouver formats for Persian
+    
+    // Clean the author section
+    const cleanAuthorSection = authorSection
+      .replace(/\s*و\s+/g, ',') // Replace "و" with comma for splitting
+      .replace(/\s+/g, ' ') // Normalize spaces
+      .trim();
+
+    // Pattern: نام خانوادگی، نام
+    // Captures multi-word lastnames and firstnames
+    const persianAuthorPattern = /([آ-ی\s]+?)،\s*([آ-ی\s]+?)(?=،|,|$|و)/g;
     let match;
 
-    while ((match = persianAuthorPattern.exec(authorSection)) !== null) {
-      if (match[1] && match[2] && match[1].length > 1 && match[2].length > 1) {
+    while ((match = persianAuthorPattern.exec(cleanAuthorSection)) !== null) {
+      const lastname = match[1]?.trim();
+      const firstname = match[2]?.trim();
+
+      if (lastname && firstname && lastname.length > 1 && firstname.length > 1) {
         // Skip common words that might be mistaken as names
         const skipWords = [
           'و',
@@ -81,11 +94,36 @@ const extractAuthors = (text, format = 'apa') => {
           'آن',
           'با',
           'برای',
+          'یک',
+          'را',
         ];
-        if (!skipWords.includes(match[1]) && !skipWords.includes(match[2])) {
+        
+        // Check if both parts are not in skip words
+        if (
+          !skipWords.includes(lastname) &&
+          !skipWords.includes(firstname) &&
+          lastname !== firstname
+        ) {
           authors.push({
-            firstname: match[2].trim(),
-            lastname: match[1].trim(),
+            firstname: firstname,
+            lastname: lastname,
+          });
+        }
+      }
+    }
+
+    // If no authors found with the pattern above, try a simpler approach
+    if (authors.length === 0) {
+      // Split by common delimiters
+      const parts = cleanAuthorSection.split(/[,،]/);
+      for (let i = 0; i < parts.length - 1; i += 2) {
+        const lastname = parts[i]?.trim();
+        const firstname = parts[i + 1]?.trim();
+        
+        if (lastname && firstname && lastname.length > 1 && firstname.length > 1) {
+          authors.push({
+            firstname: firstname,
+            lastname: lastname,
           });
         }
       }

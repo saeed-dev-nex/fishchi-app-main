@@ -1,41 +1,21 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import {
-  Box,
-  Typography,
-  CircularProgress,
-  Alert,
-  Stack,
-  Button,
-  TextField,
-  Avatar,
-  Chip,
-  alpha,
-  Tabs,
-  Tab,
-  IconButton,
-  Tooltip,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Divider,
-} from '@mui/material';
-import {
-  Description as DescriptionIcon,
-  Add as AddIcon,
-  Delete as DeleteIcon,
-  Edit as EditIcon,
-  Close as CloseIcon,
-} from '@mui/icons-material';
+import { Box, CircularProgress, Alert, Tabs, Tab } from '@mui/material';
 import type { AppDispatch, RootState } from '../../store';
 import {
   createNote,
   deleteNote,
   fetchNotes,
+  summarizeNote,
+  clearSummary,
+  suggestTags,
 } from '../../store/features/noteSlice';
-import CustomTextEditor from '../common/RichTextEditor';
 import type { INote } from '../../types';
+import NotesHeader from './NotesHeader';
+import EmptyNotesState from './EmptyNotesState';
+import NoteTabContent from './NoteTabContent';
+import AddNoteDialog from './AddNoteDialog';
+import EditNoteModal from './EditNoteModal';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -74,13 +54,18 @@ const NotesTabWorkspace: React.FC<NotesTabWorkspaceProps> = ({
     notes = [],
     isLoading,
     error,
+    summary,
+    suggestTags: suggestTagsState,
   } = useSelector((state: RootState) => state.notes);
 
   const [activeTab, setActiveTab] = useState(0);
   const [newNoteContent, setNewNoteContent] = useState('');
   const [pageRef, setPageRef] = useState('');
+  const [tags, setTags] = useState<string[]>([]);
   const [editorKey, setEditorKey] = useState(0);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedNote, setSelectedNote] = useState<INote | null>(null);
 
   useEffect(() => {
     dispatch(fetchNotes({ projectId, sourceId }));
@@ -96,25 +81,24 @@ const NotesTabWorkspace: React.FC<NotesTabWorkspaceProps> = ({
           sourceId,
           content: newNoteContent,
           pageRef,
+          tags,
         })
       ).unwrap();
 
-      // Clear content after successful creation
+      // Clear content and close dialog
       setNewNoteContent('');
       setPageRef('');
+      setTags([]);
       setEditorKey((prev) => prev + 1);
       setIsAddDialogOpen(false);
-
-      // Switch to the new note tab
       setActiveTab(notes.length);
     } catch (error) {
       console.error('Error creating note:', error);
     }
   };
 
-  const deleteNoteHandler = (id: string) => {
+  const handleDeleteNote = (id: string) => {
     dispatch(deleteNote(id));
-    // If we're deleting the active tab, switch to the first tab
     if (activeTab >= notes.length - 1) {
       setActiveTab(Math.max(0, notes.length - 2));
     }
@@ -122,6 +106,30 @@ const NotesTabWorkspace: React.FC<NotesTabWorkspaceProps> = ({
 
   const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
     setActiveTab(newValue);
+  };
+
+  const handleSuggestTags = async () => {
+    if (!newNoteContent.trim()) return;
+
+    try {
+      const result = await dispatch(
+        suggestTags({ htmlContent: newNoteContent })
+      ).unwrap();
+      if (result && result.length > 0) {
+        const newTags = result.filter((tag: string) => !tags.includes(tag));
+        setTags([...tags, ...newTags]);
+      }
+    } catch (error) {
+      console.error('Error suggesting tags:', error);
+    }
+  };
+
+  const handleCloseAddDialog = () => {
+    setIsAddDialogOpen(false);
+    setNewNoteContent('');
+    setPageRef('');
+    setTags([]);
+    setEditorKey((prev) => prev + 1);
   };
 
   const getTabLabel = (note: INote, index: number) => {
@@ -150,61 +158,17 @@ const NotesTabWorkspace: React.FC<NotesTabWorkspaceProps> = ({
 
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-      {/* Notes Header */}
-      <Box
-        sx={{
-          p: 3,
-          borderBottom: (theme) =>
-            `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-          background: (theme) =>
-            `linear-gradient(90deg, ${alpha(
-              theme.palette.secondary.main,
-              0.05
-            )} 0%, transparent 100%)`,
-        }}
-      >
-        <Stack
-          direction='row'
-          justifyContent='space-between'
-          alignItems='center'
-          sx={{ mb: 2 }}
-        >
-          <Typography variant='h6' fontWeight='600' color='secondary'>
-            فیش‌های پژوهشی
-          </Typography>
-          <Stack direction='row' spacing={1} alignItems='center'>
-            <Chip
-              label={`${notes.length} فیش`}
-              size='small'
-              color='secondary'
-              variant='outlined'
-            />
-            <Button
-              variant='contained'
-              size='small'
-              startIcon={<AddIcon />}
-              onClick={() => setIsAddDialogOpen(true)}
-              sx={{
-                borderRadius: 2,
-                textTransform: 'none',
-                fontWeight: 500,
-                px: 2,
-              }}
-            >
-              فیش جدید
-            </Button>
-          </Stack>
-        </Stack>
-      </Box>
+      <NotesHeader
+        notesCount={notes.length}
+        onAddClick={() => setIsAddDialogOpen(true)}
+      />
 
-      {/* Error Display */}
       {error && (
         <Alert severity='error' sx={{ m: 2, borderRadius: 2 }}>
           {error}
         </Alert>
       )}
 
-      {/* Notes Content */}
       <Box
         sx={{
           flex: 1,
@@ -215,7 +179,6 @@ const NotesTabWorkspace: React.FC<NotesTabWorkspaceProps> = ({
       >
         {notes.length > 0 ? (
           <>
-            {/* Tabs */}
             <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
               <Tabs
                 value={activeTab}
@@ -242,187 +205,63 @@ const NotesTabWorkspace: React.FC<NotesTabWorkspaceProps> = ({
               </Tabs>
             </Box>
 
-            {/* Tab Panels */}
             <Box sx={{ flex: 1, overflow: 'hidden' }}>
               {notes.map((note, index) => (
                 <TabPanel key={note._id} value={activeTab} index={index}>
-                  <Box
-                    sx={{
-                      height: '100%',
-                      display: 'flex',
-                      flexDirection: 'column',
+                  <NoteTabContent
+                    note={note}
+                    summary={summary}
+                    onEdit={(note) => {
+                      setSelectedNote(note);
+                      setIsEditModalOpen(true);
                     }}
-                  >
-                    {/* Note Actions */}
-                    <Stack
-                      direction='row'
-                      justifyContent='space-between'
-                      alignItems='center'
-                      sx={{ mb: 2 }}
-                    >
-                      <Typography variant='body2' color='text.secondary'>
-                        {note.pageRef
-                          ? `صفحه: ${note.pageRef}`
-                          : 'بدون صفحه‌مرجع'}
-                      </Typography>
-                      <Stack direction='row' spacing={1}>
-                        <Tooltip title='ویرایش فیش'>
-                          <IconButton size='small'>
-                            <EditIcon fontSize='small' />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title='حذف فیش'>
-                          <IconButton
-                            size='small'
-                            color='error'
-                            onClick={() => deleteNoteHandler(note._id)}
-                          >
-                            <DeleteIcon fontSize='small' />
-                          </IconButton>
-                        </Tooltip>
-                      </Stack>
-                    </Stack>
-
-                    <Divider sx={{ mb: 2 }} />
-
-                    {/* Note Content */}
-                    <Box
-                      sx={{
-                        flex: 1,
-                        overflow: 'auto',
-                        '& .ProseMirror': {
-                          minHeight: '200px',
-                          padding: 2,
-                          borderRadius: 2,
-                          border: (theme) =>
-                            `1px solid ${theme.palette.divider}`,
-                          backgroundColor: (theme) =>
-                            alpha(theme.palette.background.paper, 0.5),
-                        },
-                      }}
-                      className='ProseMirror'
-                      dangerouslySetInnerHTML={{ __html: note.content }}
-                    />
-                  </Box>
+                    onDelete={handleDeleteNote}
+                    onSummarize={() => {
+                      dispatch(
+                        summarizeNote({
+                          noteId: note._id,
+                          htmlContent: note.content,
+                        })
+                      );
+                    }}
+                    onClearSummary={() => dispatch(clearSummary())}
+                  />
                 </TabPanel>
               ))}
             </Box>
           </>
         ) : (
-          <Box
-            sx={{
-              flex: 1,
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              textAlign: 'center',
-              p: 4,
-            }}
-          >
-            <Avatar
-              sx={{
-                width: 80,
-                height: 80,
-                bgcolor: (theme) => alpha(theme.palette.secondary.main, 0.1),
-                mb: 3,
-              }}
-            >
-              <DescriptionIcon sx={{ fontSize: 40, color: 'secondary.main' }} />
-            </Avatar>
-            <Typography variant='h6' fontWeight='600' gutterBottom>
-              هیچ فیشی ثبت نشده
-            </Typography>
-            <Typography variant='body2' color='text.secondary' sx={{ mb: 3 }}>
-              اولین فیش را برای این منبع بنویسید
-            </Typography>
-            <Button
-              variant='contained'
-              startIcon={<AddIcon />}
-              onClick={() => setIsAddDialogOpen(true)}
-              sx={{ borderRadius: 2 }}
-            >
-              افزودن فیش
-            </Button>
-          </Box>
+          <EmptyNotesState onAddClick={() => setIsAddDialogOpen(true)} />
         )}
       </Box>
 
-      {/* Add Note Dialog */}
-      <Dialog
+      <AddNoteDialog
         open={isAddDialogOpen}
-        onClose={() => setIsAddDialogOpen(false)}
-        maxWidth='md'
-        fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: 3,
-            maxHeight: '90vh',
-          },
-        }}
-      >
-        <DialogTitle>
-          <Stack
-            direction='row'
-            justifyContent='space-between'
-            alignItems='center'
-          >
-            <Typography variant='h6' fontWeight='600'>
-              فیش جدید
-            </Typography>
-            <IconButton onClick={() => setIsAddDialogOpen(false)}>
-              <CloseIcon />
-            </IconButton>
-          </Stack>
-        </DialogTitle>
-        <DialogContent>
-          <Box sx={{ mb: 2 }}>
-            <CustomTextEditor
-              key={editorKey}
-              content={newNoteContent}
-              onChange={(content) => setNewNoteContent(content)}
-            />
-          </Box>
-          <TextField
-            label='صفحه (اختیاری)'
-            size='small'
-            value={pageRef}
-            onChange={(e) => setPageRef(e.target.value)}
-            sx={{
-              width: '200px',
-              '& .MuiOutlinedInput-root': {
-                borderRadius: 2,
-              },
-            }}
-          />
-        </DialogContent>
-        <DialogActions sx={{ p: 3 }}>
-          <Button
-            onClick={() => setIsAddDialogOpen(false)}
-            sx={{ borderRadius: 2, textTransform: 'none' }}
-          >
-            انصراف
-          </Button>
-          <Button
-            variant='contained'
-            onClick={handleCreateNote}
-            disabled={isLoading || !newNoteContent.trim()}
-            sx={{
-              borderRadius: 2,
-              textTransform: 'none',
-              fontWeight: 500,
-              px: 3,
-              minWidth: 120,
-            }}
-          >
-            {isLoading ? (
-              <CircularProgress size={20} color='inherit' />
-            ) : (
-              'ثبت فیش'
-            )}
-          </Button>
-        </DialogActions>
-      </Dialog>
+        onClose={handleCloseAddDialog}
+        content={newNoteContent}
+        onContentChange={setNewNoteContent}
+        pageRef={pageRef}
+        onPageRefChange={setPageRef}
+        tags={tags}
+        onTagsChange={setTags}
+        onSave={handleCreateNote}
+        isLoading={isLoading}
+        editorKey={editorKey}
+        onSuggestTags={handleSuggestTags}
+        suggestTagsLoading={suggestTagsState.isLoading}
+        suggestTagsError={suggestTagsState.error}
+      />
+
+      {selectedNote && (
+        <EditNoteModal
+          open={isEditModalOpen}
+          onClose={() => {
+            setIsEditModalOpen(false);
+            setSelectedNote(null);
+          }}
+          note={selectedNote}
+        />
+      )}
     </Box>
   );
 };

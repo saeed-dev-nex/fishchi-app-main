@@ -603,6 +603,7 @@ const DashboardPage: React.FC = () => {
                               </Box>
                             </Box>
                           }
+                          secondaryTypographyProps={{ component: 'div' }}
                         />
                         <ListItemSecondaryAction>
                           <IconButton size='small'>

@@ -248,6 +248,17 @@ export interface INote {
 
 export interface NoteState {
   notes: INote[];
+  summary: {
+    noteId: string | null;
+    content: string | null;
+    isLoading: boolean;
+    error: string | null;
+  };
+  suggestTags: {
+    isLoading: boolean;
+    tags: string | null;
+    error: string | null;
+  };
   isLoading: boolean;
   error: string | null;
 }
@@ -259,6 +270,7 @@ export type CreateNoteData = {
   content: string;
   sourceId?: string;
   pageRef?: string;
+  tags?: string[];
 };
 export type UpdateNoteData = {
   id: string;

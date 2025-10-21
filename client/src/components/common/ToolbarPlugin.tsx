@@ -17,6 +17,7 @@ import {
   TextField,
   alpha,
   useTheme,
+  CircularProgress,
 } from '@mui/material';
 import {
   FormatBold,
@@ -31,12 +32,18 @@ import {
   FormatAlignCenter,
   FormatAlignRight,
 } from '@mui/icons-material';
+import { AutoFixHigh as AiProofreadIcon } from '@mui/icons-material';
+import { useDispatch } from 'react-redux';
+import type { AppDispatch } from '../../store';
+import { proofreadNoteContent } from '../../store/features/noteSlice';
 
 type ToolbarProps = {
   editor: Editor | null;
 };
 
 const ToolbarPlugin: React.FC<ToolbarProps> = ({ editor }) => {
+  const [isProofreading, setIsProofreading] = React.useState(false);
+  const dispatch = useDispatch<AppDispatch>();
   const theme = useTheme();
   const [tableDialogOpen, setTableDialogOpen] = React.useState(false);
   const [rows, setRows] = React.useState(3);
@@ -90,6 +97,25 @@ const ToolbarPlugin: React.FC<ToolbarProps> = ({ editor }) => {
     }, 50);
 
     setTableDialogOpen(false);
+  };
+
+  const handleProofread = async () => {
+    if (!editor) return;
+    const currentContent = editor.getHTML();
+    if (!currentContent || currentContent === '<p></p>') return;
+
+    setIsProofreading(true);
+    try {
+      const resultAction = await dispatch(proofreadNoteContent(currentContent));
+      if (proofreadNoteContent.fulfilled.match(resultAction)) {
+        editor.commands.setContent(resultAction.payload, true); // Update editor content
+      } else {
+        // Handle error (e.g., show snackbar)
+        console.error('Proofreading failed:', resultAction.payload);
+      }
+    } finally {
+      setIsProofreading(false);
+    }
   };
 
   return (
@@ -292,6 +318,22 @@ const ToolbarPlugin: React.FC<ToolbarProps> = ({ editor }) => {
         </Tooltip>
       </ToggleButtonGroup>
       <Divider orientation='vertical' flexItem />
+      <Divider orientation='vertical' flexItem />
+      <ToggleButtonGroup size='small' exclusive>
+        <Tooltip title='ویرایش متن با هوش مصنوعی'>
+          <ToggleButton
+            value='proofread'
+            onClick={handleProofread}
+            disabled={isProofreading}
+          >
+            {isProofreading ? (
+              <CircularProgress size={20} />
+            ) : (
+              <AiProofreadIcon />
+            )}
+          </ToggleButton>
+        </Tooltip>
+      </ToggleButtonGroup>
 
       {/* --- Table --- */}
       <ToggleButtonGroup size='small' exclusive>

@@ -5,6 +5,7 @@ import sourceReducer from './features/sourceSlice';
 import noteReducer from './features/noteSlice';
 import profileReducer from './features/profileSlice';
 import settingsReducer from './features/settingsSlice';
+import searchReducer from './features/searchSlice';
 
 export const store = configureStore({
   reducer: {
@@ -14,6 +15,7 @@ export const store = configureStore({
     notes: noteReducer,
     profile: profileReducer,
     settings: settingsReducer,
+    search: searchReducer,
   },
 });
 

@@ -82,12 +82,9 @@ export const fetchSourcesByProject = createAsyncThunk(
         `/sources?projectId=${projectId}&limit=1000`
       );
       return data.data.sources as ISource[];
-    } catch (error: any) {
+    } catch (error: unknown) {
       const message =
-        error.response?.data?.message ||
-        error.response?.data?.error ||
-        error.message ||
-        'خطایی در دریافت منابع پروژه رخ داد';
+        error instanceof Error ? error.message : 'An error occurred';
       return rejectWithValue(message);
     }
   }
@@ -95,17 +92,14 @@ export const fetchSourcesByProject = createAsyncThunk(
 // ---------- 2. Delete Source By ID --------
 export const deleteSource = createAsyncThunk(
   'sources/deleteSource',
-  async (sourceId: string, thunkAPI) => {
+  async (sourceId: string, { rejectWithValue }) => {
     try {
       await apiClient.delete(`/sources/${sourceId}`);
       return sourceId;
-    } catch (error: any) {
+    } catch (error: unknown) {
       const message =
-        error.response?.data?.message ||
-        error.response?.data?.error ||
-        error.message ||
-        'خطایی در حذف منبع رخ داد';
-      return thunkAPI.rejectWithValue(message);
+        error instanceof Error ? error.message : 'An error occurred';
+      return rejectWithValue(message);
     }
   }
 );
@@ -118,12 +112,9 @@ export const createSource = createAsyncThunk(
       const { data } = await apiClient.post('/sources', sourceData);
 
       return data.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       const message =
-        error.response?.data?.message ||
-        error.response?.data?.error ||
-        error.message ||
-        'خطایی در ایجاد منبع رخ داد';
+        error instanceof Error ? error.message : 'An error occurred';
       return thunkAPI.rejectWithValue(message);
     }
   }
