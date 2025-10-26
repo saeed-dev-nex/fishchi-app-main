@@ -27,7 +27,12 @@ import {
 } from '../../store/features/sourceSlice';
 import { suggestTags } from '../../store/features/noteSlice';
 import { addExistingSourcesToProject } from '../../store/features/projectSlice';
-import { parseAuthors, formatAuthors } from '../../utils/persianNameProcessor';
+import {
+  parseAuthors,
+  formatAuthors,
+  hasPersianCharacters,
+  extractAuthors,
+} from '../../utils/persianNameProcessor';
 
 import {
   ManualSourceForm,
@@ -38,6 +43,8 @@ import {
   type ManualFormInputs,
   type DoiFormInputs,
 } from './modal-components';
+
+import apiClient from '../../api/axios';
 
 interface AddSourceModalProps {
   open: boolean;
@@ -65,9 +72,13 @@ const AddSourceModal: React.FC<AddSourceModalProps> = ({
   const [citationText, setCitationText] = useState('');
   const [selectedLibrary, setSelectedLibrary] = useState<string[]>([]);
   const [isSuggestingTags, setIsSuggestingTags] = useState(false);
-  const [tagSuggestionError, setTagSuggestionError] = useState<string | null>(null);
+  const [tagSuggestionError, setTagSuggestionError] = useState<string | null>(
+    null
+  );
   const [tags, setTags] = useState<string[]>([]);
   const [tagInputValue, setTagInputValue] = useState('');
+  const [isParsingCitation, setIsParsingCitation] = useState(false); // Add state for AI parsing
+  const [parsingError, setParsingError] = useState<string | null>(null);
 
   // Filter out sources that are already in the current project
   const availableLibrarySources = librarySources.filter(
@@ -143,36 +154,41 @@ const AddSourceModal: React.FC<AddSourceModalProps> = ({
 
   const handleParseCitation = async () => {
     if (!citationText.trim()) return;
+    setIsParsingCitation(true);
+    setParsingError(null);
+    dispatch(clearError());
 
     try {
-      const response = await fetch('/api/v1/sources/parse-citation', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({ citation: citationText }),
+      const response = await apiClient.post('/ai/parse-citation', {
+        citation: citationText,
       });
 
-      if (!response.ok) {
-        throw new Error('خطا در استخراج اطلاعات');
+      if (response.data.status !== 'success') {
+        throw new Error(
+          response.data.message || 'خطا در پردازش Citation توسط AI'
+        );
       }
+      const parsedData = response.data.data;
+      console.log('AI Parsed Data:', parsedData); // For debugging
 
-      const result = await response.json();
-      const parsedData = result.data;
-
-      // Fill the manual form with parsed data
+      // Fill the manual form with AI-parsed data
       setValue('title', parsedData.title || '');
+      // Use formatAuthors for display consistency
       setValue(
         'authors',
         parsedData.authors && parsedData.authors.length > 0
-          ? formatAuthors(parsedData.authors)
+          ? formatAuthors(parsedData.authors) // Use formatAuthors from persianNameProcessor
           : ''
       );
       setValue('year', parsedData.year?.toString() || '');
       setValue('type', parsedData.type || 'article');
-      setValue('language', parsedData.language || 'persian');
-      setValue('abstract', '');
+      setValue(
+        'language',
+        parsedData.language ||
+          (hasPersianCharacters(citationText) ? 'persian' : 'english')
+      ); // Infer language if AI doesn't provide
+      // Optionally set abstract if AI provided one
+      setValue('abstract', parsedData.abstract || '');
       setValue('journal', parsedData.publicationDetails?.journal || '');
       setValue('publisher', parsedData.publicationDetails?.publisher || '');
       setValue('volume', parsedData.publicationDetails?.volume || '');
@@ -181,14 +197,21 @@ const AddSourceModal: React.FC<AddSourceModalProps> = ({
       setValue('doi', parsedData.identifiers?.doi || '');
       setValue('isbn', parsedData.identifiers?.isbn || '');
       setValue('url', parsedData.identifiers?.url || '');
-      setValue('tags', '');
+      setValue('tags', ''); // Reset tags, let user add manually or use suggest
 
-      // Switch to manual tab to show the filled form
+      // Switch to manual tab and show advanced fields
       setActiveTab(0);
-      setShowAdvancedFields(true);
-      setCitationText('');
+      setShowAdvancedFields(true); // Show advanced fields as AI might fill them
+      setCitationText(''); // Clear the citation text input
     } catch (error) {
-      console.error('Parse citation error:', error);
+      console.error('AI Parse citation error:', error);
+      const message =
+        error.response?.data?.message ||
+        error.message ||
+        'خطا در ارتباط با سرویس هوش مصنوعی.';
+      setParsingError(message); // Show error specific to parsing
+    } finally {
+      setIsParsingCitation(false);
     }
   };
 
@@ -224,12 +247,19 @@ const AddSourceModal: React.FC<AddSourceModalProps> = ({
   };
 
   const onManualSubmit: SubmitHandler<ManualFormInputs> = async (data) => {
+    
     const processedData = {
       projectId,
       title: data.title,
       type: data.type || 'article',
       language: data.language || 'english',
-      authors: data.authors ? parseAuthors(data.authors) : [],
+      authors: data.authors
+        ? (() => {
+            const primary = parseAuthors(data.authors);
+            if (primary && primary.length > 0) return primary;
+            return extractAuthors(data.authors);
+          })()
+        : [],
       year: Number(data.year) || undefined,
       abstract: data.abstract || undefined,
       publicationDetails: {
@@ -385,8 +415,13 @@ const AddSourceModal: React.FC<AddSourceModalProps> = ({
               citationText={citationText}
               onCitationTextChange={setCitationText}
               onParseCitation={handleParseCitation}
-              isLoading={isLoading}
+              isLoading={isParsingCitation}
             />
+            {parsingError && (
+              <Alert severity='error' sx={{ mb: 2 }}>
+                {parsingError}
+              </Alert>
+            )}
           </Box>
 
           {/* Library Tab */}

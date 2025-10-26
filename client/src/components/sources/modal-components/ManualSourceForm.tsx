@@ -1,6 +1,10 @@
 import React from 'react';
 import { Box, Stack, Button } from '@mui/material';
-import { UseFormRegister, UseFormSetValue, UseFormWatch } from 'react-hook-form';
+import type {
+  UseFormRegister,
+  UseFormSetValue,
+  UseFormWatch,
+} from 'react-hook-form';
 import type { ManualFormInputs } from './types';
 import BasicSourceFields from './BasicSourceFields';
 import AdvancedSourceFields from './AdvancedSourceFields';

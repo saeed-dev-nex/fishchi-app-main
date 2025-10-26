@@ -7,6 +7,10 @@ settings:
 importers:
 
   .:
+    dependencies:
+      express-async-handler:
+        specifier: ^1.2.0
+        version: 1.2.0
     devDependencies:
       concurrently:
         specifier: ^9.2.1
@@ -48,6 +52,9 @@ packages:
   escalade@3.2.0:
     resolution: {integrity: sha512-WUj2qlxaQtO4g6Pq5c29GTcWGDyd8itL8zTlipgECz3JesAiiOKotd8JU6otB3PACgG6xkJUyVhboMS+bje/jA==}
     engines: {node: '>=6'}
+
+  express-async-handler@1.2.0:
+    resolution: {integrity: sha512-rCSVtPXRmQSW8rmik/AIb2P0op6l7r1fMW538yyvTMltCO4xQEWMmobfrIxN2V1/mVrgxB8Az3reYF6yUZw37w==}
 
   get-caller-file@2.0.5:
     resolution: {integrity: sha512-DyFP3BM/3YHTQOCUL/w0OZHR0lpKeGrxotcHWcqNEdnltqFwXVfhEBQ94eIo34AfQpo0rGki4cyIiftY06h2Fg==}
@@ -148,6 +155,8 @@ snapshots:
   emoji-regex@8.0.0: {}
 
   escalade@3.2.0: {}
+
+  express-async-handler@1.2.0: {}
 
   get-caller-file@2.0.5: {}
 

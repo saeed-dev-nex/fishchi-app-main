@@ -1,7 +1,8 @@
 import React from 'react';
 import { TextField, Stack, Typography } from '@mui/material';
-import { UseFormRegister } from 'react-hook-form';
+
 import type { ManualFormInputs } from './types';
+import type { UseFormRegister } from 'react-hook-form';
 
 interface BasicSourceFieldsProps {
   register: UseFormRegister<ManualFormInputs>;

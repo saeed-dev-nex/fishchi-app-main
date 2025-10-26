@@ -10,8 +10,9 @@ export default defineConfig({
     open: true,
     proxy: {
       '/api/v1': {
-        target: 'http://localhost:5000',
+        target: 'https://localhost:5000',
         changeOrigin: true,
+        secure: false, // Accept self-signed certificates
       },
     },
   },

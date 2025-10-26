@@ -13,7 +13,16 @@ import cookieParser from 'cookie-parser';
 const app = express();
 
 // use Middlewares
-const allowedOrigins = ['http://localhost:3000'];
+const allowedOrigins = [
+  process.env.CLIENT_URL,
+  'http://localhost:5173', // کلاینت اصلی فیش‌چی
+  'http://localhost:5174', // (کلاینت احتمالی دیگر)
+  'http://127.0.0.1:5173',
+  'https://fishchi.ir',
+  'https://www.fishchi.ir',
+  'https://localhost:3500', // <-- افزونه Word (باید HTTPS باشد)
+  'https://localhost:3000', // (پورت قبلی افزونه یا کلاینت دیگر)];
+];
 app.use(
   cors({
     origin: function (origin, callback) {

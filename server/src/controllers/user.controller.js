@@ -100,6 +100,8 @@ const verifyEmail = asyncHandler(async (req, res) => {
 
 const loginUser = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
+  console.log('!test login: ', email);
+
   if (!email || !password) {
     res.status(400);
     throw new Error('لطفاً تمام اطلاعات خواسته شده را پر کنید');
