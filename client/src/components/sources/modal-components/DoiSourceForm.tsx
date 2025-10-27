@@ -1,6 +1,6 @@
 import React from 'react';
 import { TextField, Stack } from '@mui/material';
-import { UseFormRegister } from 'react-hook-form';
+import type { UseFormRegister } from 'react-hook-form';
 import type { DoiFormInputs } from './types';
 
 interface DoiSourceFormProps {

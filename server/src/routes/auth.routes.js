@@ -125,5 +125,32 @@ router.get('/success', (req, res) => {
 router.get('/failure', (req, res) => {
   ApiResponse.error(res, 'OAuth authentication failed', 401);
 });
+router.post('/complete-login/:sessionId', (req, res) => {
+  const { sessionId } = req.params;
 
+  // --- THIS IS THE FIX ---
+  // Read the token from the httpOnly cookie, not req.body
+  const token = req.cookies.jwt;
+  // --- END OF FIX ---
+
+  if (!sessionId || !token) {
+    // If there's no cookie or no session ID, it's a bad request
+    return res
+      .status(400)
+      .json({ message: 'Session ID or token cookie are missing.' });
+  }
+
+  // Store the token mapped to the session ID
+  pendingLogins.set(sessionId, token);
+
+  // Set a timeout to clear this entry after 5 minutes
+  setTimeout(() => {
+    pendingLogins.delete(sessionId);
+    console.log(`Cleared expired login session: ${sessionId}`);
+  }, 5 * 60 * 1000); // 5 minutes
+
+  res
+    .status(200)
+    .json({ message: 'Login complete. You can close this window.' });
+});
 export default router;

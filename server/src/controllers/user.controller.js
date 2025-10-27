@@ -77,7 +77,7 @@ const verifyEmail = asyncHandler(async (req, res) => {
   user.verificationCode = null;
   user.verificationCodeExpires = null;
 
-  const token = generateToken(user._id);
+  const token = generateToken(res, user._id);
   await user.save();
   res.cookie('token', token, {
     httpOnly: true, //Anti XSS blocking access to js
@@ -100,6 +100,8 @@ const verifyEmail = asyncHandler(async (req, res) => {
 
 const loginUser = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
+  console.log('!test login: ', email);
+
   if (!email || !password) {
     res.status(400);
     throw new Error('لطفاً تمام اطلاعات خواسته شده را پر کنید');
@@ -121,7 +123,7 @@ const loginUser = asyncHandler(async (req, res) => {
         'حساب کاربری شما فعال نشده است لطفاً ایمیل خود را بررسی کنید'
       );
     }
-    const token = generateToken(user._id);
+    const token = generateToken(res, user._id);
     res.cookie('token', token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -400,21 +402,26 @@ const resetPassword = asyncHandler(async (req, res) => {
 
 // <-------------- Logout Handler --------------------->
 /**
- * @desc Logout user
- * @route POST /api/v1/users/logout
- * @access Private
+ * @desc    Logout user / clear cookie
+ * @route   POST /api/v1/users/logout
+ * @access  Public
  */
-const logoutUser = asyncHandler(async (req, res) => {
-  // Since we're using httpOnly cookies, we just need to clear the cookie
-  res.cookie('token', '', {
+const logoutUser = (req, res) => {
+  // We must use the *exact same* options as generateToken
+  // to ensure the browser clears the correct cookie.
+  res.cookie('jwt', '', {
     httpOnly: true,
-    expires: new Date(0),
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
+    expires: new Date(0), // Set to a past date to expire immediately
+
+    // --- START FIX ---
+    // Must match generateToken.js options
+    secure: true, // Was: process.env.NODE_ENV === 'production'
+    sameSite: 'none', // Was: 'strict'
+    // --- END FIX ---
   });
 
-  ApiResponse.success(res, null, 'کاربر با موفقیت خارج شد');
-});
+  res.status(200).json({ message: 'User logged out successfully' });
+};
 
 export {
   registerUser,

@@ -13,7 +13,11 @@ import {
   CircularProgress,
 } from '@mui/material';
 import { AutoAwesome as AutoAwesomeIcon } from '@mui/icons-material';
-import { UseFormRegister, UseFormSetValue, UseFormWatch } from 'react-hook-form';
+import type {
+  UseFormRegister,
+  UseFormSetValue,
+  UseFormWatch,
+} from 'react-hook-form';
 import type { ManualFormInputs } from './types';
 
 interface AdvancedSourceFieldsProps {
@@ -191,7 +195,9 @@ const AdvancedSourceFields: React.FC<AdvancedSourceFieldsProps> = ({
                   .map((tag) => tag.trim())
                   .filter(Boolean);
                 if (newTags.length > 0) {
-                  const updatedTags = Array.from(new Set([...tags, ...newTags]));
+                  const updatedTags = Array.from(
+                    new Set([...tags, ...newTags])
+                  );
                   setTags(updatedTags);
                   setValue('tags', updatedTags.join(', '));
                   setTagInputValue('');
@@ -208,7 +214,12 @@ const AdvancedSourceFields: React.FC<AdvancedSourceFieldsProps> = ({
               value.map((option, index) => {
                 const { key, ...tagProps } = getTagProps({ index });
                 return (
-                  <Chip key={key} label={option} {...tagProps} sx={{ m: 0.5 }} />
+                  <Chip
+                    key={key}
+                    label={option}
+                    {...tagProps}
+                    sx={{ m: 0.5 }}
+                  />
                 );
               })
             }

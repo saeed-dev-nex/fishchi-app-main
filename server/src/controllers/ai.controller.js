@@ -1,6 +1,7 @@
 import asyncHandler from 'express-async-handler';
 import {
   generateText,
+  parseCitationWithAI,
   proofreadText,
   suggestTagsForText,
 } from '../utils/aiService.js';
@@ -72,4 +73,60 @@ const suggestTags = asyncHandler(async (req, res) => {
   ApiResponse.success(res, { tags }, 'تگ‌ها با موفقیت پیشنهاد شدند');
 });
 
-export { summarizeNote, suggestTags, proofreadNote };
+/**
+ * @desc    Parse citation text using AI
+ * @route   POST /api/v1/ai/parse-citation
+ * @access  Private
+ */
+const aiParseCitation = asyncHandler(async (req, res) => {
+  const { citation } = req.body;
+
+  if (
+    !citation ||
+    typeof citation !== 'string' ||
+    citation.trim().length < 10
+  ) {
+    res.status(400);
+    throw new Error('متن Citation معتبر نیست یا بسیار کوتاه است.');
+  }
+
+  try {
+    const parsedData = await parseCitationWithAI(citation);
+
+    if (!parsedData) {
+      throw new Error('AI نتوانست اطلاعاتی از متن استخراج کند.');
+    }
+
+    // Basic validation and potential formatting adjustments
+    // Ensure authors is an array of objects with firstname/lastname
+    if (parsedData.authors && !Array.isArray(parsedData.authors)) {
+      parsedData.authors = []; // Or try to parse if it's a string
+    } else if (parsedData.authors) {
+      parsedData.authors = parsedData.authors
+        .map((author) => ({
+          firstname: author.firstname || '',
+          lastname: author.lastname || '',
+        }))
+        .filter((a) => a.firstname || a.lastname); // Filter out empty authors
+    } else {
+      parsedData.authors = [];
+    }
+
+    // Ensure year is a number or null
+    parsedData.year = parsedData.year ? parseInt(parsedData.year, 10) : null;
+    if (isNaN(parsedData.year)) {
+      parsedData.year = null;
+    }
+
+    ApiResponse.success(
+      res,
+      parsedData,
+      'Citation با موفقیت توسط AI پردازش شد'
+    );
+  } catch (error) {
+    console.error('AI Citation Controller Error:', error);
+    res.status(500); // Use 500 for AI service errors
+    throw new Error(error.message || 'خطا در پردازش Citation توسط هوش مصنوعی.');
+  }
+});
+export { summarizeNote, suggestTags, proofreadNote, aiParseCitation };

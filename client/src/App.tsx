@@ -14,9 +14,9 @@ import { useDispatch } from 'react-redux';
 import type { AppDispatch } from './store';
 import { checkUserStatus } from './store/features/authSlice';
 import { useEffect } from 'react';
-import ProjectDetailPage from './pages/app/ProjectDetailPage.tsx';
+import ProjectDetailPage from './pages/app/ProjectDetailPage';
 import SourcesLibraryPage from './pages/app/SourcesLibraryPage';
-import SourceDetailPage from './pages/app/SourceDetailPage.tsx';
+import SourceDetailPage from './pages/app/SourceDetailPage';
 import ProfilePage from './pages/app/ProfilePage';
 import SettingsPage from './pages/app/SettingsPage';
 import SearchPage from './pages/app/SearchPage';
@@ -31,10 +31,8 @@ function App() {
   const dispatch = useDispatch<AppDispatch>();
 
   useEffect(() => {
-    // Check user status on app load only once
     dispatch(checkUserStatus());
   }, [dispatch]);
-
   return (
     <>
       <LanguageProvider>
@@ -45,10 +43,22 @@ function App() {
                 <NotificationProvider />
                 <BrowserRouter>
                   <Routes>
-                    <Route path='/' element={<PublicLayout />}>
-                      <Route index element={<LandingPage />} />
-                      <Route path='login' element={<LoginPage />} />
-                      <Route path='register' element={<RegisterPage />} />
+                    <Route
+                      path='/'
+                      element={<PublicLayout />}
+                    >
+                      <Route
+                        index
+                        element={<LandingPage />}
+                      />
+                      <Route
+                        path='login'
+                        element={<LoginPage />}
+                      />
+                      <Route
+                        path='register'
+                        element={<RegisterPage />}
+                      />
                       <Route
                         path='verify-email'
                         element={<VerificationEmail />}
@@ -63,13 +73,27 @@ function App() {
                       />
                     </Route>
                     <Route element={<ProtectedRoute />}>
-                      <Route path='/app' element={<AppLayout />}>
-                        <Route index element={<DashboardPage />} />
+                      <Route
+                        path='/app'
+                        element={<AppLayout />}
+                      >
+                        <Route
+                          index
+                          element={<DashboardPage />}
+                        />
                         <Route
                           path='dashboard'
-                          element={<Navigate to='/app' replace />}
+                          element={
+                            <Navigate
+                              to='/app'
+                              replace
+                            />
+                          }
                         />
-                        <Route path='projects' element={<ProjectsPage />} />
+                        <Route
+                          path='projects'
+                          element={<ProjectsPage />}
+                        />
                         <Route
                           path='projects/:id'
                           element={<ProjectDetailPage />}
@@ -82,13 +106,30 @@ function App() {
                           path='library/:id'
                           element={<SourceDetailPage />}
                         />
-                        <Route path='profile' element={<ProfilePage />} />
-                        <Route path='settings' element={<SettingsPage />} />
-                        <Route path='search' element={<SearchPage />} />
+                        <Route
+                          path='profile'
+                          element={<ProfilePage />}
+                        />
+                        <Route
+                          path='settings'
+                          element={<SettingsPage />}
+                        />
+                        <Route
+                          path='search'
+                          element={<SearchPage />}
+                        />
                       </Route>
                     </Route>
                     {/* Catch all route - redirect to home */}
-                    <Route path='*' element={<Navigate to='/' replace />} />
+                    <Route
+                      path='*'
+                      element={
+                        <Navigate
+                          to='/'
+                          replace
+                        />
+                      }
+                    />
                   </Routes>
                 </BrowserRouter>
               </PrivacyProvider>

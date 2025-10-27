@@ -117,3 +117,76 @@ export const suggestTagsForText = async (textContent) => {
     return [];
   }
 };
+
+/**
+ * Parses citation text using AI to extract structured information.
+ * @param {string} citationText - The citation text to parse.
+ * @returns {Promise<object|null>} - A structured object with citation details or null on failure.
+ */
+export const parseCitationWithAI = async (citationText) => {
+  if (!citationText || citationText.trim().length < 10) {
+    return null; // Avoid processing very short texts
+  }
+
+  // Define the desired JSON structure
+  const desiredStructure = {
+    title: 'string (main title)',
+    authors: [{ firstname: 'string', lastname: 'string' }],
+    year: 'number (publication year)',
+    type: 'string (e.g., article, book, thesis, website, other)',
+    language: 'string (e.g., persian, english)',
+    publicationDetails: {
+      journal: 'string (journal or conference name, if applicable)',
+      publisher: 'string (publisher name, if applicable)',
+      volume: 'string (volume number)',
+      issue: 'string (issue number)',
+      pages: "string (page range, e.g., '123-145')",
+    },
+    identifiers: {
+      doi: 'string (DOI identifier)',
+      isbn: 'string (ISBN identifier)',
+      url: 'string (URL link)',
+    },
+    // Add abstract only if clearly present in the citation text itself, otherwise leave empty
+    abstract: 'string (brief summary if present in the text)',
+  };
+
+  // Construct a detailed prompt for the AI
+  const prompt = `
+    Analyze the following citation text and extract its components accurately.
+    Return the information ONLY as a valid JSON object matching this structure:
+    ${JSON.stringify(desiredStructure, null, 2)}
+
+    Important Rules:
+    1.  Parse names carefully: For Persian names often in "Lastname، Firstname" format, extract correctly into firstname and lastname fields. Handle multi-word names correctly (e.g., "یوسفی خواه، سارا"). For English names, handle formats like "Lastname, F." or "Firstname Lastname". If multiple authors, include all in the 'authors' array.
+    2.  Year: Extract only the 4-digit publication year.
+    3.  Type: Determine the type (article, book, thesis, website, other) based on context (journal name, publisher, keywords like 'thesis', URL structure etc.). Default to 'article' if unsure.
+    4.  Language: Detect the primary language (persian or english) and Don't change language in result.
+    5.  Publication Details: Extract journal/conference, publisher, volume, issue, and page numbers/range if available.
+    6.  Identifiers: Extract DOI, ISBN, and URL if present.
+    7.  Abstract: Only include an abstract if it's explicitly part of the provided citation text itself. Do not summarize or invent one.
+    8.  JSON Output: Ensure the output is *only* the JSON object, with no introductory text, explanations, or markdown formatting. Use double quotes for all keys and string values.
+
+    Citation Text:
+    "${citationText}"
+
+    JSON Output:
+  `;
+
+  try {
+    const resultText = await generateText(prompt); // Use the existing generateText function
+
+    // Clean potential markdown code block formatting
+    const cleanedJsonText = resultText.replace(/```json\n?|\n?```/g, '').trim();
+
+    // Attempt to parse the JSON response
+    const parsedResult = JSON.parse(cleanedJsonText);
+    return parsedResult;
+  } catch (error) {
+    console.error('[AI Citation Parse Error]:', error);
+    console.error('[AI Citation Parse Error] Raw AI response:', resultText); // Log raw response for debugging
+    throw new Error(
+      'سرویس هوش مصنوعی قادر به پردازش Citation نبود. لطفاً فرمت متن را بررسی کنید یا به صورت دستی وارد نمایید.'
+    );
+  }
+};

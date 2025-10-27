@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { protect } from '../middlewares/auth.middleware.js';
 import {
+  aiParseCitation,
   proofreadNote,
   suggestTags,
   summarizeNote,
@@ -15,5 +16,6 @@ router.use(protect);
 router.post('/summarize', summarizeNote);
 router.post('/suggest-tags', suggestTags);
 router.post('/proofread', proofreadNote);
+router.post('/parse-citation', aiParseCitation);
 
 export default router;

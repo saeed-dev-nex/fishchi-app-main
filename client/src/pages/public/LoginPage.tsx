@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Grid,
   Paper,
@@ -33,6 +33,7 @@ import { useForm, type SubmitHandler } from 'react-hook-form';
 import { loginSchema, type LoginFormInputs } from '../../types';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { clearState, loginUser } from '../../store/features/authSlice';
+import apiClient from '../../api/axios';
 
 // No makeStyles needed in MUI v5, we'll use the `sx` prop.
 
@@ -53,6 +54,11 @@ const LoginPage: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [showPassword, setShowPassword] = useState(false);
+  // State to show a success message instead of redirecting
+  const [officeLoginSuccess, setOfficeLoginSuccess] = useState(false);
+
+  // Ref to hold the session ID from the URL
+  const officeSessionId = useRef<string | null>(null);
 
   const handleClickShowPassword = () => {
     setShowPassword(!showPassword);
@@ -69,6 +75,63 @@ const LoginPage: React.FC = () => {
       navigate(from, { replace: true });
     }
   }, [user, navigate, location.state]);
+  // --- 3. Add this useEffect to read query params ONCE ---
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const from = searchParams.get('from');
+    const sessionId = searchParams.get('session_id');
+
+    if (from === 'office' && sessionId) {
+      // Store the session ID if we're in the office flow
+      officeSessionId.current = sessionId;
+    }
+  }, [location.search]); // Runs when URL changes
+
+  // --- 4. Add this useEffect to watch for login success ---
+  // --- 4. Add this useEffect to watch for login success (FIXED) ---
+  useEffect(() => {
+    // Check if USER OBJECT EXISTS
+    if (user && officeSessionId.current) {
+      // We don't need to read the token.
+      // The browser will send the httpOnly cookie automatically.
+
+      // --- THIS IS THE FIX ---
+      // We just make a POST request with an empty body.
+      apiClient
+        .post(`/auth/complete-login/${officeSessionId.current}`)
+        .then(() => {
+          // Show success message
+          setOfficeLoginSuccess(true);
+        })
+        .catch((err) => {
+          console.error('Failed to complete office login:', err);
+        });
+      // --- END OF FIX ---
+
+      officeSessionId.current = null;
+    }
+    // This is the NORMAL login flow
+    else if (user && !officeLoginSuccess) {
+      navigate('/dashboard');
+    }
+  }, [user, navigate, officeLoginSuccess]);
+
+  // --- 5. Add this render logic at the top of your return() ---
+  if (officeLoginSuccess) {
+    return (
+      // You can style this better using your existing layout
+      <Box sx={{ p: 4, textAlign: 'center' }}>
+        <Alert severity='success'>ورود با موفقیت انجام شد!</Alert>
+        <Typography
+          variant='h6'
+          sx={{ mt: 2 }}
+        >
+          می‌توانید این پنجره را ببندید و به Microsoft Word بازگردید.
+        </Typography>
+        <Typography>افزونه Word به طور خودکار وارد خواهد شد.</Typography>
+      </Box>
+    );
+  }
 
   const onSubmit: SubmitHandler<LoginFormInputs> = (data) => {
     dispatch(loginUser(data));
@@ -76,13 +139,13 @@ const LoginPage: React.FC = () => {
 
   const handleGoogleLogin = () => {
     window.location.href = `${
-      import.meta.env.VITE_API_URL || 'http://localhost:3000'
+      import.meta.env.VITE_API_URL || 'https://localhost:3000'
     }/api/v1/auth/google`;
   };
 
   const handleGitHubLogin = () => {
     window.location.href = `${
-      import.meta.env.VITE_API_URL || 'http://localhost:3000'
+      import.meta.env.VITE_API_URL || 'https://localhost:3000'
     }/api/v1/auth/github`;
   };
 
@@ -159,7 +222,10 @@ const LoginPage: React.FC = () => {
               onSubmit={handleSubmit(onSubmit)}
             >
               {error && (
-                <Alert severity='error' sx={{ width: '100%', mb: 2 }}>
+                <Alert
+                  severity='error'
+                  sx={{ width: '100%', mb: 2 }}
+                >
                   {error}
                 </Alert>
               )}
@@ -259,7 +325,10 @@ const LoginPage: React.FC = () => {
                 ورود
               </Button>
               <Divider sx={{ my: 2, width: '100%' }}>
-                <Typography variant='body2' sx={{ color: 'text.secondary' }}>
+                <Typography
+                  variant='body2'
+                  sx={{ color: 'text.secondary' }}
+                >
                   یا
                 </Typography>
               </Divider>
@@ -303,9 +372,15 @@ const LoginPage: React.FC = () => {
                   ورود با گیت‌هاب
                 </Button>
               </Box>
-              <Grid container sx={{ mt: 3 }}>
+              <Grid
+                container
+                sx={{ mt: 3 }}
+              >
                 <Grid size={{ xs: 12 }}>
-                  <Typography variant='body2' sx={{ cursor: 'pointer', mb: 2 }}>
+                  <Typography
+                    variant='body2'
+                    sx={{ cursor: 'pointer', mb: 2 }}
+                  >
                     فراموشی رمز عبور؟
                     <Link
                       to='/forgot-password'
@@ -321,7 +396,10 @@ const LoginPage: React.FC = () => {
                   </Typography>
                 </Grid>
                 <Grid size={{ xs: 12 }}>
-                  <Typography variant='body2' sx={{ cursor: 'pointer' }}>
+                  <Typography
+                    variant='body2'
+                    sx={{ cursor: 'pointer' }}
+                  >
                     حساب کاربری ندارید؟
                     <Link
                       to='/register'

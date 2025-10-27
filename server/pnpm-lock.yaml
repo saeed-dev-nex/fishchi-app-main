@@ -74,7 +74,13 @@ importers:
       passport-google-oauth20:
         specifier: ^2.0.0
         version: 2.0.0
+      selfsigned:
+        specifier: ^3.0.1
+        version: 3.0.1
     devDependencies:
+      dev-certs:
+        specifier: ^0.0.2
+        version: 0.0.2
       nodemon:
         specifier: ^3.1.10
         version: 3.1.10
@@ -298,6 +304,9 @@ packages:
   depd@2.0.0:
     resolution: {integrity: sha512-g7nH6P6dyDioJogAAGprGpCtVImJhpPk/roCzdb3fIh61/s/nPsfR6onyMwkCAR/OlC3yBC0lESvUoQEAssIrw==}
     engines: {node: '>= 0.8'}
+
+  dev-certs@0.0.2:
+    resolution: {integrity: sha512-y4X4NaW+lGMjU9kXa3ghxBdY+uUtTgKaon27pANplWa8YKomGbFkhXqgjaVLiHBzxjDHvEKHaD5xbZEqSUNfhw==}
 
   docx@9.5.1:
     resolution: {integrity: sha512-ABDI7JEirFD2+bHhOBlsGZxaG1UgZb2M/QMKhLSDGgVNhxDesTCDcP+qoDnDGjZ4EOXTRfUjUgwHVuZ6VSTfWQ==}
@@ -699,6 +708,13 @@ packages:
       encoding:
         optional: true
 
+  node-forge@0.6.49:
+    resolution: {integrity: sha512-8632osJqcHqlbmdWOvngqc0T0YV+MLSPsHFpGiQGXPe1wjhcVY3srKQOLkpypyl8w0Q5rbqzTy9Wc0hs3NSWyg==}
+
+  node-forge@1.3.1:
+    resolution: {integrity: sha512-dPEtOeMvF9VMcYV/1Wb8CPoVAXtp6MKMlcbAt4ddqmGqUJ6fQZFXkNZNkNlfevtNkGtaSoXf/vNNNSvgrdXwtA==}
+    engines: {node: '>= 6.13.0'}
+
   nodemailer@7.0.6:
     resolution: {integrity: sha512-F44uVzgwo49xboqbFgBGkRaiMgtoBrBEWCVincJPK9+S9Adkzt/wXCLKbf7dxucmxfTI5gHGB+bEmdyzN6QKjw==}
     engines: {node: '>=6.0.0'}
@@ -851,6 +867,10 @@ packages:
 
   selderee@0.11.0:
     resolution: {integrity: sha512-5TF+l7p4+OsnP8BCCvSyZiSPc4x4//p5uPwK8TCnVPJYRmU2aYKMpOXvw8zM5a5JvuuCGN1jmsMwuU2W02ukfA==}
+
+  selfsigned@3.0.1:
+    resolution: {integrity: sha512-6U6w6kSLrM9Zxo0D7mC7QdGS6ZZytMWBnj/vhF9p+dAHx6CwGezuRcO4VclTbrrI7mg7SD6zNiqXUuBHOVopNQ==}
+    engines: {node: '>=10'}
 
   semver@7.7.2:
     resolution: {integrity: sha512-RF0Fw+rO5AMf9MAyaRXI4AV0Ulj5lMHqVxxdSgiVbixSCXoEmmX/jk0CuJw4+3SqroYO9VoUh+HcuJivvtJemA==}
@@ -1257,6 +1277,10 @@ snapshots:
   delayed-stream@1.0.0: {}
 
   depd@2.0.0: {}
+
+  dev-certs@0.0.2:
+    dependencies:
+      node-forge: 0.6.49
 
   docx@9.5.1:
     dependencies:
@@ -1689,6 +1713,10 @@ snapshots:
     dependencies:
       whatwg-url: 5.0.0
 
+  node-forge@0.6.49: {}
+
+  node-forge@1.3.1: {}
+
   nodemailer@7.0.6: {}
 
   nodemon@3.1.10:
@@ -1845,6 +1873,10 @@ snapshots:
   selderee@0.11.0:
     dependencies:
       parseley: 0.12.1
+
+  selfsigned@3.0.1:
+    dependencies:
+      node-forge: 1.3.1
 
   semver@7.7.2: {}
 
