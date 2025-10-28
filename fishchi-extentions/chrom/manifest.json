@@ -15,7 +15,7 @@
     "https://*.sid.ir/*",
     "https://*.civilica.com/*",
     "https://*.noormags.ir/*",
-    "http://localhost:*/*",
+    "https://localhost:*/*",
     "https://fishchi-app.vercel.app/*"
   ],
   "background": {

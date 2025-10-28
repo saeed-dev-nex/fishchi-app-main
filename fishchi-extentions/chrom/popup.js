@@ -1,6 +1,6 @@
 // Popup Script for Fishchi Extension
 // Handles UI interactions and communication with background script
-
+const BASE_URL = 'https://localhost:3000';
 (function () {
   'use strict';
 
@@ -187,25 +187,25 @@
     if (elements.registerLink) {
       elements.registerLink.addEventListener('click', (e) => {
         e.preventDefault();
-        chrome.tabs.create({ url: 'http://localhost:3000/register' });
+        chrome.tabs.create({ url: `${BASE_URL}/register ` });
       });
     }
     if (elements.forgotPasswordLink) {
       elements.forgotPasswordLink.addEventListener('click', (e) => {
         e.preventDefault();
-        chrome.tabs.create({ url: 'http://localhost:3000/forgot-password' });
+        chrome.tabs.create({ url: `${BASE_URL}/forgot-password'` });
       });
     }
     if (elements.settingsLink) {
       elements.settingsLink.addEventListener('click', (e) => {
         e.preventDefault();
-        chrome.tabs.create({ url: 'http://localhost:3000/settings' });
+        chrome.tabs.create({ url: `${BASE_URL}/settings` });
       });
     }
     if (elements.helpLink) {
       elements.helpLink.addEventListener('click', (e) => {
         e.preventDefault();
-        chrome.tabs.create({ url: 'http://localhost:3000/help' });
+        chrome.tabs.create({ url: `${BASE_URL}/help` });
       });
     }
     if (elements.testLink) {
@@ -233,7 +233,7 @@
   async function handleLogin() {
     try {
       // Open the main website login page
-      chrome.tabs.create({ url: 'http://localhost:3000/login' });
+      chrome.tabs.create({ url: `${BASE_URL}/login` });
     } catch (error) {
       console.error('Login redirect error:', error);
       showError('خطا در هدایت به صفحه ورود');

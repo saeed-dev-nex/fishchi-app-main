@@ -5,7 +5,7 @@
   'use strict';
 
   // Configuration
-  const API_BASE_URL = 'http://localhost:3000/api/v1';
+  const API_BASE_URL = 'https://localhost:5000/api/v1';
   const STORAGE_KEYS = {
     AUTH_TOKEN: 'fishchi_auth_token',
     USER_DATA: 'fishchi_user_data',
@@ -232,7 +232,7 @@
   // Handle login
   async function handleLogin(email, password) {
     try {
-      const response = await makeApiRequest('/auth/login', {
+      const response = await makeApiRequest('/users/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -350,8 +350,8 @@
         },
       });
 
-      if (response.success) {
-        projects = response.projects || [];
+      if (response.status === 'success') {
+        projects = response.data || [];
         await saveToStorage(STORAGE_KEYS.PROJECTS, projects);
 
         return {
@@ -390,8 +390,8 @@
         },
       });
 
-      if (response.success) {
-        projects = response.projects || [];
+      if (response.status === 'success') {
+        projects = response.data || [];
         await saveToStorage(STORAGE_KEYS.PROJECTS, projects);
 
         return {
@@ -514,11 +514,11 @@
         }),
       });
 
-      if (response.success) {
+      if (response.status === 'success') {
         return {
           success: true,
-          source: response.source,
-          message: 'Source created successfully',
+          source: response.data,
+          message: response.message || 'Source created successfully',
         };
       } else {
         return {
