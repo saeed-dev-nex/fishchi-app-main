@@ -13,7 +13,7 @@ export default defineConfig({
     open: true,
     proxy: {
       '/api/v1': {
-        target: process.env.BACKEND_TARGET_URL,
+        target: 'http://localhost:5000',
         changeOrigin: true,
         secure: false, // Accept self-signed certificates
       },

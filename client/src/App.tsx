@@ -14,9 +14,9 @@ import { useDispatch } from 'react-redux';
 import type { AppDispatch } from './store';
 import { checkUserStatus } from './store/features/authSlice';
 import { useEffect } from 'react';
-import ProjectDetailPage from './pages/app/ProjectDetailPage';
+import ProjectDetailPage from './pages/app/ProjectDetailPage.tsx';
 import SourcesLibraryPage from './pages/app/SourcesLibraryPage';
-import SourceDetailPage from './pages/app/SourceDetailPage';
+import SourceDetailPage from './pages/app/SourceDetailPage.tsx';
 import ProfilePage from './pages/app/ProfilePage';
 import SettingsPage from './pages/app/SettingsPage';
 import SearchPage from './pages/app/SearchPage';
@@ -33,6 +33,7 @@ function App() {
   useEffect(() => {
     dispatch(checkUserStatus());
   }, [dispatch]);
+
   return (
     <>
       <LanguageProvider>
@@ -43,93 +44,50 @@ function App() {
                 <NotificationProvider />
                 <BrowserRouter>
                   <Routes>
-                    <Route
-                      path='/'
-                      element={<PublicLayout />}
-                    >
+                    <Route path='/' element={<PublicLayout />}>
+                      <Route index element={<LandingPage />} />
+                      <Route path='login' element={<LoginPage />} />
+                      <Route path='register' element={<RegisterPage />} />
                       <Route
-                        index
-                        element={<LandingPage />}
-                      />
-                      <Route
-                        path='login'
-                        element={<LoginPage />}
-                      />
-                      <Route
-                        path='register'
-                        element={<RegisterPage />}
-                      />
-                      <Route
-                        path='verify-email'
+                        path="verify-email"
                         element={<VerificationEmail />}
                       />
                       <Route
-                        path='forgot-password'
+                        path="forgot-password"
                         element={<ForgotPasswordPage />}
                       />
                       <Route
-                        path='reset-password'
+                        path="reset-password"
                         element={<ResetPasswordPage />}
                       />
                     </Route>
                     <Route element={<ProtectedRoute />}>
-                      <Route
-                        path='/app'
-                        element={<AppLayout />}
-                      >
-                        <Route
-                          index
-                          element={<DashboardPage />}
-                        />
+                      <Route path='/app' element={<AppLayout />}>
+                        <Route index element={<DashboardPage />} />
                         <Route
                           path='dashboard'
-                          element={
-                            <Navigate
-                              to='/app'
-                              replace
-                            />
-                          }
+                          element={<Navigate to='/app' replace />}
                         />
+                        <Route path='projects' element={<ProjectsPage />} />
                         <Route
-                          path='projects'
-                          element={<ProjectsPage />}
-                        />
-                        <Route
-                          path='projects/:id'
+                          path="projects/:id"
                           element={<ProjectDetailPage />}
                         />
                         <Route
-                          path='library'
+                          path="library"
                           element={<SourcesLibraryPage />}
                         />
                         <Route
-                          path='library/:id'
+                          path="library/:id"
                           element={<SourceDetailPage />}
                         />
-                        <Route
-                          path='profile'
-                          element={<ProfilePage />}
-                        />
-                        <Route
-                          path='settings'
-                          element={<SettingsPage />}
-                        />
-                        <Route
-                          path='search'
-                          element={<SearchPage />}
-                        />
+                        <Route path='profile' element={<ProfilePage />} />
+                        <Route path='settings' element={<SettingsPage />} />
+                        <Route path='search' element={<SearchPage />} />
                       </Route>
                     </Route>
                     {/* Catch all route - redirect to home */}
-                    <Route
-                      path='*'
-                      element={
-                        <Navigate
-                          to='/'
-                          replace
-                        />
-                      }
-                    />
+                    <Route path='*' element={<Navigate to='/' replace />} />
                   </Routes>
                 </BrowserRouter>
               </PrivacyProvider>
