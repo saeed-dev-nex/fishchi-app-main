@@ -12,7 +12,7 @@ const NODE_ENV = process.env.NODE_ENV || 'development';
 const startServer = async () => {
   // Connect to MongoDB
   await connectDB();
-  
+
   if (NODE_ENV === 'development') {
     console.log('Development mode: Starting HTTPS server with mkcert...');
     try {
