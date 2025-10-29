@@ -6,8 +6,8 @@ const protect = async (req, res, next) => {
 
   // --- START MODIFICATION ---
   // Strategy 1: Check for httpOnly Cookie (for Web App)
-  if (req.cookies.jwt) {
-    token = req.cookies.jwt;
+  if (req.cookies.token) {
+    token = req.cookies.token;
   }
   // Strategy 2: Check for Bearer Token Header (for Word Add-in / API clients)
   else if (

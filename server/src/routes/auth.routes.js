@@ -2,10 +2,12 @@ import express from 'express';
 import passport from '../config/passport.js';
 import generateToken from '../utils/generateToken.js';
 import ApiResponse from '../utils/apiResponse.js';
+// --- NEW: Import pendingLogins from app.js ---
+import { pendingLogins } from '../app.js';
 
 const router = express.Router();
 
-// Test endpoint to check OAuth configuration
+// Test endpoint... (unchanged)
 router.get('/test', (req, res) => {
   res.json({
     google: {
@@ -39,29 +41,76 @@ router.get(
     }
     next();
   },
-  passport.authenticate('google', {
-    scope: ['profile', 'email'],
-  })
+  // --- MODIFIED: Pass session_id as state ---
+  (req, res, next) => {
+    const { session_id } = req.query;
+    const authOptions = {
+      scope: ['profile', 'email'],
+      session: false, // Ensure session is false
+    };
+    // If session_id exists, pass it as 'state'
+    if (session_id) {
+      authOptions.state = session_id;
+    }
+    passport.authenticate('google', authOptions)(req, res, next);
+  }
+  // --- END MODIFIED ---
 );
 
 router.get(
   '/google/callback',
-  passport.authenticate('google', { session: false }),
+  passport.authenticate('google', {
+    session: false,
+    failureRedirect: '/login?error=oauth_failed',
+  }),
   (req, res) => {
     try {
       const user = req.user;
       const token = generateToken(user._id);
 
-      // Set cookie
-      res.cookie('token', token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-        maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-      });
+      // --- MODIFIED: Check for session_id (from state) ---
+      const sessionId = req.query.state;
 
-      // Redirect to frontend with success
-      res.redirect(`${process.env.CLIENT_URL}/app?oauth=success`);
+      if (sessionId) {
+        // This is an add-in login flow
+        console.log(`Completing add-in login for session: ${sessionId}`);
+
+        // Store the token for the polling mechanism
+        pendingLogins.set(sessionId, token);
+
+        // Set a timeout to clear this entry after 5 minutes
+        setTimeout(() => {
+          pendingLogins.delete(sessionId);
+          console.log(`Cleared expired OAuth login session: ${sessionId}`);
+        }, 5 * 60 * 1000); // 5 minutes
+
+        // Send a simple HTML response to close the window
+        return res.status(200).send(
+          `
+          <html lang="fa" dir="rtl">
+            <head><title>ورود موفق</title></head>
+            <body style="font-family: sans-serif; text-align: center; padding-top: 50px;">
+              <h2>ورود با موفقیت انجام شد!</h2>
+              <p>می‌توانید این پنجره را ببندید و به Microsoft Word بازگردید.</p>
+              <script>window.close();</script>
+            </body>
+          </html>
+          `
+        );
+      } else {
+        // This is a normal web login flow
+        // Set cookie
+        res.cookie('token', token, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'strict',
+          maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+        });
+
+        // Redirect to frontend with success
+        res.redirect(`${process.env.CLIENT_URL}/app?oauth=success`);
+      }
+      // --- END MODIFIED ---
     } catch (error) {
       console.error('Google OAuth Error:', error);
       res.redirect(`${process.env.CLIENT_URL}/login?error=oauth_failed`);
@@ -82,29 +131,76 @@ router.get(
     }
     next();
   },
-  passport.authenticate('github', {
-    scope: ['user:email'],
-  })
+  // --- MODIFIED: Pass session_id as state ---
+  (req, res, next) => {
+    const { session_id } = req.query;
+    const authOptions = {
+      scope: ['user:email'],
+      session: false, // Ensure session is false
+    };
+    // If session_id exists, pass it as 'state'
+    if (session_id) {
+      authOptions.state = session_id;
+    }
+    passport.authenticate('github', authOptions)(req, res, next);
+  }
+  // --- END MODIFIED ---
 );
 
 router.get(
   '/github/callback',
-  passport.authenticate('github', { session: false }),
+  passport.authenticate('github', {
+    session: false,
+    failureRedirect: '/login?error=oauth_failed',
+  }),
   (req, res) => {
     try {
       const user = req.user;
       const token = generateToken(user._id);
 
-      // Set cookie
-      res.cookie('token', token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-        maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-      });
+      // --- MODIFIED: Check for session_id (from state) ---
+      const sessionId = req.query.state;
 
-      // Redirect to frontend with success
-      res.redirect(`${process.env.CLIENT_URL}/app?oauth=success`);
+      if (sessionId) {
+        // This is an add-in login flow
+        console.log(`Completing add-in login for session: ${sessionId}`);
+
+        // Store the token for the polling mechanism
+        pendingLogins.set(sessionId, token);
+
+        // Set a timeout to clear this entry after 5 minutes
+        setTimeout(() => {
+          pendingLogins.delete(sessionId);
+          console.log(`Cleared expired OAuth login session: ${sessionId}`);
+        }, 5 * 60 * 1000); // 5 minutes
+
+        // Send a simple HTML response to close the window
+        return res.status(200).send(
+          `
+          <html lang="fa" dir="rtl">
+            <head><title>ورود موفق</title></head>
+            <body style="font-family: sans-serif; text-align: center; padding-top: 50px;">
+              <h2>ورود با موفقیت انجام شد!</h2>
+              <p>می‌توانید این پنجره را ببندید و به Microsoft Word بازگردید.</p>
+              <script>window.close();</script>
+            </body>
+          </html>
+          `
+        );
+      } else {
+        // This is a normal web login flow
+        // Set cookie
+        res.cookie('token', token, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'strict',
+          maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+        });
+
+        // Redirect to frontend with success
+        res.redirect(`${process.env.CLIENT_URL}/app?oauth=success`);
+      }
+      // --- END MODIFIED ---
     } catch (error) {
       console.error('GitHub OAuth Error:', error);
       res.redirect(`${process.env.CLIENT_URL}/login?error=oauth_failed`);
@@ -112,7 +208,7 @@ router.get(
   }
 );
 
-// OAuth success endpoint
+// OAuth success/failure endpoints (unchanged)
 router.get('/success', (req, res) => {
   ApiResponse.success(
     res,
@@ -121,16 +217,16 @@ router.get('/success', (req, res) => {
   );
 });
 
-// OAuth failure endpoint
 router.get('/failure', (req, res) => {
   ApiResponse.error(res, 'OAuth authentication failed', 401);
 });
+
+// Endpoint for local login flow (from LoginPage)
 router.post('/complete-login/:sessionId', (req, res) => {
   const { sessionId } = req.params;
 
-  // --- THIS IS THE FIX ---
-  // Read the token from the httpOnly cookie, not req.body
-  const token = req.cookies.jwt;
+  // --- THIS IS THE FIX: Read 'token' cookie, not 'jwt' ---
+  const token = req.cookies.token;
   // --- END OF FIX ---
 
   if (!sessionId || !token) {
@@ -142,15 +238,43 @@ router.post('/complete-login/:sessionId', (req, res) => {
 
   // Store the token mapped to the session ID
   pendingLogins.set(sessionId, token);
+  console.log(`Completing add-in login (local) for session: ${sessionId}`);
 
   // Set a timeout to clear this entry after 5 minutes
   setTimeout(() => {
     pendingLogins.delete(sessionId);
-    console.log(`Cleared expired login session: ${sessionId}`);
+    console.log(`Cleared expired local login session: ${sessionId}`);
   }, 5 * 60 * 1000); // 5 minutes
 
   res
     .status(200)
     .json({ message: 'Login complete. You can close this window.' });
 });
+
+// ---  Add-in Polling Endpoint (FIX for 404 error) ---
+// This is the route the Word Add-in calls repeatedly to check for a token
+router.get('/poll-login/:sessionId', (req, res) => {
+  const { sessionId } = req.params;
+
+  if (pendingLogins.has(sessionId)) {
+    // Found it! Get the token.
+    const token = pendingLogins.get(sessionId);
+
+    // Delete it from the map (it's a one-time use token)
+    pendingLogins.delete(sessionId);
+
+    // Send the token to the add-in
+    console.log(`Token sent to add-in for session: ${sessionId}`);
+    // Return 200 OK with the token
+    res.status(200).json({ token: token });
+  } else {
+    // Not found yet.
+    // Return 200 OK, but with no token.
+    // The add-in (App.tsx) will see 'data.token' is null/undefined
+    // and log "Polling... token not ready." and try again.
+    res.status(200).json({ token: null, message: 'Token not ready yet.' });
+  }
+});
+// --- -------- ---
+
 export default router;

@@ -11,7 +11,7 @@ passport.use(
     {
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: `http://localhost:3000/api/v1/auth/google/callback`,
+      callbackURL: `https://localhost:3000/api/v1/auth/google/callback`,
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
@@ -59,6 +59,8 @@ passport.use(
 
         return done(null, user);
       } catch (error) {
+        console.log('Google Auth : ', error);
+
         return done(error, null);
       }
     }
@@ -72,7 +74,7 @@ passport.use(
     {
       clientID: process.env.GITHUB_CLIENT_ID || 'dummy',
       clientSecret: process.env.GITHUB_CLIENT_SECRET || 'dummy',
-      callbackURL: `http://localhost:3000/api/v1/auth/github/callback`,
+      callbackURL: `https://localhost:3000/api/v1/auth/github/callback`,
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
@@ -124,6 +126,8 @@ passport.use(
 
         return done(null, user);
       } catch (error) {
+        console.log('Github auth: ', error);
+
         return done(error, null);
       }
     }
@@ -141,6 +145,7 @@ passport.deserializeUser(async (id, done) => {
     const user = await User.findById(id);
     done(null, user);
   } catch (error) {
+    console.log('Deserialize User Error: ', error);
     done(error, null);
   }
 });

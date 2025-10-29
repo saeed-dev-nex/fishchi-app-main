@@ -122,10 +122,7 @@ const LoginPage: React.FC = () => {
       // You can style this better using your existing layout
       <Box sx={{ p: 4, textAlign: 'center' }}>
         <Alert severity='success'>ورود با موفقیت انجام شد!</Alert>
-        <Typography
-          variant='h6'
-          sx={{ mt: 2 }}
-        >
+        <Typography variant='h6' sx={{ mt: 2 }}>
           می‌توانید این پنجره را ببندید و به Microsoft Word بازگردید.
         </Typography>
         <Typography>افزونه Word به طور خودکار وارد خواهد شد.</Typography>
@@ -138,15 +135,37 @@ const LoginPage: React.FC = () => {
   };
 
   const handleGoogleLogin = () => {
-    window.location.href = `${
-      import.meta.env.VITE_API_URL || 'https://localhost:3000'
-    }/api/v1/auth/google`;
+    // Get the base URL for the API
+    const baseUrl =
+      import.meta.env.VITE_API_BASE_URL || 'https://localhost:5000';
+    // Base URL for the auth endpoint
+    let googleLoginUrl = `${baseUrl}/api/v1/auth/google`;
+
+    // Check if we have an office session ID stored in our ref
+    if (officeSessionId.current) {
+      // If yes, append it to the URL so the backend can track it
+      googleLoginUrl += `?session_id=${officeSessionId.current}`;
+    }
+
+    // Redirect the user
+    window.location.href = googleLoginUrl;
   };
 
   const handleGitHubLogin = () => {
-    window.location.href = `${
-      import.meta.env.VITE_API_URL || 'https://localhost:3000'
-    }/api/v1/auth/github`;
+    // Get the base URL for the API
+    const baseUrl =
+      import.meta.env.VITE_API_BASE_URL || 'https://localhost:5000';
+    // Base URL for the auth endpoint
+    let githubLoginUrl = `${baseUrl}/api/v1/auth/github`;
+
+    // Check if we have an office session ID stored in our ref
+    if (officeSessionId.current) {
+      // If yes, append it to the URL so the backend can track it
+      githubLoginUrl += `?session_id=${officeSessionId.current}`;
+    }
+
+    // Redirect the user
+    window.location.href = githubLoginUrl;
   };
 
   return (
@@ -222,10 +241,7 @@ const LoginPage: React.FC = () => {
               onSubmit={handleSubmit(onSubmit)}
             >
               {error && (
-                <Alert
-                  severity='error'
-                  sx={{ width: '100%', mb: 2 }}
-                >
+                <Alert severity='error' sx={{ width: '100%', mb: 2 }}>
                   {error}
                 </Alert>
               )}
@@ -325,10 +341,7 @@ const LoginPage: React.FC = () => {
                 ورود
               </Button>
               <Divider sx={{ my: 2, width: '100%' }}>
-                <Typography
-                  variant='body2'
-                  sx={{ color: 'text.secondary' }}
-                >
+                <Typography variant='body2' sx={{ color: 'text.secondary' }}>
                   یا
                 </Typography>
               </Divider>
@@ -372,15 +385,9 @@ const LoginPage: React.FC = () => {
                   ورود با گیت‌هاب
                 </Button>
               </Box>
-              <Grid
-                container
-                sx={{ mt: 3 }}
-              >
+              <Grid container sx={{ mt: 3 }}>
                 <Grid size={{ xs: 12 }}>
-                  <Typography
-                    variant='body2'
-                    sx={{ cursor: 'pointer', mb: 2 }}
-                  >
+                  <Typography variant='body2' sx={{ cursor: 'pointer', mb: 2 }}>
                     فراموشی رمز عبور؟
                     <Link
                       to='/forgot-password'
@@ -396,10 +403,7 @@ const LoginPage: React.FC = () => {
                   </Typography>
                 </Grid>
                 <Grid size={{ xs: 12 }}>
-                  <Typography
-                    variant='body2'
-                    sx={{ cursor: 'pointer' }}
-                  >
+                  <Typography variant='body2' sx={{ cursor: 'pointer' }}>
                     حساب کاربری ندارید؟
                     <Link
                       to='/register'

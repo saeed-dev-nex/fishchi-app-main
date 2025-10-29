@@ -9,6 +9,13 @@ import mainRouter from './routes/index.js';
 import { notFound, errorHandler } from './middlewares/error.middleware.js';
 import cookieParser from 'cookie-parser';
 
+// ---  Add-in Login Store ---
+// This Map will temporarily store tokens (sessionId -> token)
+// for the Word Add-in polling mechanism.
+// We export it so auth.routes.js can import and use it.
+export const pendingLogins = new Map();
+// ------------- ---
+
 // Initialize Express app
 const app = express();
 

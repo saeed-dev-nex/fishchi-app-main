@@ -2,12 +2,9 @@ import axios from 'axios';
 
 const isDevelopment = import.meta.env.MODE === 'development';
 
-// const BASE_URL = 'https://api.fishchi.ir/api/v1';
-
-// const BASE_URL = 'https://localhost:5000/api/v1';
-const BASE_URL = isDevelopment
-  ? 'https://localhost:5000/api/v1'
-  : 'https://api.fishchi.ir/api/v1';
+// In development use the Vite dev server proxy by using a relative URL.
+// This avoids TLS issues with the backend's self-signed certificate.
+const BASE_URL = isDevelopment ? '/api/v1' : 'https://api.fishchi.ir/api/v1';
 
 const axiosInstance = axios.create({
   baseURL: BASE_URL,
