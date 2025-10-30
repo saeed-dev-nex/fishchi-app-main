@@ -118,7 +118,7 @@ const AppLayout: React.FC = () => {
   const handleLogout = async () => {
     handleProfileMenuClose();
     try {
-      await dispatch(logoutUser()).unwrap();
+      await dispatch(logoutUser());
     } catch (error) {
       console.error('Logout failed:', error);
     } finally {

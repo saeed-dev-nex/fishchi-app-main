@@ -8,6 +8,20 @@ import ApiResponse from '../utils/apiResponse.js';
 import sendEmail from '../utils/sendEmail.js';
 import { activationEmailTemplate } from '../utils/activationEmailTemplate.js';
 import generateToken from '../utils/generateToken.js';
+import { set } from 'mongoose';
+import { log } from 'console';
+
+// --- Helper function to set the cookie consistently ---
+const setTokenCookie = (res, token) => {
+  res.cookie('token', token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    path: '/', // --- FIX: Add path ---
+  });
+};
+// --- End Helper ---
 
 // <-------------- Register Handler --------------------->
 /**
@@ -16,18 +30,14 @@ import generateToken from '../utils/generateToken.js';
  * @access Public
  */
 const registerUser = asyncHandler(async (req, res) => {
-  console.log('------- register user begin ---------');
-
   const { name, email, password } = req.body;
-  console.log('name', name);
-  console.log('email', email);
-  console.log('password', password);
+
   if (!name || !email || !password) {
     res.status(400);
     throw new Error('لطفاً تمام اطلاعات خواسته شده را پر کنید');
   }
   const userExists = await User.findOne({ email });
-  console.log('userExists', userExists);
+
   if (userExists) {
     res.status(400);
     throw new Error('ایمیل قبلاً ثبت شده است');
@@ -79,13 +89,7 @@ const verifyEmail = asyncHandler(async (req, res) => {
 
   const token = generateToken(res, user._id);
   await user.save();
-  res.cookie('token', token, {
-    httpOnly: true, //Anti XSS blocking access to js
-    secure: process.env.NODE_ENV === 'production', // in Product mode only send HTTPS
-    sameSite: 'strict', //Anti CSRF Attack
-    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 day
-    // maxAge: 10 * 60 * 1000, // 10 minutes
-  });
+  setTokenCookie(res, token);
   ApiResponse.success(
     res,
     {
@@ -100,22 +104,18 @@ const verifyEmail = asyncHandler(async (req, res) => {
 
 const loginUser = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
-  console.log('!test login: ', email);
 
   if (!email || !password) {
     res.status(400);
     throw new Error('لطفاً تمام اطلاعات خواسته شده را پر کنید');
   }
   const user = await User.findOne({ email }).select('+isVerified');
-  if (!user) {
-    res.status(400);
-    throw new Error('ایمیل یا رمز عبور اشتباه است');
-  }
   const isMatch = await user.comparePassword(password);
-  if (!isMatch) {
+  if (!user || !isMatch) {
     res.status(400);
     throw new Error('ایمیل یا رمز عبور اشتباه است');
   }
+
   if (user && isMatch) {
     if (!user.isVerified) {
       res.status(401);
@@ -124,18 +124,14 @@ const loginUser = asyncHandler(async (req, res) => {
       );
     }
     const token = generateToken(res, user._id);
-    res.cookie('token', token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
-    });
+    setTokenCookie(res, token);
     ApiResponse.success(
       res,
       {
         _id: user._id,
         name: user.name,
         email: user.email,
+        avatar: user.avatar,
       },
       'Login successful'
     );
@@ -407,18 +403,18 @@ const resetPassword = asyncHandler(async (req, res) => {
  * @access  Public
  */
 const logoutUser = (req, res) => {
+  console.log('start Logout');
+
   // We must use the *exact same* options as generateToken
   // to ensure the browser clears the correct cookie.
-  res.cookie('jwt', '', {
+  res.cookie('token', '', 'jwt', '', {
     httpOnly: true,
-    expires: new Date(0), // Set to a past date to expire immediately
-
-    // --- START FIX ---
-    // Must match generateToken.js options
+    expires: new Date(0),
     secure: true, // Was: process.env.NODE_ENV === 'production'
-    sameSite: 'none', // Was: 'strict'
-    // --- END FIX ---
+    sameSite: 'strict', // Was: 'strict'
+    path: '/',
   });
+  console.log(res.cookie);
 
   res.status(200).json({ message: 'User logged out successfully' });
 };

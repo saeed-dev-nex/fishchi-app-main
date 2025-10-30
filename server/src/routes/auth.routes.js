@@ -15,14 +15,14 @@ router.get('/test', (req, res) => {
         process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
       ),
       clientId: process.env.GOOGLE_CLIENT_ID ? 'Set' : 'Not set',
-      callbackUrl: 'http://localhost:3000/api/v1/auth/google/callback',
+      callbackUrl: 'https://localhost:3000/api/v1/auth/google/callback',
     },
     github: {
       configured: !!(
         process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET
       ),
       clientId: process.env.GITHUB_CLIENT_ID ? 'Set' : 'Not set',
-      callbackUrl: 'http://localhost:3000/api/v1/auth/github/callback',
+      callbackUrl: 'https://localhost:3000/api/v1/auth/github/callback',
     },
     clientUrl: process.env.CLIENT_URL,
   });
@@ -41,7 +41,7 @@ router.get(
     }
     next();
   },
-  // --- MODIFIED: Pass session_id as state ---
+  // ---  Pass session_id as state ---
   (req, res, next) => {
     const { session_id } = req.query;
     const authOptions = {
@@ -54,7 +54,7 @@ router.get(
     }
     passport.authenticate('google', authOptions)(req, res, next);
   }
-  // --- END MODIFIED ---
+  // --- END  ---
 );
 
 router.get(
@@ -66,7 +66,7 @@ router.get(
   (req, res) => {
     try {
       const user = req.user;
-      const token = generateToken(user._id);
+      const token = generateToken(res, user._id);
 
       // --- MODIFIED: Check for session_id (from state) ---
       const sessionId = req.query.state;
@@ -104,7 +104,8 @@ router.get(
           httpOnly: true,
           secure: process.env.NODE_ENV === 'production',
           sameSite: 'strict',
-          maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+          maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+          path: '/',
         });
 
         // Redirect to frontend with success
@@ -156,7 +157,7 @@ router.get(
   (req, res) => {
     try {
       const user = req.user;
-      const token = generateToken(user._id);
+      const token = generateToken(res, user._id);
 
       // --- MODIFIED: Check for session_id (from state) ---
       const sessionId = req.query.state;
@@ -194,7 +195,8 @@ router.get(
           httpOnly: true,
           secure: process.env.NODE_ENV === 'production',
           sameSite: 'strict',
-          maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+          maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+          path: '/',
         });
 
         // Redirect to frontend with success
