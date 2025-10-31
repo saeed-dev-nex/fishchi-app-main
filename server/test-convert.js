@@ -1,4 +1,4 @@
-const moment = require('moment-jalaali');
+import moment from 'moment-jalaali';
 
 function convertYearBasedOnLanguage(year, language) {
   // Check for null, undefined, empty string, or zero
