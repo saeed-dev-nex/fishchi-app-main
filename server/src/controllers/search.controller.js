@@ -44,7 +44,9 @@ const semanticSearch = asyncHandler(async (req, res) => {
     const similarity = cosineSimilarity(queryVector, note.contentVector);
     if (similarity > 0.6) {
       // آستانه شباهت (کاهش از 0.7 به 0.5 برای نتایج بیشتر)
-      allResults.push({ type: 'note', data: note, similarity });
+      const noteData = note.toObject();
+      delete noteData.contentVector;
+      allResults.push({ type: 'note', data: noteData, similarity });
     }
   });
 
@@ -53,7 +55,9 @@ const semanticSearch = asyncHandler(async (req, res) => {
     const similarity = cosineSimilarity(queryVector, source.searchVector); // استفاده از نام صحیح فیلد searchVector
     if (similarity > 0.5) {
       // آستانه شباهت (کاهش از 0.7 به 0.5 برای نتایج بیشتر)
-      allResults.push({ type: 'source', data: source, similarity });
+      const sourceData = source.toObject();
+      delete sourceData.searchVector;
+      allResults.push({ type: 'source', data: sourceData, similarity });
     }
   });
 
