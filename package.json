@@ -13,9 +13,10 @@
   "license": "ISC",
   "packageManager": "pnpm@10.13.1",
   "devDependencies": {
-    "concurrently": "^9.2.1"
+    "concurrently": "latest"
   },
   "dependencies": {
+    "citeproc-js-node": "^0.0.3",
     "express-async-handler": "^1.2.0"
   }
 }

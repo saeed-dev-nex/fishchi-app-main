@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DOI Test Page - Fishchi Extension</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .article {
+            border: 1px solid #ddd;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            background: #f9f9f9;
+        }
+        .doi {
+            background: #e8f4fd;
+            padding: 10px;
+            border-left: 4px solid #007acc;
+            margin: 10px 0;
+            font-family: monospace;
+        }
+        .meta-info {
+            background: #f0f0f0;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .test-section {
+            border: 2px solid #4CAF50;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 8px;
+            background: #f8fff8;
+        }
+        h1, h2, h3 {
+            color: #333;
+        }
+        .highlight {
+            background: yellow;
+            padding: 2px 4px;
+        }
+    </style>
+
+    <!-- Meta tags for DOI testing -->
+    <meta name="citation_doi" content="10.1038/nature12373">
+    <meta name="dc.identifier" content="doi:10.1016/j.cell.2020.02.058">
+    <meta name="DOI" content="10.1126/science.abo3503">
+</head>
+<body>
+    <h1>DOI Test Page for Fishchi Extension</h1>
+    <p>This page contains various DOI formats to test the Fishchi Chrome extension's DOI detection and import functionality.</p>
+
+    <div class="test-section">
+        <h2>🧪 Test Instructions</h2>
+        <ol>
+            <li>Install the Fishchi Chrome extension</li>
+            <li>Login to your Fishchi account</li>
+            <li>Open this page</li>
+            <li>Click on the extension icon</li>
+            <li>The extension should detect DOIs and show import options</li>
+        </ol>
+    </div>
+
+    <div class="article">
+        <h2>Article 1: Nature Paper</h2>
+        <h3>Crystal structure of the β2 adrenergic receptor–Gs protein complex</h3>
+        <p><strong>Authors:</strong> Rasmussen, S.G.F., DeVree, B.T., Zou, Y. et al.</p>
+        <p><strong>Journal:</strong> Nature</p>
+        <p><strong>Year:</strong> 2011</p>
+
+        <div class="doi">
+            <strong>DOI:</strong> 10.1038/nature10361
+        </div>
+
+        <p>This paper describes the crystal structure of the β2 adrenergic receptor in complex with the stimulatory G protein Gs.</p>
+    </div>
+
+    <div class="article">
+        <h2>Article 2: Cell Paper</h2>
+        <h3>SARS-CoV-2 Entry Factors Are Highly Expressed in Nasal Epithelial Cells Together with Innate Immune Genes</h3>
+        <p><strong>Authors:</strong> Sungnak, W., Huang, N., Bécavin, C. et al.</p>
+        <p><strong>Journal:</strong> Cell</p>
+        <p><strong>Year:</strong> 2020</p>
+
+        <div class="doi">
+            DOI: <span class="highlight">10.1016/j.cell.2020.02.058</span>
+        </div>
+
+        <p>This study investigates the expression of SARS-CoV-2 entry factors in different human tissues.</p>
+    </div>
+
+    <div class="article">
+        <h2>Article 3: Science Paper</h2>
+        <h3>Improved protein structure prediction using potentials from deep learning</h3>
+        <p><strong>Authors:</strong> Senior, A.W., Evans, R., Jumper, J. et al.</p>
+        <p><strong>Journal:</strong> Nature</p>
+        <p><strong>Year:</strong> 2020</p>
+
+        <div class="doi">
+            https://doi.org/10.1038/s41586-019-1923-7
+        </div>
+
+        <p>This paper presents AlphaFold, a deep learning approach for protein structure prediction.</p>
+    </div>
+
+    <div class="article">
+        <h2>Article 4: PLOS ONE Paper</h2>
+        <h3>Machine learning approaches for predicting protein-protein interactions</h3>
+        <p><strong>Authors:</strong> Smith, J.A., Johnson, B.C., Wilson, D.E.</p>
+        <p><strong>Journal:</strong> PLOS ONE</p>
+        <p><strong>Year:</strong> 2021</p>
+
+        <div class="doi">
+            Digital Object Identifier: <strong>10.1371/journal.pone.0245234</strong>
+        </div>
+
+        <p>This study compares various machine learning methods for predicting protein-protein interactions.</p>
+    </div>
+
+    <div class="meta-info">
+        <h3>📋 Different DOI Formats Found on This Page</h3>
+        <ul>
+            <li><code>10.1038/nature10361</code> - Standard format</li>
+            <li><code>DOI: 10.1016/j.cell.2020.02.058</code> - With DOI prefix</li>
+            <li><code>https://doi.org/10.1038/s41586-019-1923-7</code> - Full URL format</li>
+            <li><code>Digital Object Identifier: 10.1371/journal.pone.0245234</code> - Full text format</li>
+        </ul>
+    </div>
+
+    <div class="meta-info">
+        <h3>🏷️ Meta Tags for Testing</h3>
+        <p>This page also includes meta tags with DOI information:</p>
+        <ul>
+            <li><code>&lt;meta name="citation_doi" content="10.1038/nature12373"&gt;</code></li>
+            <li><code>&lt;meta name="dc.identifier" content="doi:10.1016/j.cell.2020.02.058"&gt;</code></li>
+            <li><code>&lt;meta name="DOI" content="10.1126/science.abo3503"&gt;</code></li>
+        </ul>
+    </div>
+
+    <div class="test-section">
+        <h3>✅ Expected Behavior</h3>
+        <ul>
+            <li>Extension should detect multiple DOIs on this page</li>
+            <li>Clicking the extension should show DOI import options</li>
+            <li>Each DOI should be importable to Fishchi</li>
+            <li>Source information should be fetched from Crossref API</li>
+            <li>Articles should be saved with English language setting</li>
+        </ul>
+    </div>
+
+    <div class="article">
+        <h2>Article 5: IEEE Paper</h2>
+        <h3>Deep Learning for Computer Vision: A Brief Review</h3>
+        <p><strong>Authors:</strong> Zhang, L., Wang, M., Liu, X.</p>
+        <p><strong>Conference:</strong> IEEE Computer Vision and Pattern Recognition</p>
+        <p><strong>Year:</strong> 2019</p>
+
+        <div class="doi">
+            DOI: <a href="https://doi.org/10.1109/CVPR.2019.00123">10.1109/CVPR.2019.00123</a>
+        </div>
+
+        <p>A comprehensive review of deep learning techniques applied to computer vision tasks.</p>
+    </div>
+
+    <div class="article">
+        <h2>Article 6: Springer Paper</h2>
+        <h3>Natural Language Processing with Transformers</h3>
+        <p><strong>Authors:</strong> Brown, A., Davis, C., Miller, R.</p>
+        <p><strong>Journal:</strong> Machine Learning Research</p>
+        <p><strong>Year:</strong> 2022</p>
+
+        <div class="doi">
+            doi:10.1007/s10994-022-06234-8
+        </div>
+
+        <p>This paper explores the latest developments in transformer-based NLP models.</p>
+    </div>
+
+    <script>
+        // Simple JavaScript to highlight DOIs when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOI Test Page loaded for Fishchi Extension testing');
+            console.log('Expected DOIs to be detected:');
+            console.log('- 10.1038/nature10361');
+            console.log('- 10.1016/j.cell.2020.02.058');
+            console.log('- 10.1038/s41586-019-1923-7');
+            console.log('- 10.1371/journal.pone.0245234');
+            console.log('- 10.1109/CVPR.2019.00123');
+            console.log('- 10.1007/s10994-022-06234-8');
+            console.log('- Meta tag DOIs: 10.1038/nature12373, 10.1016/j.cell.2020.02.058, 10.1126/science.abo3503');
+        });
+
+        // Test function for extension debugging
+        window.testFishchiDOI = function() {
+            const doiPatterns = [
+                /(?:doi:?\s*)(10\.\d{4,}\/[-._;()\/:a-zA-Z0-9]+)/gi,
+                /(?:https?:\/\/(?:dx\.)?doi\.org\/)?(10\.\d{4,}\/[-._;()\/:a-zA-Z0-9]+)/gi,
+                /(?:DOI:?\s*)(10\.\d{4,}\/[-._;()\/:a-zA-Z0-9]+)/gi,
+            ];
+
+            const pageText = document.body.textContent;
+            const foundDOIs = new Set();
+
+            doiPatterns.forEach(pattern => {
+                let match;
+                while ((match = pattern.exec(pageText)) !== null) {
+                    const doi = match[1] || match[0];
+                    const cleanDoi = doi.replace(/^(doi:?|DOI:?)\s*/i, '').trim();
+                    if (cleanDoi.match(/^10\.\d{4,}\/[-._;()\/:a-zA-Z0-9]+$/)) {
+                        foundDOIs.add(cleanDoi);
+                    }
+                }
+            });
+
+            console.log('DOIs found by test function:', Array.from(foundDOIs));
+            return Array.from(foundDOIs);
+        };
+    </script>
+</body>
+</html>

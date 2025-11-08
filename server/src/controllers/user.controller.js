@@ -1,24 +1,24 @@
-import asyncHandler from 'express-async-handler';
-import otpGenerator from 'otp-generator';
-import multer from 'multer';
-import path from 'path';
-import fs from 'fs';
-import User from '../models/User.model.js';
-import ApiResponse from '../utils/apiResponse.js';
-import sendEmail from '../utils/sendEmail.js';
-import { activationEmailTemplate } from '../utils/activationEmailTemplate.js';
-import generateToken from '../utils/generateToken.js';
-import { set } from 'mongoose';
-import { log } from 'console';
+import asyncHandler from "express-async-handler";
+import otpGenerator from "otp-generator";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
+import User from "../models/User.model.js";
+import ApiResponse from "../utils/apiResponse.js";
+import sendEmail from "../utils/sendEmail.js";
+import { activationEmailTemplate } from "../utils/activationEmailTemplate.js";
+import generateToken from "../utils/generateToken.js";
+import { set } from "mongoose";
+import { log } from "console";
 
 // --- Helper function to set the cookie consistently ---
 const setTokenCookie = (res, token) => {
-  res.cookie('token', token, {
+  res.cookie("token", token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-    path: '/', // --- FIX: Add path ---
+    path: "/", // --- FIX: Add path ---
   });
 };
 // --- End Helper ---
@@ -34,13 +34,13 @@ const registerUser = asyncHandler(async (req, res) => {
 
   if (!name || !email || !password) {
     res.status(400);
-    throw new Error('لطفاً تمام اطلاعات خواسته شده را پر کنید');
+    throw new Error("لطفاً تمام اطلاعات خواسته شده را پر کنید");
   }
   const userExists = await User.findOne({ email });
 
   if (userExists) {
     res.status(400);
-    throw new Error('ایمیل قبلاً ثبت شده است');
+    throw new Error("ایمیل قبلاً ثبت شده است");
   }
   const user = new User({ name, email, password });
   const code = otpGenerator.generate(8, {
@@ -54,7 +54,7 @@ const registerUser = asyncHandler(async (req, res) => {
 
   sendEmail({
     to: user.email,
-    subject: 'کد فعالسازی',
+    subject: "کد فعالسازی",
     text: `کد فعالسازی شما: ${code}`,
     html: activationEmailTemplate(user.name, user.email, code),
   });
@@ -62,8 +62,8 @@ const registerUser = asyncHandler(async (req, res) => {
   ApiResponse.success(
     res,
     null,
-    'حساب کاربری شما با موفقیت ایجاد شد لطفا برای کد فعالسازی به ایمیل خود مراجعه کنید',
-    201
+    "حساب کاربری شما با موفقیت ایجاد شد لطفا برای کد فعالسازی به ایمیل خود مراجعه کنید",
+    201,
   );
 });
 
@@ -72,16 +72,16 @@ const verifyEmail = asyncHandler(async (req, res) => {
   const { email, code } = req.body;
   if (!email || !code) {
     res.status(400);
-    throw new Error('ایمیل و کد فعالسازی الزامی است');
+    throw new Error("ایمیل و کد فعالسازی الزامی است");
   }
   const user = await User.findOne({
     email,
     verificationCode: code,
     verificationCodeExpires: { $gt: Date.now() },
-  }).select('+verificationCode, +verificationCodeExpires');
+  }).select("+verificationCode, +verificationCodeExpires");
   if (!user) {
     res.status(400);
-    throw new Error('کد فعالسازی نا معتبر یا منقضی شده است');
+    throw new Error("کد فعالسازی نا معتبر یا منقضی شده است");
   }
   user.isVerified = true;
   user.verificationCode = null;
@@ -97,30 +97,39 @@ const verifyEmail = asyncHandler(async (req, res) => {
       name: user.name,
       email: user.email,
     },
-    'حساب کاربری شما با موفقیت فعال شد'
+    "حساب کاربری شما با موفقیت فعال شد",
   );
 });
 // <-------------- Login Handler --------------------->
 
 const loginUser = asyncHandler(async (req, res) => {
+  // -------------- Start Email Login Handler ----------------->
+  console.log("User login attempt");
   const { email, password } = req.body;
-
+  console.log(`User login attempt for email: ${email}`);
   if (!email || !password) {
     res.status(400);
-    throw new Error('لطفاً تمام اطلاعات خواسته شده را پر کنید');
+    throw new Error("لطفاً تمام اطلاعات خواسته شده را پر کنید");
   }
-  const user = await User.findOne({ email }).select('+isVerified');
-  const isMatch = await user.comparePassword(password);
-  if (!user || !isMatch) {
+  const user = await User.findOne({ email }).select("+isVerified");
+  console.log(`User found: ${user ? "Yes" : "No"}`);
+
+  if (!user) {
     res.status(400);
-    throw new Error('ایمیل یا رمز عبور اشتباه است');
+    throw new Error("ایمیل یا رمز عبور اشتباه است");
+  }
+
+  const isMatch = await user.comparePassword(password);
+  if (!isMatch) {
+    res.status(400);
+    throw new Error("ایمیل یا رمز عبور اشتباه است");
   }
 
   if (user && isMatch) {
     if (!user.isVerified) {
       res.status(401);
       throw new Error(
-        'حساب کاربری شما فعال نشده است لطفاً ایمیل خود را بررسی کنید'
+        "حساب کاربری شما فعال نشده است لطفاً ایمیل خود را بررسی کنید",
       );
     }
     const token = generateToken(res, user._id);
@@ -133,7 +142,7 @@ const loginUser = asyncHandler(async (req, res) => {
         email: user.email,
         avatar: user.avatar,
       },
-      'Login successful'
+      "Login successful",
     );
   }
 });
@@ -147,7 +156,7 @@ const getUserProfile = asyncHandler(async (req, res) => {
 
   if (!user) {
     res.status(404);
-    throw new Error('کاربر یافت نشد');
+    throw new Error("کاربر یافت نشد");
   }
 
   ApiResponse.success(res, {
@@ -173,7 +182,7 @@ const updateUserProfile = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user._id);
   if (!user) {
     res.status(404);
-    throw new Error('کاربر یافت نشد');
+    throw new Error("کاربر یافت نشد");
   }
 
   // Update fields
@@ -198,7 +207,7 @@ const updateUserProfile = asyncHandler(async (req, res) => {
       bio: user.bio,
       isVerified: user.isVerified,
     },
-    'پروفایل با موفقیت بروزرسانی شد'
+    "پروفایل با موفقیت بروزرسانی شد",
   );
 });
 
@@ -210,27 +219,27 @@ const changePassword = asyncHandler(async (req, res) => {
 
   if (!currentPassword || !newPassword) {
     res.status(400);
-    throw new Error('رمز عبور فعلی و جدید الزامی است');
+    throw new Error("رمز عبور فعلی و جدید الزامی است");
   }
 
-  const user = await User.findById(req.user._id).select('+password');
+  const user = await User.findById(req.user._id).select("+password");
   if (!user) {
     res.status(404);
-    throw new Error('کاربر یافت نشد');
+    throw new Error("کاربر یافت نشد");
   }
 
   // Check current password
   const isMatch = await user.comparePassword(currentPassword);
   if (!isMatch) {
     res.status(400);
-    throw new Error('رمز عبور فعلی اشتباه است');
+    throw new Error("رمز عبور فعلی اشتباه است");
   }
 
   // Update password
   user.password = newPassword;
   await user.save();
 
-  ApiResponse.success(res, null, 'رمز عبور با موفقیت تغییر کرد');
+  ApiResponse.success(res, null, "رمز عبور با موفقیت تغییر کرد");
 });
 
 // @desc    آپلود عکس پروفایل
@@ -239,22 +248,22 @@ const changePassword = asyncHandler(async (req, res) => {
 const uploadAvatar = asyncHandler(async (req, res) => {
   if (!req.file) {
     res.status(400);
-    throw new Error('فایل عکس الزامی است');
+    throw new Error("فایل عکس الزامی است");
   }
 
   const user = await User.findById(req.user._id);
   if (!user) {
     res.status(404);
-    throw new Error('کاربر یافت نشد');
+    throw new Error("کاربر یافت نشد");
   }
 
   // Delete old avatar if exists
   if (user.avatar) {
     const oldAvatarPath = path.join(
       process.cwd(),
-      'uploads',
-      'avatars',
-      user.avatar
+      "uploads",
+      "avatars",
+      user.avatar,
     );
     if (fs.existsSync(oldAvatarPath)) {
       fs.unlinkSync(oldAvatarPath);
@@ -271,7 +280,7 @@ const uploadAvatar = asyncHandler(async (req, res) => {
       avatar: user.avatar,
       avatarUrl: `/uploads/avatars/${user.avatar}`,
     },
-    'عکس پروفایل با موفقیت آپلود شد'
+    "عکس پروفایل با موفقیت آپلود شد",
   );
 });
 
@@ -282,16 +291,16 @@ const deleteAvatar = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user._id);
   if (!user) {
     res.status(404);
-    throw new Error('کاربر یافت نشد');
+    throw new Error("کاربر یافت نشد");
   }
 
   // Delete avatar file if exists
   if (user.avatar) {
     const avatarPath = path.join(
       process.cwd(),
-      'uploads',
-      'avatars',
-      user.avatar
+      "uploads",
+      "avatars",
+      user.avatar,
     );
     if (fs.existsSync(avatarPath)) {
       fs.unlinkSync(avatarPath);
@@ -302,7 +311,7 @@ const deleteAvatar = asyncHandler(async (req, res) => {
   user.avatar = null;
   await user.save();
 
-  ApiResponse.success(res, null, 'عکس پروفایل با موفقیت حذف شد');
+  ApiResponse.success(res, null, "عکس پروفایل با موفقیت حذف شد");
 });
 
 // <-------------- Forgot Password Handler --------------------->
@@ -316,13 +325,13 @@ const forgotPassword = asyncHandler(async (req, res) => {
 
   if (!email) {
     res.status(400);
-    throw new Error('ایمیل الزامی است');
+    throw new Error("ایمیل الزامی است");
   }
 
   const user = await User.findOne({ email });
   if (!user) {
     res.status(404);
-    throw new Error('کاربری با این ایمیل یافت نشد');
+    throw new Error("کاربری با این ایمیل یافت نشد");
   }
 
   // Generate reset code
@@ -340,7 +349,7 @@ const forgotPassword = asyncHandler(async (req, res) => {
   // Send email with reset code
   sendEmail({
     to: user.email,
-    subject: 'کد بازیابی رمز عبور',
+    subject: "کد بازیابی رمز عبور",
     text: `کد بازیابی رمز عبور شما: ${resetCode}`,
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -359,7 +368,7 @@ const forgotPassword = asyncHandler(async (req, res) => {
     `,
   });
 
-  ApiResponse.success(res, null, 'کد بازیابی رمز عبور به ایمیل شما ارسال شد');
+  ApiResponse.success(res, null, "کد بازیابی رمز عبور به ایمیل شما ارسال شد");
 });
 
 // <-------------- Reset Password Handler --------------------->
@@ -373,18 +382,18 @@ const resetPassword = asyncHandler(async (req, res) => {
 
   if (!email || !code || !newPassword) {
     res.status(400);
-    throw new Error('ایمیل، کد و رمز عبور جدید الزامی است');
+    throw new Error("ایمیل، کد و رمز عبور جدید الزامی است");
   }
 
   const user = await User.findOne({
     email,
     resetPasswordCode: code,
     resetPasswordCodeExpires: { $gt: Date.now() },
-  }).select('+resetPasswordCode, +resetPasswordCodeExpires');
+  }).select("+resetPasswordCode, +resetPasswordCodeExpires");
 
   if (!user) {
     res.status(400);
-    throw new Error('کد بازیابی نامعتبر یا منقضی شده است');
+    throw new Error("کد بازیابی نامعتبر یا منقضی شده است");
   }
 
   // Update password
@@ -393,7 +402,7 @@ const resetPassword = asyncHandler(async (req, res) => {
   user.resetPasswordCodeExpires = null;
   await user.save();
 
-  ApiResponse.success(res, null, 'رمز عبور با موفقیت تغییر کرد');
+  ApiResponse.success(res, null, "رمز عبور با موفقیت تغییر کرد");
 });
 
 // <-------------- Logout Handler --------------------->
@@ -403,20 +412,20 @@ const resetPassword = asyncHandler(async (req, res) => {
  * @access  Public
  */
 const logoutUser = (req, res) => {
-  console.log('start Logout');
+  console.log("start Logout");
 
   // We must use the *exact same* options as generateToken
   // to ensure the browser clears the correct cookie.
-  res.cookie('token', '', 'jwt', '', {
+  res.cookie("token", "", "jwt", "", {
     httpOnly: true,
     expires: new Date(0),
     secure: true, // Was: process.env.NODE_ENV === 'production'
-    sameSite: 'strict', // Was: 'strict'
-    path: '/',
+    sameSite: "strict", // Was: 'strict'
+    path: "/",
   });
   console.log(res.cookie);
 
-  res.status(200).json({ message: 'User logged out successfully' });
+  res.status(200).json({ message: "User logged out successfully" });
 };
 
 export {

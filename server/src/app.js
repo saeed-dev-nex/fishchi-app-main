@@ -1,13 +1,13 @@
 // Import needed Libraries
-import 'dotenv/config';
-import express from 'express';
-import cors from 'cors';
-import path from 'path';
-import session from 'express-session';
-import passport from './config/passport.js';
-import mainRouter from './routes/index.js';
-import { notFound, errorHandler } from './middlewares/error.middleware.js';
-import cookieParser from 'cookie-parser';
+import "dotenv/config";
+import express from "express";
+import cors from "cors";
+import path from "path";
+import session from "express-session";
+import passport from "./config/passport.js";
+import mainRouter from "./routes/index.js";
+import { notFound, errorHandler } from "./middlewares/error.middleware.js";
+import cookieParser from "cookie-parser";
 
 // ---  Add-in Login Store ---
 // This Map will temporarily store tokens (sessionId -> token)
@@ -24,8 +24,10 @@ const allowedOrigins = [
   process.env.CLIENT_URL,
   // 'https://fishchi.ir',
   // 'https://www.fishchi.ir',
-  'https://localhost:3500', //Word addins Address
-  'https://localhost:3000', //Client Address
+  "https://localhost:3500", //Word addins Address
+  "https://localhost:3000", //Client Address
+  "http://localhost:3500", // HTTP fallback for debugging
+  "http://localhost:3000", // HTTP fallback for debugging
 ];
 app.use(
   cors({
@@ -34,15 +36,15 @@ app.use(
       if (
         !origin ||
         allowedOrigins.indexOf(origin) !== -1 ||
-        origin.startsWith('chrome-extension://')
+        origin.startsWith("chrome-extension://")
       ) {
         callback(null, true);
       } else {
-        callback(new Error('Not allowed by CORS'));
+        callback(new Error("Not allowed by CORS"));
       }
     },
     credentials: true,
-  })
+  }),
 ); // Enable CORS for all routes
 app.use(express.json()); // Parse JSON request bodies
 app.use(cookieParser());
@@ -50,15 +52,15 @@ app.use(cookieParser());
 // Session configuration for OAuth
 app.use(
   session({
-    secret: process.env.SESSION_SECRET || 'your-secret-key',
+    secret: process.env.SESSION_SECRET || "your-secret-key",
     resave: false,
     saveUninitialized: false,
     cookie: {
-      secure: process.env.NODE_ENV === 'production',
+      secure: process.env.NODE_ENV === "production",
       httpOnly: true,
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
     },
-  })
+  }),
 );
 
 // Initialize Passport
@@ -66,17 +68,17 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 // Serve static files from uploads directory
-app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
+app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
 // Routes
-app.get('/', (req, res) => {
+app.get("/", (req, res) => {
   res.send(`
     <h1>Welcome to Fishchi API</h1>
     <p>Version 1.0.0</p>
     `);
 });
 
-app.use('/api/v1', mainRouter);
+app.use("/api/v1", mainRouter);
 
 app.use(notFound);
 // errorHandler most be last layer for handle all errors

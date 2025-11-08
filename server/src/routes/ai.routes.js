@@ -5,6 +5,7 @@ import {
   proofreadNote,
   suggestTags,
   summarizeNote,
+  translateText,
 } from '../controllers/ai.controller.js';
 
 const router = Router();
@@ -17,5 +18,6 @@ router.post('/summarize', summarizeNote);
 router.post('/suggest-tags', suggestTags);
 router.post('/proofread', proofreadNote);
 router.post('/parse-citation', aiParseCitation);
+router.post('/translate', translateText);
 
 export default router;

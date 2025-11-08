@@ -1,21 +1,21 @@
 // Content Script for Fishchi Extension
 // Extracts source information from Iranian academic websites
 
-console.log('Fishchi content script file loaded');
+console.log("Fishchi content script file loaded");
 
 (function () {
-  'use strict';
+  "use strict";
 
-  console.log('Fishchi content script IIFE started');
+  console.log("Fishchi content script IIFE started");
 
   // Function to convert author names using advanced Persian name processing
   function convertAuthorName(name) {
-    if (!name || typeof name !== 'string') return name;
+    if (!name || typeof name !== "string") return name;
 
     const trimmedName = name.trim();
 
     // Check if the name contains a comma (indicating "Last, First" format)
-    if (trimmedName.includes('،') || trimmedName.includes(',')) {
+    if (trimmedName.includes("،") || trimmedName.includes(",")) {
       // Split by comma (Persian or English)
       const parts = trimmedName
         .split(/[،,]/)
@@ -33,7 +33,7 @@ console.log('Fishchi content script file loaded');
       if (parts.length > 2) {
         const additionalParts = parts.slice(2);
         // For comma-separated names, assume additional parts belong to first name
-        firstName = firstName + ' ' + additionalParts.join(' ');
+        firstName = firstName + " " + additionalParts.join(" ");
       }
 
       // Use advanced Persian name processor for complex names
@@ -48,8 +48,8 @@ console.log('Fishchi content script file loaded');
 
   // Configuration for different websites
   const SITE_CONFIGS = {
-    'sid.ir': {
-      name: 'SID',
+    "sid.ir": {
+      name: "SID",
       selectors: {
         title: 'meta[name="citation_title"], h1.artitle',
         authors: 'meta[name="citation_author"], .sras em a',
@@ -65,18 +65,18 @@ console.log('Fishchi content script file loaded');
       extractors: {
         title: (element) => {
           // Check if element is a single element (not NodeList)
-          if (element && typeof element.getAttribute === 'function') {
-            const content = element.getAttribute('content')?.trim();
+          if (element && typeof element.getAttribute === "function") {
+            const content = element.getAttribute("content")?.trim();
             if (content) return content;
           }
 
           // Fallback to DOM selectors specific to SID
           const domSelectors = [
-            'h1.artitle',
-            '.artitle',
-            'h1',
-            '.article-title',
-            '.title',
+            "h1.artitle",
+            ".artitle",
+            "h1",
+            ".article-title",
+            ".title",
           ];
           for (const selector of domSelectors) {
             const el = document.querySelector(selector);
@@ -92,27 +92,27 @@ console.log('Fishchi content script file loaded');
             return Array.from(elements)
               .map((el) => {
                 const fullName = convertAuthorName(el.textContent?.trim());
-                const nameParts = fullName.split(' ');
+                const nameParts = fullName.split(" ");
                 return {
-                  firstname: nameParts[0] || '',
-                  lastname: nameParts.slice(1).join(' ') || '',
+                  firstname: nameParts[0] || "",
+                  lastname: nameParts.slice(1).join(" ") || "",
                 };
               })
               .filter((a) => a.firstname);
           }
 
           // Check if single element has content attribute
-          if (elements && typeof elements.getAttribute === 'function') {
-            const content = elements.getAttribute('content')?.trim();
+          if (elements && typeof elements.getAttribute === "function") {
+            const content = elements.getAttribute("content")?.trim();
             if (content) {
               return content
-                .split(',')
+                .split(",")
                 .map((name) => {
                   const fullName = convertAuthorName(name.trim());
-                  const nameParts = fullName.split(' ');
+                  const nameParts = fullName.split(" ");
                   return {
-                    firstname: nameParts[0] || '',
-                    lastname: nameParts.slice(1).join(' ') || '',
+                    firstname: nameParts[0] || "",
+                    lastname: nameParts.slice(1).join(" ") || "",
                   };
                 })
                 .filter((a) => a.firstname);
@@ -121,11 +121,11 @@ console.log('Fishchi content script file loaded');
 
           // Fallback to DOM selectors specific to SID
           const domSelectors = [
-            '.sras em a',
-            '.sras em',
-            '.author',
-            '.authors .author-name',
-            '.author-list .author',
+            ".sras em a",
+            ".sras em",
+            ".author",
+            ".authors .author-name",
+            ".author-list .author",
           ];
           for (const selector of domSelectors) {
             const elements = document.querySelectorAll(selector);
@@ -147,7 +147,7 @@ console.log('Fishchi content script file loaded');
 
           for (const pattern of authorPatterns) {
             const match = pageText.match(pattern);
-            if (match && match[1] && typeof match[1] === 'string') {
+            if (match && match[1] && typeof match[1] === "string") {
               const authors = match[1]
                 .split(/[،,;؛]/)
                 .map((name) => ({ name: convertAuthorName(name.trim()) }))
@@ -161,17 +161,17 @@ console.log('Fishchi content script file loaded');
         },
         year: (element) => {
           // Check if element is a single element (not NodeList)
-          if (element && typeof element.getAttribute === 'function') {
-            const year = element.getAttribute('content')?.trim();
+          if (element && typeof element.getAttribute === "function") {
+            const year = element.getAttribute("content")?.trim();
             if (year) return parseInt(year, 10);
           }
 
           // Fallback to DOM selectors specific to SID
           const domSelectors = [
-            '.arjournal',
-            '.year',
-            '.publication-date',
-            '.date',
+            ".arjournal",
+            ".year",
+            ".publication-date",
+            ".date",
           ];
           for (const selector of domSelectors) {
             const el = document.querySelector(selector);
@@ -200,18 +200,18 @@ console.log('Fishchi content script file loaded');
         },
         journal: (element) => {
           // Check if element is a single element (not NodeList)
-          if (element && typeof element.getAttribute === 'function') {
-            const content = element.getAttribute('content')?.trim();
+          if (element && typeof element.getAttribute === "function") {
+            const content = element.getAttribute("content")?.trim();
             if (content) return content;
           }
 
           // Fallback to DOM selectors specific to SID
           const domSelectors = [
-            '.arjournal a',
-            '.arjournal',
-            '.journal-title',
-            '.magazine-title',
-            '.journal',
+            ".arjournal a",
+            ".arjournal",
+            ".journal-title",
+            ".magazine-title",
+            ".journal",
           ];
           for (const selector of domSelectors) {
             const el = document.querySelector(selector);
@@ -238,13 +238,13 @@ console.log('Fishchi content script file loaded');
         },
         volume: (element) => {
           // Check if element is a single element (not NodeList)
-          if (element && typeof element.getAttribute === 'function') {
-            const content = element.getAttribute('content')?.trim();
+          if (element && typeof element.getAttribute === "function") {
+            const content = element.getAttribute("content")?.trim();
             if (content) return content;
           }
 
           // Fallback to DOM selectors specific to SID
-          const arjournalElement = document.querySelector('.arjournal');
+          const arjournalElement = document.querySelector(".arjournal");
           if (arjournalElement) {
             const text = arjournalElement.textContent;
             const volumeMatch = text.match(/دوره:\s*(\d+)/);
@@ -257,13 +257,13 @@ console.log('Fishchi content script file loaded');
         },
         issue: (element) => {
           // Check if element is a single element (not NodeList)
-          if (element && typeof element.getAttribute === 'function') {
-            const content = element.getAttribute('content')?.trim();
+          if (element && typeof element.getAttribute === "function") {
+            const content = element.getAttribute("content")?.trim();
             if (content) return content;
           }
 
           // Fallback to DOM selectors specific to SID
-          const arjournalElement = document.querySelector('.arjournal');
+          const arjournalElement = document.querySelector(".arjournal");
           if (arjournalElement) {
             const text = arjournalElement.textContent;
             const issueMatch = text.match(/شماره:\s*(\d+)/);
@@ -279,22 +279,22 @@ console.log('Fishchi content script file loaded');
           let first = null;
           let last = null;
 
-          if (firstPage && typeof firstPage.getAttribute === 'function') {
-            first = firstPage.getAttribute('content')?.trim();
+          if (firstPage && typeof firstPage.getAttribute === "function") {
+            first = firstPage.getAttribute("content")?.trim();
           }
 
-          if (lastPage && typeof lastPage.getAttribute === 'function') {
-            last = lastPage.getAttribute('content')?.trim();
+          if (lastPage && typeof lastPage.getAttribute === "function") {
+            last = lastPage.getAttribute("content")?.trim();
           }
 
           if (first && last) return `${first}-${last}`;
 
           // Fallback to DOM selectors specific to SID
-          const srpsElement = document.querySelector('.srps');
+          const srpsElement = document.querySelector(".srps");
           if (srpsElement) {
             const text = srpsElement.textContent;
             const pageMatch = text.match(
-              /صفحه شروع\s*(\d+)\s*\|\s*صفحه پایان\s*(\d+)/
+              /صفحه شروع\s*(\d+)\s*\|\s*صفحه پایان\s*(\d+)/,
             );
             if (pageMatch) {
               return `${pageMatch[1]}-${pageMatch[2]}`;
@@ -312,11 +312,11 @@ console.log('Fishchi content script file loaded');
           }
 
           // Check if single element has content attribute
-          if (elements && typeof elements.getAttribute === 'function') {
-            const content = elements.getAttribute('content')?.trim();
+          if (elements && typeof elements.getAttribute === "function") {
+            const content = elements.getAttribute("content")?.trim();
             if (content) {
               return content
-                .split('،')
+                .split("،")
                 .map((tag) => tag.trim())
                 .filter((t) => t);
             }
@@ -324,12 +324,12 @@ console.log('Fishchi content script file loaded');
 
           // Fallback to DOM selectors specific to SID
           const domSelectors = [
-            '.srks .keyword em a',
-            '.srks .keyword em',
-            '.srks .keyword',
-            '.keywords',
-            '.tags',
-            '.key-words',
+            ".srks .keyword em a",
+            ".srks .keyword em",
+            ".srks .keyword",
+            ".keywords",
+            ".tags",
+            ".key-words",
           ];
           for (const selector of domSelectors) {
             const elements = document.querySelectorAll(selector);
@@ -343,17 +343,17 @@ console.log('Fishchi content script file loaded');
         },
         abstract: (element) => {
           // Check if element is a single element (not NodeList)
-          if (element && typeof element.getAttribute === 'function') {
-            const content = element.getAttribute('content')?.trim();
+          if (element && typeof element.getAttribute === "function") {
+            const content = element.getAttribute("content")?.trim();
             if (content) return content;
           }
 
           // Fallback to DOM selectors specific to SID
           const domSelectors = [
-            '.arabs',
-            '.abstract',
-            '.summary',
-            '.description',
+            ".arabs",
+            ".abstract",
+            ".summary",
+            ".description",
           ];
           for (const selector of domSelectors) {
             const el = document.querySelector(selector);
@@ -365,19 +365,19 @@ console.log('Fishchi content script file loaded');
         },
       },
     },
-    'civilica.com': {
-      name: 'Civilica',
+    "civilica.com": {
+      name: "Civilica",
       selectors: {
-        title: 'h1, .article-title, .title, .doc-title, .paper-title',
+        title: "h1, .article-title, .title, .doc-title, .paper-title",
         authors:
           'meta[name="citation_author"], .author-name, .authors .author, .author, .author-list .author-name, .author-list .author, .article-author, .author-info .name, .doc-author, .author-item, .author-link, .doc-info .doc-author a, .author-section .author-name, .content .author, span[class*="author"], div[class*="author"], a[href*="/author/"], a[href*="/profile/"], .author-link, .author-item, .author-name, .author, .authors, .author-info, .author-list, .doc-info .author, .paper-author, .conference-author',
-        year: '.year, .publication-year, .date, .publication-date, .doc-year, .article-year, .conference-year',
+        year: ".year, .publication-year, .date, .publication-date, .doc-year, .article-year, .conference-year",
         journal:
-          '.journal-name, .conference-name, .conference, .conference-title, .doc-journal, .article-journal, .publication-name, .event-name, .conference-title',
+          ".journal-name, .conference-name, .conference, .conference-title, .doc-journal, .article-journal, .publication-name, .event-name, .conference-title",
         abstract:
-          '.abstract, .summary, .description, .article-abstract, .doc-abstract, .article-summary, .content-abstract, .paper-abstract, .conference-abstract',
+          ".abstract, .summary, .description, .article-abstract, .doc-abstract, .article-summary, .content-abstract, .paper-abstract, .conference-abstract",
         keywords:
-          '.keywords, .tags, .key-words, .article-keywords, .doc-keywords, .keyword-list, .tag-list, .paper-keywords, .conference-keywords',
+          ".keywords, .tags, .key-words, .article-keywords, .doc-keywords, .keyword-list, .tag-list, .paper-keywords, .conference-keywords",
       },
       extractors: {
         title: (element) => {
@@ -391,26 +391,26 @@ console.log('Fishchi content script file loaded');
           if (elements && elements.length > 0) {
             return Array.from(elements)
               .map((el) => {
-                const nameParts = el.textContent?.trim().split(' ');
+                const nameParts = el.textContent?.trim().split(" ");
                 return {
-                  firstname: nameParts[0] || '',
-                  lastname: nameParts.slice(1).join(' ') || '',
+                  firstname: nameParts[0] || "",
+                  lastname: nameParts.slice(1).join(" ") || "",
                 };
               })
               .filter((a) => a.firstname && a.firstname.length > 2);
           }
 
           // Check if single element has content attribute
-          if (elements && typeof elements.getAttribute === 'function') {
-            const content = elements.getAttribute('content')?.trim();
+          if (elements && typeof elements.getAttribute === "function") {
+            const content = elements.getAttribute("content")?.trim();
             if (content) {
               return content
-                .split(',')
+                .split(",")
                 .map((name) => {
-                  const nameParts = name.trim().split(' ');
+                  const nameParts = name.trim().split(" ");
                   return {
-                    firstname: nameParts[0] || '',
-                    lastname: nameParts.slice(1).join(' ') || '',
+                    firstname: nameParts[0] || "",
+                    lastname: nameParts.slice(1).join(" ") || "",
                   };
                 })
                 .filter((a) => a.firstname && a.firstname.length > 2);
@@ -419,18 +419,18 @@ console.log('Fishchi content script file loaded');
 
           // Try to extract from meta tags directly
           const authorMeta = document.querySelector(
-            'meta[name="citation_author"]'
+            'meta[name="citation_author"]',
           );
           if (authorMeta) {
-            const content = authorMeta.getAttribute('content')?.trim();
+            const content = authorMeta.getAttribute("content")?.trim();
             if (content) {
               const authors = content
-                .split(',')
+                .split(",")
                 .map((name) => {
-                  const nameParts = name.trim().split(' ');
+                  const nameParts = name.trim().split(" ");
                   return {
-                    firstname: nameParts[0] || '',
-                    lastname: nameParts.slice(1).join(' ') || '',
+                    firstname: nameParts[0] || "",
+                    lastname: nameParts.slice(1).join(" ") || "",
                   };
                 })
                 .filter((a) => a.firstname && a.firstname.length > 2);
@@ -442,7 +442,7 @@ console.log('Fishchi content script file loaded');
 
           // Try structured data extraction
           const structuredData = document.querySelector(
-            'script[type="application/ld+json"]'
+            'script[type="application/ld+json"]',
           );
           if (structuredData) {
             try {
@@ -453,10 +453,10 @@ console.log('Fishchi content script file loaded');
                   : [data.author];
                 const result = authors
                   .map((author) => {
-                    const nameParts = author.trim().split(' ');
+                    const nameParts = author.trim().split(" ");
                     return {
-                      firstname: nameParts[0] || '',
-                      lastname: nameParts.slice(1).join(' ') || '',
+                      firstname: nameParts[0] || "",
+                      lastname: nameParts.slice(1).join(" ") || "",
                     };
                   })
                   .filter((a) => a.firstname && a.firstname.length > 2);
@@ -473,7 +473,7 @@ console.log('Fishchi content script file loaded');
           // First, try to get text from main content area only (avoid header/footer)
           const mainContent =
             document.querySelector(
-              'main, .main-content, .content, .article-content, .paper-content, .document-content'
+              "main, .main-content, .content, .article-content, .paper-content, .document-content",
             ) || document.body;
           const pageText = mainContent.textContent;
 
@@ -496,17 +496,17 @@ console.log('Fishchi content script file loaded');
 
           for (const pattern of authorPatterns) {
             const match = pageText.match(pattern);
-            if (match && match[1] && typeof match[1] === 'string') {
+            if (match && match[1] && typeof match[1] === "string") {
               const authors = match[1]
                 .split(/[،,;؛]/)
                 .map((name) => {
                   const cleanName = name.trim();
                   if (cleanName.length < 3) return null;
 
-                  const nameParts = cleanName.split(' ');
+                  const nameParts = cleanName.split(" ");
                   return {
-                    firstname: nameParts[0] || '',
-                    lastname: nameParts.slice(1).join(' ') || '',
+                    firstname: nameParts[0] || "",
+                    lastname: nameParts.slice(1).join(" ") || "",
                   };
                 })
                 .filter((a) => a && a.firstname && a.firstname.length > 2);
@@ -519,19 +519,19 @@ console.log('Fishchi content script file loaded');
           // Try to find author names in specific Civilica elements
           const civilicaSelectors = [
             // Look for author information in Civilica-specific elements
-            '.doc-info .author',
-            '.paper-author',
-            '.conference-author',
-            '.author-section .author-name',
-            '.content .author',
+            ".doc-info .author",
+            ".paper-author",
+            ".conference-author",
+            ".author-section .author-name",
+            ".content .author",
             // Look for author links
             'a[href*="/author/"]',
             'a[href*="/profile/"]',
             // Look for author names in text content
-            '.author',
-            '.authors',
-            '.author-info',
-            '.author-list',
+            ".author",
+            ".authors",
+            ".author-info",
+            ".author-list",
           ];
 
           for (const selector of civilicaSelectors) {
@@ -542,10 +542,10 @@ console.log('Fishchi content script file loaded');
                   const text = el.textContent?.trim();
                   if (!text || text.length < 3) return null;
 
-                  const nameParts = text.split(' ');
+                  const nameParts = text.split(" ");
                   return {
-                    firstname: nameParts[0] || '',
-                    lastname: nameParts.slice(1).join(' ') || '',
+                    firstname: nameParts[0] || "",
+                    lastname: nameParts.slice(1).join(" ") || "",
                   };
                 })
                 .filter((a) => a && a.firstname && a.firstname.length > 2);
@@ -560,7 +560,7 @@ console.log('Fishchi content script file loaded');
           // First, try to get text from article content only (avoid header/footer/navigation)
           const articleContent =
             document.querySelector(
-              '.article-content, .paper-content, .document-content, .content, main'
+              ".article-content, .paper-content, .document-content, .content, main",
             ) || document.body;
           const articleText = articleContent.textContent;
 
@@ -572,109 +572,109 @@ console.log('Fishchi content script file loaded');
             // Comprehensive list of words to exclude (UI elements, common words, etc.)
             const excludeWords = [
               // Common academic terms
-              'مقاله',
-              'کنفرانس',
-              'مجله',
-              'نشریه',
-              'ژورنال',
-              'همایش',
-              'سمینار',
-              'تألیف',
-              'نویسنده',
-              'مؤلف',
-              'پدیدآورنده',
+              "مقاله",
+              "کنفرانس",
+              "مجله",
+              "نشریه",
+              "ژورنال",
+              "همایش",
+              "سمینار",
+              "تألیف",
+              "نویسنده",
+              "مؤلف",
+              "پدیدآورنده",
               // Civilica-specific terms
-              'سیویلیکا',
-              'کد پستی',
-              'تلفن',
-              'آدرس',
-              'بزرگراه',
-              'خیابان',
-              'کوچه',
-              'پلاک',
-              'ساختمان',
-              'طبقه',
-              'واحد',
-              'کلیه',
-              'امور',
-              'پشتیبانی',
-              'کاربران',
-              'بخش',
-              'ستادی',
-              'دانشگاهی',
+              "سیویلیکا",
+              "کد پستی",
+              "تلفن",
+              "آدرس",
+              "بزرگراه",
+              "خیابان",
+              "کوچه",
+              "پلاک",
+              "ساختمان",
+              "طبقه",
+              "واحد",
+              "کلیه",
+              "امور",
+              "پشتیبانی",
+              "کاربران",
+              "بخش",
+              "ستادی",
+              "دانشگاهی",
               // UI elements and common phrases
-              'لطفا',
-              'کمی',
-              'صبر',
-              'نمایید',
-              'ورود',
-              'ثبت',
-              'نام',
-              'رمز',
-              'عبور',
-              'فراموشی',
-              'راهنما',
-              'درباره',
-              'تماس',
-              'عضویت',
-              'رایگان',
-              'سازمانی',
+              "لطفا",
+              "کمی",
+              "صبر",
+              "نمایید",
+              "ورود",
+              "ثبت",
+              "نام",
+              "رمز",
+              "عبور",
+              "فراموشی",
+              "راهنما",
+              "درباره",
+              "تماس",
+              "عضویت",
+              "رایگان",
+              "سازمانی",
               // Navigation and UI
-              'جستجو',
-              'فیلتر',
-              'مرتب',
-              'سازی',
-              'نمایش',
-              'لیست',
-              'کارت',
-              'صفحه',
-              'قبلی',
-              'بعدی',
-              'اول',
-              'آخر',
+              "جستجو",
+              "فیلتر",
+              "مرتب",
+              "سازی",
+              "نمایش",
+              "لیست",
+              "کارت",
+              "صفحه",
+              "قبلی",
+              "بعدی",
+              "اول",
+              "آخر",
               // Common verbs and actions
-              'مشاهده',
-              'دانلود',
-              'چاپ',
-              'اشتراک',
-              'ذخیره',
-              'ویرایش',
-              'حذف',
-              'افزودن',
-              'ایجاد',
-              'تغییر',
+              "مشاهده",
+              "دانلود",
+              "چاپ",
+              "اشتراک",
+              "ذخیره",
+              "ویرایش",
+              "حذف",
+              "افزودن",
+              "ایجاد",
+              "تغییر",
               // Academic terms
-              'چکیده',
-              'خلاصه',
-              'مقدمه',
-              'نتیجه',
-              'بحث',
-              'منابع',
-              'مراجع',
-              'کلمات',
-              'کلیدی',
-              'برچسب',
-              'تگ',
+              "چکیده",
+              "خلاصه",
+              "مقدمه",
+              "نتیجه",
+              "بحث",
+              "منابع",
+              "مراجع",
+              "کلمات",
+              "کلیدی",
+              "برچسب",
+              "تگ",
               // Numbers and dates
-              'سال',
-              'ماه',
-              'روز',
-              'تاریخ',
-              'زمان',
-              'ساعت',
-              'دقیقه',
-              'ثانیه',
+              "سال",
+              "ماه",
+              "روز",
+              "تاریخ",
+              "زمان",
+              "ساعت",
+              "دقیقه",
+              "ثانیه",
               // Common adjectives
-              'جدید',
-              'قدیمی',
-              'بزرگ',
-              'کوچک',
-              'زیبا',
-              'خوب',
-              'بد',
-              'مهم',
-              'ضروری',
-              'مفید',
+              "جدید",
+              "قدیمی",
+              "بزرگ",
+              "کوچک",
+              "زیبا",
+              "خوب",
+              "بد",
+              "مهم",
+              "ضروری",
+              "مفید",
             ];
 
             const potentialNames = matches
@@ -686,7 +686,7 @@ console.log('Fishchi content script file loaded');
                   return false;
 
                 // Must contain at least one space (indicating first and last name)
-                if (!cleanMatch.includes(' ')) return false;
+                if (!cleanMatch.includes(" ")) return false;
 
                 // Must not contain numbers or special characters
                 if (/[\d\-_.,;:!?@#$%^&*()+=<>[\]{}|\\\/]/.test(cleanMatch))
@@ -702,13 +702,13 @@ console.log('Fishchi content script file loaded');
                 // Must contain Persian characters
                 if (
                   !/[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/.test(
-                    cleanMatch
+                    cleanMatch,
                   )
                 )
                   return false;
 
                 // Split into parts and validate each part
-                const parts = cleanMatch.split(' ');
+                const parts = cleanMatch.split(" ");
                 if (parts.length < 2) return false;
 
                 // Each part should be at least 2 characters and not contain excluded words
@@ -724,10 +724,10 @@ console.log('Fishchi content script file loaded');
 
             if (potentialNames.length > 0) {
               return potentialNames.map((name) => {
-                const nameParts = name.trim().split(' ');
+                const nameParts = name.trim().split(" ");
                 return {
-                  firstname: nameParts[0] || '',
-                  lastname: nameParts.slice(1).join(' ') || '',
+                  firstname: nameParts[0] || "",
+                  lastname: nameParts.slice(1).join(" ") || "",
                 };
               });
             }
@@ -737,45 +737,45 @@ console.log('Fishchi content script file loaded');
           // Look for author information in specific sections of the page
           const civilicaAuthorSelectors = [
             // Look for author information in the main content area
-            '.content .author',
-            '.main-content .author',
-            '.article-content .author',
-            '.paper-content .author',
+            ".content .author",
+            ".main-content .author",
+            ".article-content .author",
+            ".paper-content .author",
             // Look for author information in document info sections
-            '.doc-info .author',
-            '.document-info .author',
-            '.paper-info .author',
+            ".doc-info .author",
+            ".document-info .author",
+            ".paper-info .author",
             // Look for author information in header sections
-            '.article-header .author',
-            '.paper-header .author',
-            '.document-header .author',
+            ".article-header .author",
+            ".paper-header .author",
+            ".document-header .author",
             // Look for author information in metadata sections
-            '.metadata .author',
-            '.meta-info .author',
-            '.paper-meta .author',
+            ".metadata .author",
+            ".meta-info .author",
+            ".paper-meta .author",
             // Look for author information in sidebar sections
-            '.sidebar .author',
-            '.side-content .author',
-            '.additional-info .author',
+            ".sidebar .author",
+            ".side-content .author",
+            ".additional-info .author",
             // Look for author links specifically
             'a[href*="/author/"]',
             'a[href*="/profile/"]',
             // Look for author names in specific Civilica elements
-            '.doc-info .doc-author a',
-            '.author-section .author-name',
-            '.content .author',
+            ".doc-info .doc-author a",
+            ".author-section .author-name",
+            ".content .author",
             'span[class*="author"]',
             'div[class*="author"]',
-            '.author-link',
-            '.author-item',
-            '.author-name',
-            '.author',
-            '.authors',
-            '.author-info',
-            '.author-list',
-            '.doc-info .author',
-            '.paper-author',
-            '.conference-author',
+            ".author-link",
+            ".author-item",
+            ".author-name",
+            ".author",
+            ".authors",
+            ".author-info",
+            ".author-list",
+            ".doc-info .author",
+            ".paper-author",
+            ".conference-author",
           ];
 
           for (const selector of civilicaAuthorSelectors) {
@@ -786,10 +786,10 @@ console.log('Fishchi content script file loaded');
                   const text = el.textContent?.trim();
                   if (!text || text.length < 3) return null;
 
-                  const nameParts = text.split(' ');
+                  const nameParts = text.split(" ");
                   return {
-                    firstname: nameParts[0] || '',
-                    lastname: nameParts.slice(1).join(' ') || '',
+                    firstname: nameParts[0] || "",
+                    lastname: nameParts.slice(1).join(" ") || "",
                   };
                 })
                 .filter((a) => a && a.firstname && a.firstname.length > 2);
@@ -865,8 +865,8 @@ console.log('Fishchi content script file loaded');
               const journal = match[1].trim();
               // Clean up the journal name
               const cleanJournal = journal
-                .replace(/[،,;؛].*$/, '') // Remove everything after comma
-                .replace(/\s+/g, ' ') // Normalize whitespace
+                .replace(/[،,;؛].*$/, "") // Remove everything after comma
+                .replace(/\s+/g, " ") // Normalize whitespace
                 .trim();
               if (cleanJournal.length > 3 && cleanJournal.length < 100) {
                 return cleanJournal;
@@ -876,10 +876,10 @@ console.log('Fishchi content script file loaded');
 
           // Try to find journal in meta tags
           const journalMeta = document.querySelector(
-            'meta[name="citation_journal_title"]'
+            'meta[name="citation_journal_title"]',
           );
           if (journalMeta) {
-            const content = journalMeta.getAttribute('content')?.trim();
+            const content = journalMeta.getAttribute("content")?.trim();
             if (content && content.length < 200) {
               return content;
             }
@@ -891,7 +891,7 @@ console.log('Fishchi content script file loaded');
           if (element && element.textContent) {
             const text = element.textContent.trim();
             if (text && text.length > 20) {
-              return text.substring(0, 500) + (text.length > 500 ? '...' : '');
+              return text.substring(0, 500) + (text.length > 500 ? "..." : "");
             }
           }
 
@@ -912,7 +912,7 @@ console.log('Fishchi content script file loaded');
               if (abstract.length > 20) {
                 return (
                   abstract.substring(0, 500) +
-                  (abstract.length > 500 ? '...' : '')
+                  (abstract.length > 500 ? "..." : "")
                 );
               }
             }
@@ -920,13 +920,13 @@ console.log('Fishchi content script file loaded');
 
           // Try to find abstract in meta tags
           const abstractMeta = document.querySelector(
-            'meta[name="description"]'
+            'meta[name="description"]',
           );
           if (abstractMeta) {
-            const content = abstractMeta.getAttribute('content')?.trim();
+            const content = abstractMeta.getAttribute("content")?.trim();
             if (content && content.length > 20) {
               return (
-                content.substring(0, 500) + (content.length > 500 ? '...' : '')
+                content.substring(0, 500) + (content.length > 500 ? "..." : "")
               );
             }
           }
@@ -966,10 +966,10 @@ console.log('Fishchi content script file loaded');
           // Try to find keywords in meta tags
           const keywordsMeta = document.querySelector('meta[name="keywords"]');
           if (keywordsMeta) {
-            const content = keywordsMeta.getAttribute('content')?.trim();
+            const content = keywordsMeta.getAttribute("content")?.trim();
             if (content) {
               return content
-                .split(',')
+                .split(",")
                 .map((tag) => tag.trim())
                 .filter((t) => t);
             }
@@ -978,29 +978,29 @@ console.log('Fishchi content script file loaded');
           // For Civilica, try to extract meaningful keywords from the page content
           // Look for common academic keywords in Persian
           const academicKeywords = [
-            'افسردگی',
-            'اضطراب',
-            'کیفیت زندگی',
-            'حمایت اجتماعی',
-            'ملال هویت جنسیتی',
-            'روانشناسی',
-            'جامعه‌شناسی',
-            'آموزش',
-            'پزشکی',
-            'علوم',
-            'تحقیق',
-            'پژوهش',
-            'دانشگاه',
-            'دانشجو',
-            'استاد',
-            'مقاله',
-            'کنفرانس',
-            'مجله',
-            'نشریه',
+            "افسردگی",
+            "اضطراب",
+            "کیفیت زندگی",
+            "حمایت اجتماعی",
+            "ملال هویت جنسیتی",
+            "روانشناسی",
+            "جامعه‌شناسی",
+            "آموزش",
+            "پزشکی",
+            "علوم",
+            "تحقیق",
+            "پژوهش",
+            "دانشگاه",
+            "دانشجو",
+            "استاد",
+            "مقاله",
+            "کنفرانس",
+            "مجله",
+            "نشریه",
           ];
 
           const foundKeywords = academicKeywords.filter((keyword) =>
-            pageText.includes(keyword)
+            pageText.includes(keyword),
           );
 
           if (foundKeywords.length > 0) {
@@ -1011,8 +1011,8 @@ console.log('Fishchi content script file loaded');
         },
       },
     },
-    'noormags.ir': {
-      name: 'Noormags',
+    "noormags.ir": {
+      name: "Noormags",
       selectors: {
         title:
           'meta[name="citation_title"], h1, .article-title, .title, .article-header h1',
@@ -1033,17 +1033,17 @@ console.log('Fishchi content script file loaded');
       extractors: {
         title: (element) => {
           // Check if element is a single element (not NodeList)
-          if (element && typeof element.getAttribute === 'function') {
-            const content = element.getAttribute('content')?.trim();
+          if (element && typeof element.getAttribute === "function") {
+            const content = element.getAttribute("content")?.trim();
             if (content) return content;
           }
 
           // Fallback to DOM selectors specific to Noormags
           const domSelectors = [
-            'h1',
-            '.article-title',
-            '.title',
-            '.article-header h1',
+            "h1",
+            ".article-title",
+            ".title",
+            ".article-header h1",
           ];
           for (const selector of domSelectors) {
             const el = document.querySelector(selector);
@@ -1059,25 +1059,25 @@ console.log('Fishchi content script file loaded');
             return Array.from(elements)
               .map((el) => {
                 const fullName = convertAuthorName(el.textContent?.trim());
-                const nameParts = fullName.split(' ');
+                const nameParts = fullName.split(" ");
                 return {
-                  firstname: nameParts[0] || '',
-                  lastname: nameParts.slice(1).join(' ') || '',
+                  firstname: nameParts[0] || "",
+                  lastname: nameParts.slice(1).join(" ") || "",
                 };
               })
               .filter((a) => a.firstname);
           }
 
           // Check if single element has content attribute
-          if (elements && typeof elements.getAttribute === 'function') {
-            const content = elements.getAttribute('content')?.trim();
+          if (elements && typeof elements.getAttribute === "function") {
+            const content = elements.getAttribute("content")?.trim();
             if (content) {
               // Handle Noormags format: "احمدحسینی,‌سید‌نصیر"
               const cleanContent = content
-                .replace(/&zwnj;/g, '')
-                .replace(/&nbsp;/g, ' ');
+                .replace(/&zwnj;/g, "")
+                .replace(/&nbsp;/g, " ");
               return cleanContent
-                .split(',')
+                .split(",")
                 .map((name) => ({ name: convertAuthorName(name.trim()) }))
                 .filter((a) => a.name);
             }
@@ -1085,16 +1085,16 @@ console.log('Fishchi content script file loaded');
 
           // Try to extract from meta tags directly
           const authorMeta = document.querySelector(
-            'meta[name="citation_author"]'
+            'meta[name="citation_author"]',
           );
           if (authorMeta) {
-            const content = authorMeta.getAttribute('content')?.trim();
+            const content = authorMeta.getAttribute("content")?.trim();
             if (content) {
               const cleanContent = content
-                .replace(/&zwnj;/g, '')
-                .replace(/&nbsp;/g, ' ');
+                .replace(/&zwnj;/g, "")
+                .replace(/&nbsp;/g, " ");
               return cleanContent
-                .split(',')
+                .split(",")
                 .map((name) => ({ name: convertAuthorName(name.trim()) }))
                 .filter((a) => a.name);
             }
@@ -1102,7 +1102,7 @@ console.log('Fishchi content script file loaded');
 
           // Try structured data extraction
           const structuredData = document.querySelector(
-            'script[type="application/ld+json"]'
+            'script[type="application/ld+json"]',
           );
           if (structuredData) {
             try {
@@ -1123,11 +1123,11 @@ console.log('Fishchi content script file loaded');
           // Fallback to DOM selectors specific to Noormags
           const domSelectors = [
             '.article-creator span[itemprop="name"]',
-            '.author',
-            '.authors .author-name',
-            '.author-list .author',
-            '.article-author',
-            '.author-name',
+            ".author",
+            ".authors .author-name",
+            ".author-list .author",
+            ".article-author",
+            ".author-name",
           ];
           for (const selector of domSelectors) {
             const elements = document.querySelectorAll(selector);
@@ -1151,7 +1151,7 @@ console.log('Fishchi content script file loaded');
 
           for (const pattern of authorPatterns) {
             const match = pageText.match(pattern);
-            if (match && match[1] && typeof match[1] === 'string') {
+            if (match && match[1] && typeof match[1] === "string") {
               const authors = match[1]
                 .split(/[،,;؛]/)
                 .map((name) => ({ name: convertAuthorName(name.trim()) }))
@@ -1165,8 +1165,8 @@ console.log('Fishchi content script file loaded');
         },
         year: (element) => {
           // Check if element is a single element (not NodeList)
-          if (element && typeof element.getAttribute === 'function') {
-            const content = element.getAttribute('content')?.trim();
+          if (element && typeof element.getAttribute === "function") {
+            const content = element.getAttribute("content")?.trim();
             if (content) {
               // Extract year from date format (e.g., "1385/04/01" or "2006/06/22")
               const yearMatch = content.match(/(\d{4})/);
@@ -1183,11 +1183,11 @@ console.log('Fishchi content script file loaded');
 
           // Fallback to DOM selectors specific to Noormags
           const domSelectors = [
-            '.year',
-            '.publication-date',
-            '.date',
-            '.article-date',
-            '.publication-year',
+            ".year",
+            ".publication-date",
+            ".date",
+            ".article-date",
+            ".publication-year",
           ];
           for (const selector of domSelectors) {
             const el = document.querySelector(selector);
@@ -1216,18 +1216,18 @@ console.log('Fishchi content script file loaded');
         },
         journal: (element) => {
           // Check if element is a single element (not NodeList)
-          if (element && typeof element.getAttribute === 'function') {
-            const content = element.getAttribute('content')?.trim();
+          if (element && typeof element.getAttribute === "function") {
+            const content = element.getAttribute("content")?.trim();
             if (content) return content;
           }
 
           // Fallback to DOM selectors specific to Noormags
           const domSelectors = [
-            '.journal-title',
-            '.magazine-title',
-            '.journal',
-            '.article-journal',
-            '.magazine-name',
+            ".journal-title",
+            ".magazine-title",
+            ".journal",
+            ".article-journal",
+            ".magazine-name",
           ];
           for (const selector of domSelectors) {
             const el = document.querySelector(selector);
@@ -1254,13 +1254,13 @@ console.log('Fishchi content script file loaded');
         },
         volume: (element) => {
           // Check if element is a single element (not NodeList)
-          if (element && typeof element.getAttribute === 'function') {
-            const content = element.getAttribute('content')?.trim();
+          if (element && typeof element.getAttribute === "function") {
+            const content = element.getAttribute("content")?.trim();
             if (content) return content;
           }
 
           // Fallback to DOM selectors specific to Noormags
-          const domSelectors = ['.volume', '.magazine-volume'];
+          const domSelectors = [".volume", ".magazine-volume"];
           for (const selector of domSelectors) {
             const el = document.querySelector(selector);
             if (el && el.textContent.trim()) {
@@ -1272,13 +1272,13 @@ console.log('Fishchi content script file loaded');
         },
         issue: (element) => {
           // Check if element is a single element (not NodeList)
-          if (element && typeof element.getAttribute === 'function') {
-            const content = element.getAttribute('content')?.trim();
+          if (element && typeof element.getAttribute === "function") {
+            const content = element.getAttribute("content")?.trim();
             if (content) return content;
           }
 
           // Fallback to DOM selectors specific to Noormags
-          const domSelectors = ['.issue', '.magazine-issue'];
+          const domSelectors = [".issue", ".magazine-issue"];
           for (const selector of domSelectors) {
             const el = document.querySelector(selector);
             if (el && el.textContent.trim()) {
@@ -1293,22 +1293,22 @@ console.log('Fishchi content script file loaded');
           let first = null;
           let last = null;
 
-          if (firstPage && typeof firstPage.getAttribute === 'function') {
-            first = firstPage.getAttribute('content')?.trim();
+          if (firstPage && typeof firstPage.getAttribute === "function") {
+            first = firstPage.getAttribute("content")?.trim();
           }
 
-          if (lastPage && typeof lastPage.getAttribute === 'function') {
-            last = lastPage.getAttribute('content')?.trim();
+          if (lastPage && typeof lastPage.getAttribute === "function") {
+            last = lastPage.getAttribute("content")?.trim();
           }
 
           if (first && last) return `${first}-${last}`;
 
           // Fallback to DOM selectors specific to Noormags
           const domSelectors = [
-            '.first-page',
-            '.start-page',
-            '.last-page',
-            '.end-page',
+            ".first-page",
+            ".start-page",
+            ".last-page",
+            ".end-page",
           ];
           for (const selector of domSelectors) {
             const el = document.querySelector(selector);
@@ -1316,11 +1316,11 @@ console.log('Fishchi content script file loaded');
               const text = el.textContent.trim();
               const pageMatch = text.match(/(\d+)/);
               if (pageMatch) {
-                if (selector.includes('first') || selector.includes('start')) {
+                if (selector.includes("first") || selector.includes("start")) {
                   first = pageMatch[1];
                 } else if (
-                  selector.includes('last') ||
-                  selector.includes('end')
+                  selector.includes("last") ||
+                  selector.includes("end")
                 ) {
                   last = pageMatch[1];
                 }
@@ -1332,30 +1332,30 @@ console.log('Fishchi content script file loaded');
         },
         abstract: (element) => {
           // Check if element is a single element (not NodeList)
-          if (element && typeof element.getAttribute === 'function') {
-            const content = element.getAttribute('content')?.trim();
+          if (element && typeof element.getAttribute === "function") {
+            const content = element.getAttribute("content")?.trim();
             if (content) return content;
           }
 
           // Try to extract from meta tags directly
           const abstractMeta = document.querySelector(
-            'meta[property="og:description"]'
+            'meta[property="og:description"]',
           );
           if (abstractMeta) {
-            const content = abstractMeta.getAttribute('content')?.trim();
+            const content = abstractMeta.getAttribute("content")?.trim();
             if (content) return content;
           }
 
           // Try description meta tag
           const descMeta = document.querySelector('meta[name="description"]');
           if (descMeta) {
-            const content = descMeta.getAttribute('content')?.trim();
+            const content = descMeta.getAttribute("content")?.trim();
             if (content) return content;
           }
 
           // Try structured data extraction
           const structuredData = document.querySelector(
-            'script[type="application/ld+json"]'
+            'script[type="application/ld+json"]',
           );
           if (structuredData) {
             try {
@@ -1363,7 +1363,7 @@ console.log('Fishchi content script file loaded');
               if (data.description) {
                 return (
                   data.description.substring(0, 500) +
-                  (data.description.length > 500 ? '...' : '')
+                  (data.description.length > 500 ? "..." : "")
                 );
               }
             } catch (e) {
@@ -1373,25 +1373,25 @@ console.log('Fishchi content script file loaded');
 
           // Try to extract from specific Noormags structure - چکیده فارسی
           const abstractSelectors = [
-            '#abstractfa',
-            '.p-summary',
-            '.abstract',
-            '.article-abstract',
-            '.tab-pane .panel-body .p-summary',
-            '.tab-content .p-summary',
+            "#abstractfa",
+            ".p-summary",
+            ".abstract",
+            ".article-abstract",
+            ".tab-pane .panel-body .p-summary",
+            ".tab-content .p-summary",
           ];
 
           for (const selector of abstractSelectors) {
             const abstractElement = document.querySelector(selector);
             if (abstractElement) {
               // Look for all paragraphs inside the element
-              const paragraphs = abstractElement.querySelectorAll('p');
+              const paragraphs = abstractElement.querySelectorAll("p");
               for (const paragraph of paragraphs) {
                 const text = paragraph.textContent.trim();
                 // Skip paragraphs that contain "چکیده:" or are too short
-                if (text && text.length > 50 && !text.includes('چکیده:')) {
+                if (text && text.length > 50 && !text.includes("چکیده:")) {
                   return (
-                    text.substring(0, 500) + (text.length > 500 ? '...' : '')
+                    text.substring(0, 500) + (text.length > 500 ? "..." : "")
                   );
                 }
               }
@@ -1400,11 +1400,11 @@ console.log('Fishchi content script file loaded');
               const text = abstractElement.textContent.trim();
               if (text && text.length > 20) {
                 // Remove "چکیده:" prefix if present and get the actual content
-                const cleanText = text.replace(/^چکیده\s*:?\s*/g, '').trim();
+                const cleanText = text.replace(/^چکیده\s*:?\s*/g, "").trim();
                 if (cleanText.length > 20) {
                   return (
                     cleanText.substring(0, 500) +
-                    (cleanText.length > 500 ? '...' : '')
+                    (cleanText.length > 500 ? "..." : "")
                   );
                 }
               }
@@ -1426,7 +1426,7 @@ console.log('Fishchi content script file loaded');
               if (abstract.length > 20) {
                 return (
                   abstract.substring(0, 500) +
-                  (abstract.length > 500 ? '...' : '')
+                  (abstract.length > 500 ? "..." : "")
                 );
               }
             }
@@ -1434,36 +1434,36 @@ console.log('Fishchi content script file loaded');
 
           // Try to extract from خلاصه ماشینی
           const summaryElement = document.querySelector(
-            'p[property="description"].p-summary-m'
+            'p[property="description"].p-summary-m',
           );
           if (summaryElement) {
             const text = summaryElement.textContent.trim();
             if (text && text.length > 20) {
               // Remove "خلاصه ماشینی:" prefix if present
               const cleanText = text
-                .replace(/^خلاصه ماشینی\s*:?\s*/g, '')
+                .replace(/^خلاصه ماشینی\s*:?\s*/g, "")
                 .trim();
               return (
                 cleanText.substring(0, 500) +
-                (cleanText.length > 500 ? '...' : '')
+                (cleanText.length > 500 ? "..." : "")
               );
             }
           }
 
           // Fallback to DOM selectors specific to Noormags
           const domSelectors = [
-            '.p-summary-m',
-            '.abstract',
-            '.summary',
-            '.description',
-            '.article-abstract',
-            '.article-summary',
-            '.article-content',
-            '.content',
-            '.text',
-            '.article-text',
-            '.main-content',
-            '.article-body',
+            ".p-summary-m",
+            ".abstract",
+            ".summary",
+            ".description",
+            ".article-abstract",
+            ".article-summary",
+            ".article-content",
+            ".content",
+            ".text",
+            ".article-text",
+            ".main-content",
+            ".article-body",
           ];
           for (const selector of domSelectors) {
             const el = document.querySelector(selector);
@@ -1471,12 +1471,12 @@ console.log('Fishchi content script file loaded');
               const text = el.textContent.trim();
               // Take first paragraph or limit length
               const paragraphs = text
-                .split('\n')
+                .split("\n")
                 .filter((p) => p.trim().length > 20);
               if (paragraphs.length > 0) {
                 return (
                   paragraphs[0].substring(0, 500) +
-                  (paragraphs[0].length > 500 ? '...' : '')
+                  (paragraphs[0].length > 500 ? "..." : "")
                 );
               }
             }
@@ -1499,7 +1499,7 @@ console.log('Fishchi content script file loaded');
               if (abstract.length > 20) {
                 return (
                   abstract.substring(0, 500) +
-                  (abstract.length > 500 ? '...' : '')
+                  (abstract.length > 500 ? "..." : "")
                 );
               }
             }
@@ -1516,11 +1516,11 @@ console.log('Fishchi content script file loaded');
           }
 
           // Check if single element has content attribute
-          if (elements && typeof elements.getAttribute === 'function') {
-            const content = elements.getAttribute('content')?.trim();
+          if (elements && typeof elements.getAttribute === "function") {
+            const content = elements.getAttribute("content")?.trim();
             if (content) {
               return content
-                .split(',')
+                .split(",")
                 .map((tag) => tag.trim())
                 .filter((t) => t);
             }
@@ -1529,10 +1529,10 @@ console.log('Fishchi content script file loaded');
           // Try to extract from meta tags directly
           const keywordsMeta = document.querySelector('meta[name="keywords"]');
           if (keywordsMeta) {
-            const content = keywordsMeta.getAttribute('content')?.trim();
+            const content = keywordsMeta.getAttribute("content")?.trim();
             if (content) {
               return content
-                .split(',')
+                .split(",")
                 .map((tag) => tag.trim())
                 .filter((t) => t);
             }
@@ -1540,14 +1540,14 @@ console.log('Fishchi content script file loaded');
 
           // Try structured data extraction
           const structuredData = document.querySelector(
-            'script[type="application/ld+json"]'
+            'script[type="application/ld+json"]',
           );
           if (structuredData) {
             try {
               const data = JSON.parse(structuredData.textContent);
               if (data.keywords) {
                 return data.keywords
-                  .split(',')
+                  .split(",")
                   .map((tag) => tag.trim())
                   .filter((t) => t);
               }
@@ -1558,7 +1558,7 @@ console.log('Fishchi content script file loaded');
 
           // Try to extract from specific Noormags keyword structure
           const keywordElements =
-            document.querySelectorAll('.keyword-item span');
+            document.querySelectorAll(".keyword-item span");
           if (keywordElements.length > 0) {
             const keywords = Array.from(keywordElements)
               .map((el) => el.textContent?.trim())
@@ -1569,11 +1569,11 @@ console.log('Fishchi content script file loaded');
 
           // Try to extract from keyword list wrapper
           const keywordListWrapper = document.querySelector(
-            '.keyword-list-wrapper'
+            ".keyword-list-wrapper",
           );
           if (keywordListWrapper) {
             const keywordItems =
-              keywordListWrapper.querySelectorAll('.keyword-item');
+              keywordListWrapper.querySelectorAll(".keyword-item");
             if (keywordItems.length > 0) {
               const keywords = Array.from(keywordItems)
                 .map((el) => el.textContent?.trim())
@@ -1585,12 +1585,12 @@ console.log('Fishchi content script file loaded');
 
           // Fallback to DOM selectors specific to Noormags
           const domSelectors = [
-            '.keywords',
-            '.tags',
-            '.key-words',
-            '.article-keywords',
-            '.article-tags',
-            '.keyword-list',
+            ".keywords",
+            ".tags",
+            ".key-words",
+            ".article-keywords",
+            ".article-tags",
+            ".keyword-list",
           ];
           for (const selector of domSelectors) {
             const elements = document.querySelectorAll(selector);
@@ -1623,16 +1623,16 @@ console.log('Fishchi content script file loaded');
   // Check if page requires login or has restricted content
   function isRestrictedPage() {
     const restrictedIndicators = [
-      'برای مشاهده متن مقاله',
-      'لازم است وارد پایگاه شوید',
-      'You need Sign in to view',
-      'برای مشاهده صفحات بیشتر',
-      'حساب خود را شارژ نمایید',
+      "برای مشاهده متن مقاله",
+      "لازم است وارد پایگاه شوید",
+      "You need Sign in to view",
+      "برای مشاهده صفحات بیشتر",
+      "حساب خود را شارژ نمایید",
     ];
 
     const pageText = document.body.textContent;
     return restrictedIndicators.some((indicator) =>
-      pageText.includes(indicator)
+      pageText.includes(indicator),
     );
   }
 
@@ -1646,7 +1646,7 @@ console.log('Fishchi content script file loaded');
     // Check if page is restricted
     if (isRestrictedPage()) {
       console.log(
-        'Page appears to be restricted, attempting limited extraction'
+        "Page appears to be restricted, attempting limited extraction",
       );
     }
 
@@ -1654,7 +1654,7 @@ console.log('Fishchi content script file loaded');
       title: null,
       authors: [],
       year: null,
-      type: 'article',
+      type: "article",
       publicationDetails: {
         journal: null,
         publisher: null,
@@ -1679,7 +1679,7 @@ console.log('Fishchi content script file loaded');
       // Extract authors
       if (siteConfig.selectors.authors) {
         const authorElements = document.querySelectorAll(
-          siteConfig.selectors.authors
+          siteConfig.selectors.authors,
         );
         sourceInfo.authors = siteConfig.extractors.authors(authorElements);
       }
@@ -1693,7 +1693,7 @@ console.log('Fishchi content script file loaded');
       // Extract journal
       if (siteConfig.selectors.journal) {
         const journalElement = document.querySelector(
-          siteConfig.selectors.journal
+          siteConfig.selectors.journal,
         );
         sourceInfo.publicationDetails.journal =
           siteConfig.extractors.journal(journalElement);
@@ -1702,7 +1702,7 @@ console.log('Fishchi content script file loaded');
       // Extract volume
       if (siteConfig.selectors.volume) {
         const volumeElement = document.querySelector(
-          siteConfig.selectors.volume
+          siteConfig.selectors.volume,
         );
         sourceInfo.publicationDetails.volume =
           siteConfig.extractors.volume(volumeElement);
@@ -1718,21 +1718,21 @@ console.log('Fishchi content script file loaded');
       // Extract pages
       if (siteConfig.selectors.firstPage && siteConfig.selectors.lastPage) {
         const firstPageElement = document.querySelector(
-          siteConfig.selectors.firstPage
+          siteConfig.selectors.firstPage,
         );
         const lastPageElement = document.querySelector(
-          siteConfig.selectors.lastPage
+          siteConfig.selectors.lastPage,
         );
         sourceInfo.publicationDetails.pages = siteConfig.extractors.pages(
           firstPageElement,
-          lastPageElement
+          lastPageElement,
         );
       }
 
       // Extract abstract
       if (siteConfig.selectors.abstract) {
         const abstractElement = document.querySelector(
-          siteConfig.selectors.abstract
+          siteConfig.selectors.abstract,
         );
         sourceInfo.abstract = siteConfig.extractors.abstract(abstractElement);
 
@@ -1741,10 +1741,10 @@ console.log('Fishchi content script file loaded');
           // Try to get description from meta tags
           const metaDesc = document.querySelector('meta[name="description"]');
           if (metaDesc) {
-            const desc = metaDesc.getAttribute('content')?.trim();
+            const desc = metaDesc.getAttribute("content")?.trim();
             if (desc && desc.length > 20) {
               sourceInfo.abstract =
-                desc.substring(0, 500) + (desc.length > 500 ? '...' : '');
+                desc.substring(0, 500) + (desc.length > 500 ? "..." : "");
             }
           }
 
@@ -1758,13 +1758,13 @@ console.log('Fishchi content script file loaded');
       // Extract keywords/tags
       if (siteConfig.selectors.keywords) {
         const keywordElements = document.querySelectorAll(
-          siteConfig.selectors.keywords
+          siteConfig.selectors.keywords,
         );
         sourceInfo.tags = siteConfig.extractors.keywords(keywordElements);
       }
 
       // Clean up data
-      sourceInfo.title = sourceInfo.title || 'عنوان یافت نشد';
+      sourceInfo.title = sourceInfo.title || "عنوان یافت نشد";
 
       // Only add default author if no authors were found and we're on a supported site
       if (sourceInfo.authors.length === 0) {
@@ -1772,7 +1772,7 @@ console.log('Fishchi content script file loaded');
         // First, try to get text from article content only (avoid header/footer/navigation)
         const articleContent =
           document.querySelector(
-            '.article-content, .paper-content, .document-content, .content, main'
+            ".article-content, .paper-content, .document-content, .content, main",
           ) || document.body;
         const articleText = articleContent.textContent;
 
@@ -1784,109 +1784,109 @@ console.log('Fishchi content script file loaded');
           // Comprehensive list of words to exclude (UI elements, common words, etc.)
           const excludeWords = [
             // Common academic terms
-            'مقاله',
-            'کنفرانس',
-            'مجله',
-            'نشریه',
-            'ژورنال',
-            'همایش',
-            'سمینار',
-            'تألیف',
-            'نویسنده',
-            'مؤلف',
-            'پدیدآورنده',
+            "مقاله",
+            "کنفرانس",
+            "مجله",
+            "نشریه",
+            "ژورنال",
+            "همایش",
+            "سمینار",
+            "تألیف",
+            "نویسنده",
+            "مؤلف",
+            "پدیدآورنده",
             // Civilica-specific terms
-            'سیویلیکا',
-            'کد پستی',
-            'تلفن',
-            'آدرس',
-            'بزرگراه',
-            'خیابان',
-            'کوچه',
-            'پلاک',
-            'ساختمان',
-            'طبقه',
-            'واحد',
-            'کلیه',
-            'امور',
-            'پشتیبانی',
-            'کاربران',
-            'بخش',
-            'ستادی',
-            'دانشگاهی',
+            "سیویلیکا",
+            "کد پستی",
+            "تلفن",
+            "آدرس",
+            "بزرگراه",
+            "خیابان",
+            "کوچه",
+            "پلاک",
+            "ساختمان",
+            "طبقه",
+            "واحد",
+            "کلیه",
+            "امور",
+            "پشتیبانی",
+            "کاربران",
+            "بخش",
+            "ستادی",
+            "دانشگاهی",
             // UI elements and common phrases
-            'لطفا',
-            'کمی',
-            'صبر',
-            'نمایید',
-            'ورود',
-            'ثبت',
-            'نام',
-            'رمز',
-            'عبور',
-            'فراموشی',
-            'راهنما',
-            'درباره',
-            'تماس',
-            'عضویت',
-            'رایگان',
-            'سازمانی',
+            "لطفا",
+            "کمی",
+            "صبر",
+            "نمایید",
+            "ورود",
+            "ثبت",
+            "نام",
+            "رمز",
+            "عبور",
+            "فراموشی",
+            "راهنما",
+            "درباره",
+            "تماس",
+            "عضویت",
+            "رایگان",
+            "سازمانی",
             // Navigation and UI
-            'جستجو',
-            'فیلتر',
-            'مرتب',
-            'سازی',
-            'نمایش',
-            'لیست',
-            'کارت',
-            'صفحه',
-            'قبلی',
-            'بعدی',
-            'اول',
-            'آخر',
+            "جستجو",
+            "فیلتر",
+            "مرتب",
+            "سازی",
+            "نمایش",
+            "لیست",
+            "کارت",
+            "صفحه",
+            "قبلی",
+            "بعدی",
+            "اول",
+            "آخر",
             // Common verbs and actions
-            'مشاهده',
-            'دانلود',
-            'چاپ',
-            'اشتراک',
-            'ذخیره',
-            'ویرایش',
-            'حذف',
-            'افزودن',
-            'ایجاد',
-            'تغییر',
+            "مشاهده",
+            "دانلود",
+            "چاپ",
+            "اشتراک",
+            "ذخیره",
+            "ویرایش",
+            "حذف",
+            "افزودن",
+            "ایجاد",
+            "تغییر",
             // Academic terms
-            'چکیده',
-            'خلاصه',
-            'مقدمه',
-            'نتیجه',
-            'بحث',
-            'منابع',
-            'مراجع',
-            'کلمات',
-            'کلیدی',
-            'برچسب',
-            'تگ',
+            "چکیده",
+            "خلاصه",
+            "مقدمه",
+            "نتیجه",
+            "بحث",
+            "منابع",
+            "مراجع",
+            "کلمات",
+            "کلیدی",
+            "برچسب",
+            "تگ",
             // Numbers and dates
-            'سال',
-            'ماه',
-            'روز',
-            'تاریخ',
-            'زمان',
-            'ساعت',
-            'دقیقه',
-            'ثانیه',
+            "سال",
+            "ماه",
+            "روز",
+            "تاریخ",
+            "زمان",
+            "ساعت",
+            "دقیقه",
+            "ثانیه",
             // Common adjectives
-            'جدید',
-            'قدیمی',
-            'بزرگ',
-            'کوچک',
-            'زیبا',
-            'خوب',
-            'بد',
-            'مهم',
-            'ضروری',
-            'مفید',
+            "جدید",
+            "قدیمی",
+            "بزرگ",
+            "کوچک",
+            "زیبا",
+            "خوب",
+            "بد",
+            "مهم",
+            "ضروری",
+            "مفید",
           ];
 
           const potentialNames = matches
@@ -1897,7 +1897,7 @@ console.log('Fishchi content script file loaded');
               if (cleanMatch.length < 4 || cleanMatch.length > 50) return false;
 
               // Must contain at least one space (indicating first and last name)
-              if (!cleanMatch.includes(' ')) return false;
+              if (!cleanMatch.includes(" ")) return false;
 
               // Must not contain numbers or special characters
               if (/[\d\-_.,;:!?@#$%^&*()+=<>[\]{}|\\\/]/.test(cleanMatch))
@@ -1913,13 +1913,13 @@ console.log('Fishchi content script file loaded');
               // Must contain Persian characters
               if (
                 !/[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/.test(
-                  cleanMatch
+                  cleanMatch,
                 )
               )
                 return false;
 
               // Split into parts and validate each part
-              const parts = cleanMatch.split(' ');
+              const parts = cleanMatch.split(" ");
               if (parts.length < 2) return false;
 
               // Each part should be at least 2 characters and not contain excluded words
@@ -1935,10 +1935,10 @@ console.log('Fishchi content script file loaded');
 
           if (potentialNames.length > 0) {
             sourceInfo.authors = potentialNames.map((name) => {
-              const nameParts = name.trim().split(' ');
+              const nameParts = name.trim().split(" ");
               return {
-                firstname: nameParts[0] || '',
-                lastname: nameParts.slice(1).join(' ') || '',
+                firstname: nameParts[0] || "",
+                lastname: nameParts.slice(1).join(" ") || "",
               };
             });
           }
@@ -1946,83 +1946,83 @@ console.log('Fishchi content script file loaded');
 
         // If still no authors found, add default
         if (sourceInfo.authors.length === 0) {
-          sourceInfo.authors = [{ firstname: 'نویسنده', lastname: 'نامشخص' }];
+          sourceInfo.authors = [{ firstname: "نویسنده", lastname: "نامشخص" }];
         }
       }
 
       // Clean up tags to remove irrelevant information
       if (sourceInfo.tags && sourceInfo.tags.length > 0) {
         const irrelevantTags = [
-          'سیویلیکا',
-          'کد پستی',
-          'تلفن',
-          'آدرس',
-          'بزرگراه',
-          'خیابان',
-          'کوچه',
-          'پلاک',
-          'ساختمان',
-          'طبقه',
-          'واحد',
-          'کلیه',
-          'امور',
-          'پشتیبانی',
-          'کاربران',
-          'بخش',
-          'ستادی',
-          'دانشگاهی',
-          'دفتر مرکزی',
-          'انتشارات',
-          'بوم سازه',
-          'جلال آل احمد',
-          'کارگر',
-          'چمران',
-          'پروانه',
-          'چمران',
-          'کد پستی',
-          '۱۴۳۹۹۱۴۱۵۳',
-          '۸۸۰۰۸۰۴۴',
-          '۸۸۳۳۵۴۵۱',
-          'امور ستادی',
-          'دانشگاهی',
-          'پشتیبانی کاربران',
-          'فراموشی رمز عبور',
-          'راهنمای کاربران',
-          'دبیرخانه',
-          'دانشگاه',
-          'ورود سازمانی',
-          'عضویت سازمانی',
-          'لیست مراکز عضو',
-          'ثبت کنفرانس',
-          'جدید',
-          'درخواست نمایه',
-          'ژورنال',
-          'ثبت سخنرانی',
-          'جلسه دفاع',
-          'رتبه بندی',
-          'دانشگاههای ایران',
-          'درباره سیویلیکا',
-          'تبلیغات',
-          'آمار علمی ایران',
-          'تقویم علمی ایران',
-          'رزومه علمی',
-          'کاربران',
-          'داده کاوی',
-          'مقالات',
-          'طرح های پژوهشی',
-          'سایر پایگاه',
-          'اخبار علمی',
-          'دانشگاههای ایران',
-          'انجمنهای علمی',
-          'افراد مهم علمی',
-          'کشور',
-          'اطلاع رسانی',
-          'کنفرانسها',
-          'مجلات علمی پژوهشی',
-          'جستجوی وکیل',
-          'دفتر مرکزی',
-          'انتشارات',
-          'بوم سازه',
+          "سیویلیکا",
+          "کد پستی",
+          "تلفن",
+          "آدرس",
+          "بزرگراه",
+          "خیابان",
+          "کوچه",
+          "پلاک",
+          "ساختمان",
+          "طبقه",
+          "واحد",
+          "کلیه",
+          "امور",
+          "پشتیبانی",
+          "کاربران",
+          "بخش",
+          "ستادی",
+          "دانشگاهی",
+          "دفتر مرکزی",
+          "انتشارات",
+          "بوم سازه",
+          "جلال آل احمد",
+          "کارگر",
+          "چمران",
+          "پروانه",
+          "چمران",
+          "کد پستی",
+          "۱۴۳۹۹۱۴۱۵۳",
+          "۸۸۰۰۸۰۴۴",
+          "۸۸۳۳۵۴۵۱",
+          "امور ستادی",
+          "دانشگاهی",
+          "پشتیبانی کاربران",
+          "فراموشی رمز عبور",
+          "راهنمای کاربران",
+          "دبیرخانه",
+          "دانشگاه",
+          "ورود سازمانی",
+          "عضویت سازمانی",
+          "لیست مراکز عضو",
+          "ثبت کنفرانس",
+          "جدید",
+          "درخواست نمایه",
+          "ژورنال",
+          "ثبت سخنرانی",
+          "جلسه دفاع",
+          "رتبه بندی",
+          "دانشگاههای ایران",
+          "درباره سیویلیکا",
+          "تبلیغات",
+          "آمار علمی ایران",
+          "تقویم علمی ایران",
+          "رزومه علمی",
+          "کاربران",
+          "داده کاوی",
+          "مقالات",
+          "طرح های پژوهشی",
+          "سایر پایگاه",
+          "اخبار علمی",
+          "دانشگاههای ایران",
+          "انجمنهای علمی",
+          "افراد مهم علمی",
+          "کشور",
+          "اطلاع رسانی",
+          "کنفرانسها",
+          "مجلات علمی پژوهشی",
+          "جستجوی وکیل",
+          "دفتر مرکزی",
+          "انتشارات",
+          "بوم سازه",
         ];
 
         sourceInfo.tags = sourceInfo.tags.filter((tag) => {
@@ -2036,131 +2036,255 @@ console.log('Fishchi content script file loaded');
       }
 
       // Add language field for Persian sources
-      sourceInfo.language = 'persian';
+      sourceInfo.language = "persian";
 
       return sourceInfo;
     } catch (error) {
-      console.error('Error extracting source info:', error);
+      console.error("Error extracting source info:", error);
       return null;
     }
+  }
+
+  // DOI detection and extraction functions
+  function extractDOIFromPage() {
+    // Common DOI patterns
+    const doiPatterns = [
+      /(?:doi:?\s*)(10\.\d{4,}\/[-._;()\/:a-zA-Z0-9]+)/gi,
+      /(?:https?:\/\/(?:dx\.)?doi\.org\/)?(10\.\d{4,}\/[-._;()\/:a-zA-Z0-9]+)/gi,
+      /(?:DOI:?\s*)(10\.\d{4,}\/[-._;()\/:a-zA-Z0-9]+)/gi,
+    ];
+
+    const pageText = document.body.textContent;
+    const dois = new Set();
+
+    // Try each pattern
+    doiPatterns.forEach((pattern) => {
+      let match;
+      while ((match = pattern.exec(pageText)) !== null) {
+        const doi = match[1] || match[0];
+        // Clean up the DOI
+        const cleanDoi = doi.replace(/^(doi:?|DOI:?)\s*/i, "").trim();
+        if (cleanDoi.match(/^10\.\d{4,}\/[-._;()\/:a-zA-Z0-9]+$/)) {
+          dois.add(cleanDoi);
+        }
+      }
+    });
+
+    // Also check meta tags
+    const metaSelectors = [
+      'meta[name="citation_doi"]',
+      'meta[name="dc.identifier"]',
+      'meta[name="DC.identifier"]',
+      'meta[property="citation_doi"]',
+      'meta[name="doi"]',
+      'meta[name="DOI"]',
+    ];
+
+    metaSelectors.forEach((selector) => {
+      const metaTag = document.querySelector(selector);
+      if (metaTag) {
+        const content = metaTag.getAttribute("content");
+        if (content) {
+          const cleanDoi = content
+            .replace(/^(https?:\/\/(?:dx\.)?doi\.org\/|doi:?|DOI:?)\s*/i, "")
+            .trim();
+          if (cleanDoi.match(/^10\.\d{4,}\/[-._;()\/:a-zA-Z0-9]+$/)) {
+            dois.add(cleanDoi);
+          }
+        }
+      }
+    });
+
+    // Check specific elements that commonly contain DOIs
+    const doiSelectors = [
+      ".doi",
+      ".DOI",
+      '[class*="doi"]',
+      '[id*="doi"]',
+      ".citation-doi",
+      ".article-doi",
+      ".paper-doi",
+    ];
+
+    doiSelectors.forEach((selector) => {
+      const elements = document.querySelectorAll(selector);
+      elements.forEach((element) => {
+        const text = element.textContent;
+        doiPatterns.forEach((pattern) => {
+          let match;
+          while ((match = pattern.exec(text)) !== null) {
+            const doi = match[1] || match[0];
+            const cleanDoi = doi.replace(/^(doi:?|DOI:?)\s*/i, "").trim();
+            if (cleanDoi.match(/^10\.\d{4,}\/[-._;()\/:a-zA-Z0-9]+$/)) {
+              dois.add(cleanDoi);
+            }
+          }
+        });
+      });
+    });
+
+    return Array.from(dois);
+  }
+
+  function detectPageDOI() {
+    const dois = extractDOIFromPage();
+    if (dois.length > 0) {
+      return dois[0]; // Return the first DOI found
+    }
+    return null;
   }
 
   // Add floating action button
   function addFloatingButton() {
     // Remove existing button if any
-    const existingButton = document.getElementById('fishchi-extract-btn');
+    const existingButton = document.getElementById("fishchi-extract-btn");
     if (existingButton) {
       existingButton.remove();
     }
 
-    const button = document.createElement('div');
-    button.id = 'fishchi-extract-btn';
-    button.innerHTML = `
+    // Check if DOI is available on this page
+    const detectedDoi = detectPageDOI();
+
+    const button = document.createElement("div");
+    button.id = "fishchi-extract-btn";
+
+    if (detectedDoi) {
+      // Show DOI import option if DOI is detected
+      button.innerHTML = `
             <div class="fishchi-btn-content">
                 <img src="${chrome.runtime.getURL(
-                  'images/icon16.png'
+                  "images/icon16.png",
+                )}" alt="فیشچی" class="fishchi-btn-icon">
+                <span class="fishchi-btn-text">وارد کردن DOI</span>
+                <div class="fishchi-btn-doi">${detectedDoi}</div>
+            </div>
+        `;
+
+      button.addEventListener("click", () => {
+        // Send DOI to background script for import
+        chrome.runtime.sendMessage({
+          action: "importSourceByDoi",
+          doi: detectedDoi,
+          url: window.location.href,
+        });
+      });
+    } else {
+      // Show regular extraction option
+      button.innerHTML = `
+            <div class="fishchi-btn-content">
+                <img src="${chrome.runtime.getURL(
+                  "images/icon16.png",
                 )}" alt="فیشچی" class="fishchi-btn-icon">
                 <span class="fishchi-btn-text">استخراج منبع</span>
             </div>
         `;
 
-    button.addEventListener('click', () => {
-      const sourceInfo = extractSourceInfo();
-      if (sourceInfo) {
-        // Send message to background script
-        chrome.runtime.sendMessage({
-          action: 'extractSource',
-          sourceInfo: sourceInfo,
-          url: window.location.href,
-        });
-      } else {
-        alert('خطا در استخراج اطلاعات منبع');
-      }
-    });
+      button.addEventListener("click", () => {
+        const sourceInfo = extractSourceInfo();
+        if (sourceInfo) {
+          // Send message to background script
+          chrome.runtime.sendMessage({
+            action: "extractSource",
+            sourceInfo: sourceInfo,
+            url: window.location.href,
+          });
+        } else {
+          alert("خطا در استخراج اطلاعات منبع");
+        }
+      });
+    }
 
     document.body.appendChild(button);
   }
 
   // Initialize content script
   function init() {
-    console.log('Fishchi content script initialized on:', window.location.href);
-    console.log('Document ready state:', document.readyState);
-    console.log('Current site config:', getCurrentSiteConfig());
+    console.log("Fishchi content script initialized on:", window.location.href);
+    console.log("Document ready state:", document.readyState);
+    console.log("Current site config:", getCurrentSiteConfig());
     console.log(
-      'Chrome runtime available:',
-      typeof chrome !== 'undefined' && chrome.runtime
+      "Chrome runtime available:",
+      typeof chrome !== "undefined" && chrome.runtime,
     );
     console.log(
-      'Chrome runtime onMessage available:',
-      typeof chrome !== 'undefined' &&
+      "Chrome runtime onMessage available:",
+      typeof chrome !== "undefined" &&
         chrome.runtime &&
-        chrome.runtime.onMessage
+        chrome.runtime.onMessage,
     );
 
     // Check if chrome.runtime is available
     if (
-      typeof chrome === 'undefined' ||
+      typeof chrome === "undefined" ||
       !chrome.runtime ||
       !chrome.runtime.onMessage
     ) {
-      console.error('Chrome runtime or onMessage not available');
+      console.error("Chrome runtime or onMessage not available");
       return;
     }
 
     // Set up message listener immediately
     chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-      console.log('Content script received message:', request);
+      console.log("Content script received message:", request);
 
       try {
-        if (request.action === 'getSourceInfo') {
+        if (request.action === "getSourceInfo") {
           const sourceInfo = extractSourceInfo();
-          console.log('Extracted source info:', sourceInfo);
+          console.log("Extracted source info:", sourceInfo);
           sendResponse({ success: true, sourceInfo });
-        } else if (request.action === 'refreshSourceInfo') {
+        } else if (request.action === "refreshSourceInfo") {
           const sourceInfo = extractSourceInfo();
-          console.log('Refreshed source info:', sourceInfo);
+          console.log("Refreshed source info:", sourceInfo);
           sendResponse({ success: true, sourceInfo });
+        } else if (request.action === "getDOI") {
+          const doi = detectPageDOI();
+          console.log("Detected DOI:", doi);
+          sendResponse({ success: !!doi, doi });
+        } else if (request.action === "extractDOIs") {
+          const dois = extractDOIFromPage();
+          console.log("Extracted DOIs:", dois);
+          sendResponse({ success: dois.length > 0, dois });
         } else {
-          sendResponse({ success: false, message: 'Unknown action' });
+          sendResponse({ success: false, message: "Unknown action" });
         }
       } catch (error) {
-        console.error('Content script error:', error);
+        console.error("Content script error:", error);
         sendResponse({ success: false, message: error.message });
       }
 
       return true; // Keep message channel open for async response
     });
 
-    console.log('Message listener set up successfully');
+    console.log("Message listener set up successfully");
 
     // Wait for page to load
-    if (document.readyState === 'loading') {
-      console.log('Document still loading, waiting for DOMContentLoaded');
-      document.addEventListener('DOMContentLoaded', () => {
-        console.log('DOMContentLoaded fired, adding button');
+    if (document.readyState === "loading") {
+      console.log("Document still loading, waiting for DOMContentLoaded");
+      document.addEventListener("DOMContentLoaded", () => {
+        console.log("DOMContentLoaded fired, adding button");
         addFloatingButton();
       });
     } else {
-      console.log('Document already loaded, adding button immediately');
+      console.log("Document already loaded, adding button immediately");
       addFloatingButton();
     }
   }
 
   // Test function to verify content script is working
   function testContentScript() {
-    console.log('Content script test function called');
+    console.log("Content script test function called");
     return {
       success: true,
-      message: 'Content script is working',
+      message: "Content script is working",
       url: window.location.href,
       timestamp: new Date().toISOString(),
-      chromeRuntime: typeof chrome !== 'undefined' && chrome.runtime,
+      chromeRuntime: typeof chrome !== "undefined" && chrome.runtime,
       chromeOnMessage:
-        typeof chrome !== 'undefined' &&
+        typeof chrome !== "undefined" &&
         chrome.runtime &&
         chrome.runtime.onMessage,
       documentReady: document.readyState,
-      buttonExists: !!document.getElementById('fishchi-extract-btn'),
+      buttonExists: !!document.getElementById("fishchi-extract-btn"),
     };
   }
 
@@ -2169,15 +2293,15 @@ console.log('Fishchi content script file loaded');
 
   // Start the content script with error handling
   try {
-    console.log('Starting Fishchi content script...');
+    console.log("Starting Fishchi content script...");
     init();
-    console.log('Fishchi content script started successfully');
+    console.log("Fishchi content script started successfully");
   } catch (error) {
-    console.error('Error starting Fishchi content script:', error);
-    console.error('Error stack:', error.stack);
+    console.error("Error starting Fishchi content script:", error);
+    console.error("Error stack:", error.stack);
   }
 
-  console.log('Fishchi content script IIFE completed');
+  console.log("Fishchi content script IIFE completed");
 })();
 
-console.log('Fishchi content script file execution completed');
+console.log("Fishchi content script file execution completed");

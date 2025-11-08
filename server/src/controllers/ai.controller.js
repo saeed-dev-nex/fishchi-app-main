@@ -4,6 +4,7 @@ import {
   parseCitationWithAI,
   proofreadText,
   suggestTagsForText,
+  translateRef,
 } from '../utils/aiService.js';
 import { htmlToText } from 'html-to-text';
 import ApiResponse from '../utils/apiResponse.js';
@@ -129,4 +130,34 @@ const aiParseCitation = asyncHandler(async (req, res) => {
     throw new Error(error.message || 'خطا در پردازش Citation توسط هوش مصنوعی.');
   }
 });
-export { summarizeNote, suggestTags, proofreadNote, aiParseCitation };
+const translateText = async (req, res, next) => {
+  try {
+    const { text, targetLang } = req.body;
+
+    // Validate input
+    if (!text) {
+      throw new ApiError(400, 'Text is required for translation');
+    }
+
+    // Call the AI service to get the translation
+    const translatedText = await translateRef(text, targetLang);
+    console.log(translatedText);
+
+    // Send the successful response
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(200, { translatedText }, 'Text translated successfully')
+      );
+  } catch (error) {
+    // Pass any errors to the global error handler
+    next(error);
+  }
+};
+export {
+  summarizeNote,
+  suggestTags,
+  proofreadNote,
+  aiParseCitation,
+  translateText,
+};

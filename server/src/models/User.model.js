@@ -1,5 +1,5 @@
-import { Schema, model } from 'mongoose';
-import bcrypt from 'bcryptjs';
+import { Schema, model } from "mongoose";
+import bcrypt from "bcryptjs";
 
 // create User Schema
 const userSchema = new Schema(
@@ -13,6 +13,7 @@ const userSchema = new Schema(
       type: String,
       require: true,
       unique: true, // tow users can't have same email
+      select: true,
     },
     password: {
       type: String,
@@ -61,7 +62,7 @@ const userSchema = new Schema(
     },
     degree: {
       type: String,
-      enum: ['دیپلم', 'کارشناسی', 'کارشناسی ارشد', 'دکتری', 'فوق دکتری', null],
+      enum: ["دیپلم", "کارشناسی", "کارشناسی ارشد", "دکتری", "فوق دکتری", null],
       default: null,
     },
     bio: {
@@ -83,20 +84,20 @@ const userSchema = new Schema(
     },
     provider: {
       type: String,
-      enum: ['local', 'google', 'github'],
-      default: 'local',
+      enum: ["local", "google", "github"],
+      default: "local",
     },
   },
   {
     timestamps: true, // Add createAt and updateAt Automatically
-  }
+  },
 );
 
 // Middlewares
 // Hash Password before saving it to the database
-userSchema.pre('save', async function (next) {
+userSchema.pre("save", async function (next) {
   // Skip password hashing for OAuth users
-  if (this.provider !== 'local' || !this.isModified('password')) {
+  if (this.provider !== "local" || !this.isModified("password")) {
     return next();
   }
 
@@ -110,5 +111,5 @@ userSchema.methods.comparePassword = async function (password) {
 };
 
 // Create User Model based on UserSchema
-const User = model('User', userSchema);
+const User = model("User", userSchema);
 export default User;
