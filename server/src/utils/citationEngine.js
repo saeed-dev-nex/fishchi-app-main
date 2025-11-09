@@ -1,6 +1,6 @@
 // server/src/utils/citationEngine.js
-import { Cite, plugins } from "@citation-js/core";
-import "@citation-js/plugin-csl";
+import { Cite, plugins } from '@citation-js/core';
+import '@citation-js/plugin-csl';
 
 // Global citation tracking for Vancouver numbering
 let vancouverCitationOrder = new Map();
@@ -8,31 +8,31 @@ let vancouverCounter = 0;
 
 // Persian localization mappings
 const PERSIAN_LOCALIZATIONS = {
-  and: "و",
-  "et al.": "و همکاران",
-  "et al": "و همکاران",
-  "eds.": "ویراستاران",
-  "ed.": "ویراستار",
-  "pp.": "صص.",
-  "p.": "ص.",
-  "vol.": "جلد",
-  "no.": "شماره",
-  "n.d.": "بی‌تا",
-  In: "در",
-  "Retrieved from": "بازیابی از",
-  "Available at": "دسترس در",
-  January: "ژانویه",
-  February: "فوریه",
-  March: "مارس",
-  April: "آوریل",
-  May: "می",
-  June: "ژوئن",
-  July: "ژوئیه",
-  August: "اوت",
-  September: "سپتامبر",
-  October: "اکتبر",
-  November: "نوامبر",
-  December: "دسامبر",
+  and: 'و',
+  'et al.': 'و همکاران',
+  'et al': 'و همکاران',
+  'eds.': 'ویراستاران',
+  'ed.': 'ویراستار',
+  'pp.': 'صص.',
+  'p.': 'ص.',
+  'vol.': 'جلد',
+  'no.': 'شماره',
+  'n.d.': 'بی‌تا',
+  In: 'در',
+  'Retrieved from': 'بازیابی از',
+  'Available at': 'دسترس در',
+  January: 'ژانویه',
+  February: 'فوریه',
+  March: 'مارس',
+  April: 'آوریل',
+  May: 'می',
+  June: 'ژوئن',
+  July: 'ژوئیه',
+  August: 'اوت',
+  September: 'سپتامبر',
+  October: 'اکتبر',
+  November: 'نوامبر',
+  December: 'دسامبر',
 };
 
 /**
@@ -47,21 +47,21 @@ const PERSIAN_LOCALIZATIONS = {
  */
 export const formatCitations = (
   cslItems,
-  styleName = "apa",
+  styleName = 'apa',
   itemIdsToCite = [],
-  lang = "en-US",
-  options = {},
+  lang = 'en-US',
+  options = {}
 ) => {
   try {
     // Validate inputs
     if (!cslItems || cslItems.length === 0) {
-      throw new Error("No CSL items provided");
+      throw new Error('No CSL items provided');
     }
 
     // Normalize style name
     const normalizedStyle = normalizeStyleName(styleName);
-    const isVancouver = normalizedStyle === "vancouver";
-    const isPersian = lang === "fa-IR" || lang.startsWith("fa");
+    const isVancouver = normalizedStyle === 'vancouver';
+    const isPersian = lang === 'fa-IR' || lang.startsWith('fa');
 
     // Handle Vancouver numbering
     if (isVancouver && options.resetNumbering) {
@@ -73,13 +73,13 @@ export const formatCitations = (
     const cite = new Cite(cslItems);
 
     // Generate in-text citation for specific items
-    let inText = "";
+    let inText = '';
     if (itemIdsToCite && itemIdsToCite.length > 0) {
       // Filter the items we want to cite
       const itemsToCite = cslItems.filter(
         (item) =>
           itemIdsToCite.includes(item.id) ||
-          itemIdsToCite.includes(item.id?.toString()),
+          itemIdsToCite.includes(item.id?.toString())
       );
 
       if (itemsToCite.length > 0) {
@@ -97,12 +97,12 @@ export const formatCitations = (
           if (numbers.length === 1) {
             inText = `[${numbers[0]}]`;
           } else {
-            inText = `[${numbers.join(",")}]`;
+            inText = `[${numbers.join(',')}]`;
           }
         } else {
           const citeCitation = new Cite(itemsToCite);
-          inText = citeCitation.format("citation", {
-            format: "text",
+          inText = citeCitation.format('citation', {
+            format: 'text',
             template: normalizedStyle,
             lang: lang,
           });
@@ -113,8 +113,8 @@ export const formatCitations = (
           }
         }
       } else {
-        console.warn("No matching items found for citation");
-        inText = isVancouver ? "[?]" : "(?)";
+        console.warn('No matching items found for citation');
+        inText = isVancouver ? '[?]' : '(?)';
       }
     } else {
       // If no specific items to cite, use the first item
@@ -128,8 +128,8 @@ export const formatCitations = (
         inText = `[${vancouverCitationOrder.get(itemId)}]`;
       } else {
         const citeCitation = new Cite([firstItem]);
-        inText = citeCitation.format("citation", {
-          format: "text",
+        inText = citeCitation.format('citation', {
+          format: 'text',
           template: normalizedStyle,
           lang: lang,
         });
@@ -142,8 +142,8 @@ export const formatCitations = (
     }
 
     // Generate bibliography for all items
-    let bibliography = cite.format("bibliography", {
-      format: "text",
+    let bibliography = cite.format('bibliography', {
+      format: 'text',
       template: normalizedStyle,
       lang: lang,
     });
@@ -158,18 +158,20 @@ export const formatCitations = (
       bibliography: bibliography.trim(),
     };
   } catch (error) {
-    console.error("Citation formatting error:", error);
+    console.error('Citation formatting error:', error);
 
     // Provide fallback formatting
     const fallbackItem = cslItems[0] || {};
     const author = fallbackItem.author?.[0];
-    const year = fallbackItem.issued?.["date-parts"]?.[0]?.[0] || "n.d.";
-    const authorName = author?.family || author?.literal || "Unknown";
+    const year = fallbackItem.issued?.['date-parts']?.[0]?.[0] || 'n.d.';
+    const authorName = author?.family || author?.literal || 'Unknown';
 
-    const isVancouver = normalizeStyleName(styleName) === "vancouver";
+    const isVancouver = normalizeStyleName(styleName) === 'vancouver';
     return {
-      inText: isVancouver ? "[1]" : `(${authorName}, ${year})`,
-      bibliography: `${authorName}. (${year}). ${fallbackItem.title || "Untitled"}.`,
+      inText: isVancouver ? '[1]' : `(${authorName}, ${year})`,
+      bibliography: `${authorName}. (${year}). ${
+        fallbackItem.title || 'Untitled'
+      }.`,
     };
   }
 };
@@ -184,18 +186,18 @@ export const formatCitations = (
  */
 export const formatBibliography = (
   cslItems,
-  styleName = "apa",
-  lang = "en-US",
-  options = {},
+  styleName = 'apa',
+  lang = 'en-US',
+  options = {}
 ) => {
   try {
     if (!cslItems || cslItems.length === 0) {
-      return "<div>No sources to format</div>";
+      return '<div>No sources to format</div>';
     }
 
     // Normalize style name
     const normalizedStyle = normalizeStyleName(styleName);
-    const isVancouver = normalizedStyle === "vancouver";
+    const isVancouver = normalizedStyle === 'vancouver';
 
     // For Vancouver style, sort items by their citation order
     let sortedItems = cslItems;
@@ -210,13 +212,13 @@ export const formatBibliography = (
     // Check if we have mixed languages (per-source localization needed)
     const hasMixedLanguages =
       sortedItems.some(
-        (item) => item.language === "fa-IR" || item.language?.startsWith("fa"),
+        (item) => item.language === 'fa-IR' || item.language?.startsWith('fa')
       ) &&
       sortedItems.some(
-        (item) => item.language !== "fa-IR" && !item.language?.startsWith("fa"),
+        (item) => item.language !== 'fa-IR' && !item.language?.startsWith('fa')
       );
 
-    console.log("📚 Bibliography language analysis:", {
+    console.log('📚 Bibliography language analysis:', {
       totalSources: sortedItems.length,
       hasMixedLanguages: hasMixedLanguages,
       requestedLang: lang,
@@ -224,12 +226,12 @@ export const formatBibliography = (
     });
 
     // If mixed languages or per-source localization needed, process each entry separately
-    if (hasMixedLanguages || lang === "auto") {
+    if (hasMixedLanguages || lang === 'auto') {
       return formatBibliographyWithPerSourceLocalization(
         sortedItems,
         normalizedStyle,
         isVancouver,
-        options,
+        options
       );
     }
 
@@ -237,8 +239,8 @@ export const formatBibliography = (
     const cite = new Cite(sortedItems);
 
     // Generate bibliography as HTML
-    let bibliography = cite.format("bibliography", {
-      format: "html",
+    let bibliography = cite.format('bibliography', {
+      format: 'html',
       template: normalizedStyle,
       lang: lang,
     });
@@ -248,48 +250,48 @@ export const formatBibliography = (
       bibliography = addVancouverNumbering(
         bibliography,
         sortedItems,
-        options.citationOrder,
+        options.citationOrder
       );
     }
 
     // Apply Persian localization to entire bibliography if requested language is Persian
-    const isPersian = lang === "fa-IR" || lang.startsWith("fa");
+    const isPersian = lang === 'fa-IR' || lang.startsWith('fa');
     if (isPersian) {
       bibliography = localizeToPersian(bibliography);
     }
 
     // Wrap in a div with proper styling for CSL bibliographies
-    const styleClass = isVancouver ? "vancouver-bib" : "csl-bib-body";
+    const styleClass = isVancouver ? 'vancouver-bib' : 'csl-bib-body';
     const styling = isVancouver
-      ? "line-height: 1.35; padding-left: 0; direction: ltr;"
-      : "line-height: 1.35; padding-left: 2em; text-indent: -2em; direction: ltr;";
+      ? 'line-height: 1.35; padding-left: 0; direction: ltr;'
+      : 'line-height: 1.35; padding-left: 2em; text-indent: -2em; direction: ltr;';
 
     return `<div class="${styleClass}" style="${styling}">
   ${bibliography}
 </div>`;
   } catch (error) {
-    console.error("Bibliography formatting error:", error);
+    console.error('Bibliography formatting error:', error);
 
     // Fallback: create simple HTML list
     const entries = cslItems
       .map((item, index) => {
         const author = item.author?.[0];
-        const year = item.issued?.["date-parts"]?.[0]?.[0] || "n.d.";
-        const authorName = author?.family || author?.literal || "Unknown";
-        const title = item.title || "Untitled";
+        const year = item.issued?.['date-parts']?.[0]?.[0] || 'n.d.';
+        const authorName = author?.family || author?.literal || 'Unknown';
+        const title = item.title || 'Untitled';
 
-        const isVancouver = normalizeStyleName(styleName) === "vancouver";
-        const prefix = isVancouver ? `${index + 1}. ` : "";
+        const isVancouver = normalizeStyleName(styleName) === 'vancouver';
+        const prefix = isVancouver ? `${index + 1}. ` : '';
         let entry = `${prefix}${authorName}. (${year}). ${title}.`;
 
         // Apply Persian localization if needed
-        if (lang === "fa-IR" || lang.startsWith("fa")) {
+        if (lang === 'fa-IR' || lang.startsWith('fa')) {
           entry = localizeToPersian(entry);
         }
 
         return `<div style="margin-bottom: 1em;">${entry}</div>`;
       })
-      .join("");
+      .join('');
 
     return `<div class="csl-bib-body">${entries}</div>`;
   }
@@ -303,26 +305,26 @@ function formatBibliographyWithPerSourceLocalization(
   cslItems,
   styleName,
   isVancouver,
-  options = {},
+  options = {}
 ) {
   try {
     console.log(
-      "📚 [formatBibliographyWithPerSourceLocalization] Processing mixed-language bibliography",
+      '📚 [formatBibliographyWithPerSourceLocalization] Processing mixed-language bibliography'
     );
 
     const entries = cslItems.map((item, index) => {
       try {
         // Determine language for this specific source
         const sourceLang =
-          item.language === "fa-IR" || item.language?.startsWith("fa")
-            ? "fa-IR"
-            : "en-US";
-        const isPersian = sourceLang === "fa-IR";
+          item.language === 'fa-IR' || item.language?.startsWith('fa')
+            ? 'fa-IR'
+            : 'en-US';
+        const isPersian = sourceLang === 'fa-IR';
 
         // Format this single item with Cite.js
         const cite = new Cite([item]);
-        let entry = cite.format("bibliography", {
-          format: "html",
+        let entry = cite.format('bibliography', {
+          format: 'html',
           template: styleName,
           lang: sourceLang,
         });
@@ -336,14 +338,14 @@ function formatBibliographyWithPerSourceLocalization(
         if (isVancouver) {
           const number = index + 1;
           // Remove any existing numbering from the entry
-          entry = entry.replace(/^\s*\d+\.\s*/, "");
+          entry = entry.replace(/^\s*\d+\.\s*/, '');
           // Add our own numbering
           entry = entry.replace(/(<[^>]*csl-entry[^>]*>)/, `$1${number}. `);
         }
 
         // Set text direction based on source language
-        const direction = isPersian ? "rtl" : "ltr";
-        const alignment = isPersian ? "right" : "left";
+        const direction = isPersian ? 'rtl' : 'ltr';
+        const alignment = isPersian ? 'right' : 'left';
 
         // Wrap entry with appropriate direction
         return `<div style="direction: ${direction}; text-align: ${alignment}; margin-bottom: 0.5em;">${entry}</div>`;
@@ -351,32 +353,32 @@ function formatBibliographyWithPerSourceLocalization(
         console.error(`❌ Error formatting source ${item.id}:`, itemError);
         // Fallback formatting
         const author = item.author?.[0];
-        const year = item.issued?.["date-parts"]?.[0]?.[0] || "n.d.";
-        const authorName = author?.family || author?.literal || "Unknown";
-        const title = item.title || "Untitled";
-        const prefix = isVancouver ? `${index + 1}. ` : "";
+        const year = item.issued?.['date-parts']?.[0]?.[0] || 'n.d.';
+        const authorName = author?.family || author?.literal || 'Unknown';
+        const title = item.title || 'Untitled';
+        const prefix = isVancouver ? `${index + 1}. ` : '';
         return `<div style="margin-bottom: 0.5em;">${prefix}${authorName}. (${year}). ${title}.</div>`;
       }
     });
 
-    const combinedBibliography = entries.join("\n");
+    const combinedBibliography = entries.join('\n');
 
     // Wrap in a div with proper styling
-    const styleClass = isVancouver ? "vancouver-bib" : "csl-bib-body";
+    const styleClass = isVancouver ? 'vancouver-bib' : 'csl-bib-body';
     const styling = isVancouver
-      ? "line-height: 1.35; padding-left: 0;"
-      : "line-height: 1.35; padding-left: 2em; text-indent: -2em;";
+      ? 'line-height: 1.35; padding-left: 0;'
+      : 'line-height: 1.35; padding-left: 2em; text-indent: -2em;';
 
     return `<div class="${styleClass}" style="${styling}">
   ${combinedBibliography}
 </div>`;
   } catch (error) {
     console.error(
-      "❌ Error in formatBibliographyWithPerSourceLocalization:",
-      error,
+      '❌ Error in formatBibliographyWithPerSourceLocalization:',
+      error
     );
     // Fallback to simple formatting
-    return formatBibliography(cslItems, styleName, "en-US", options);
+    return formatBibliography(cslItems, styleName, 'en-US', options);
   }
 }
 
@@ -389,14 +391,14 @@ function addVancouverNumbering(bibliography, items, citationOrder) {
     let counter = 1;
 
     // Split into lines and process each line
-    const lines = bibliography.split("\n");
+    const lines = bibliography.split('\n');
     const numberedLines = lines.map((line) => {
       // Look for CSL entry divs and add numbering
       if (line.includes('class="csl-entry"')) {
         // Replace content inside csl-entry with numbered content
         const numberedLine = line.replace(
           /(<div[^>]*class="csl-entry"[^>]*>)(.*?)(<\/div>)/i,
-          `$1${counter}. $2$3`,
+          `$1${counter}. $2$3`
         );
         counter++;
         return numberedLine;
@@ -404,9 +406,9 @@ function addVancouverNumbering(bibliography, items, citationOrder) {
       return line;
     });
 
-    return numberedLines.join("\n");
+    return numberedLines.join('\n');
   } catch (error) {
-    console.warn("Could not add Vancouver numbering:", error);
+    console.warn('Could not add Vancouver numbering:', error);
     // Fallback: simple regex replacement
     let counter = 1;
     return bibliography.replace(
@@ -415,7 +417,7 @@ function addVancouverNumbering(bibliography, items, citationOrder) {
         const numbered = `<div class="csl-entry">${counter}. ${content}</div>`;
         counter++;
         return numbered;
-      },
+      }
     );
   }
 }
@@ -427,25 +429,25 @@ function addVancouverNumbering(bibliography, items, citationOrder) {
  * @returns {string} Normalized style name
  */
 function normalizeStyleName(styleName) {
-  if (!styleName) return "apa";
+  if (!styleName) return 'apa';
 
   const style = styleName.toLowerCase().trim();
 
   // Map common style variations
   const styleMap = {
-    apa: "apa",
-    mla: "mla",
-    chicago: "chicago-note-bibliography",
-    harvard: "harvard1",
-    vancouver: "vancouver",
-    ieee: "ieee",
-    acs: "american-chemical-society",
-    ama: "american-medical-association",
-    asa: "american-sociological-association",
-    apsa: "american-political-science-association",
+    apa: 'apa',
+    mla: 'mla',
+    chicago: 'chicago-note-bibliography',
+    harvard: 'harvard1',
+    vancouver: 'vancouver',
+    ieee: 'ieee',
+    acs: 'american-chemical-society',
+    ama: 'american-medical-association',
+    asa: 'american-sociological-association',
+    apsa: 'american-political-science-association',
   };
 
-  return styleMap[style] || style || "apa";
+  return styleMap[style] || style || 'apa';
 }
 
 /**
@@ -455,14 +457,14 @@ function normalizeStyleName(styleName) {
  */
 export function getAvailableStyles() {
   return [
-    "apa",
-    "mla",
-    "chicago-note-bibliography",
-    "harvard1",
-    "vancouver",
-    "ieee",
-    "american-chemical-society",
-    "american-medical-association",
+    'apa',
+    'mla',
+    'chicago-note-bibliography',
+    'harvard1',
+    'vancouver',
+    'ieee',
+    'american-chemical-society',
+    'american-medical-association',
   ];
 }
 
@@ -515,30 +517,30 @@ function localizeToPersian(text) {
   for (const [english, persian] of Object.entries(PERSIAN_LOCALIZATIONS)) {
     // Use word boundaries for exact matches
     const regex = new RegExp(
-      `\\b${english.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`,
-      "gi",
+      `\\b${english.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`,
+      'gi'
     );
     localizedText = localizedText.replace(regex, persian);
   }
 
   // Handle specific patterns
   // Multiple authors: "Author1 & Author2" -> "Author1 و Author2"
-  localizedText = localizedText.replace(/\s+&\s+/g, " و ");
+  localizedText = localizedText.replace(/\s+&\s+/g, ' و ');
 
   // Et al variants
-  localizedText = localizedText.replace(/,?\s*et\s+al\.?/gi, " و همکاران");
+  localizedText = localizedText.replace(/,?\s*et\s+al\.?/gi, ' و همکاران');
 
   // Page ranges: "pp. 123-456" -> "صص. ۱۲۳-۴۵۶"
-  localizedText = localizedText.replace(/pp\.\s*(\d+)-(\d+)/gi, "صص. $1-$2");
-  localizedText = localizedText.replace(/p\.\s*(\d+)/gi, "ص. $1");
+  localizedText = localizedText.replace(/pp\.\s*(\d+)-(\d+)/gi, 'صص. $1-$2');
+  localizedText = localizedText.replace(/p\.\s*(\d+)/gi, 'ص. $1');
 
   // Volume and issue: "Vol. 5, No. 3" -> "جلد ۵، شماره ۳"
   localizedText = localizedText.replace(
     /Vol\.\s*(\d+),?\s*No\.\s*(\d+)/gi,
-    "جلد $1، شماره $2",
+    'جلد $1، شماره $2'
   );
-  localizedText = localizedText.replace(/Vol\.\s*(\d+)/gi, "جلد $1");
-  localizedText = localizedText.replace(/No\.\s*(\d+)/gi, "شماره $1");
+  localizedText = localizedText.replace(/Vol\.\s*(\d+)/gi, 'جلد $1');
+  localizedText = localizedText.replace(/No\.\s*(\d+)/gi, 'شماره $1');
 
   // Handle Persian numerals if needed (optional)
   if (shouldConvertToPersianNumerals()) {
@@ -555,16 +557,16 @@ function localizeToPersian(text) {
  */
 function convertToPersianNumerals(text) {
   const englishToPersian = {
-    0: "۰",
-    1: "۱",
-    2: "۲",
-    3: "۳",
-    4: "۴",
-    5: "۵",
-    6: "۶",
-    7: "۷",
-    8: "۸",
-    9: "۹",
+    0: '۰',
+    1: '۱',
+    2: '۲',
+    3: '۳',
+    4: '۴',
+    5: '۵',
+    6: '۶',
+    7: '۷',
+    8: '۸',
+    9: '۹',
   };
 
   return text.replace(/[0-9]/g, (digit) => englishToPersian[digit] || digit);
