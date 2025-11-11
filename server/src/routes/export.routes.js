@@ -1,29 +1,30 @@
-import express from "express";
-import { protect } from "../middlewares/auth.middleware.js";
+import express from 'express';
+import { protect } from '../middlewares/auth.middleware.js';
 import {
   exportToDocx,
   formatBibliographyForWord,
   formatCitationForWord,
   formatCitationForWordTest,
   manageVancouverNumbering,
-} from "../controllers/export.controller.js";
+} from '../controllers/export.controller.js';
+import { convertCitationStyle } from '../controllers/styleConversion.controller.js';
 
 const router = express.Router();
 
 // Basic test route to verify module loading
-router.get("/test", (req, res) => {
+router.get('/test', (req, res) => {
   res.json({
-    message: "Export routes are working",
+    message: 'Export routes are working',
     timestamp: new Date().toISOString(),
   });
 });
 
-router.post("/docx", protect, exportToDocx); // POST /api/v1/export/docx
-router.post("/format-citation", protect, formatCitationForWord);
+router.post('/docx', protect, exportToDocx); // POST /api/v1/export/docx
+router.post('/format-citation', protect, formatCitationForWord);
 
 // Temporary test route without authentication for debugging
-router.post("/format-citation-test", formatCitationForWordTest);
-router.post("/format-bibliography", protect, formatBibliographyForWord);
-router.post("/manage-vancouver-numbering", protect, manageVancouverNumbering);
-
+router.post('/format-citation-test', formatCitationForWordTest);
+router.post('/format-bibliography', protect, formatBibliographyForWord);
+router.post('/manage-vancouver-numbering', protect, manageVancouverNumbering);
+router.post('/convert-style', protect, convertCitationStyle);
 export default router;
